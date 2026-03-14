@@ -19,6 +19,7 @@ user_router.py
     GET    /users/me/social-links      소셜 연동 조회
     DELETE /users/me                   회원 탈퇴
     GET    /users/check/email          이메일 중복 확인
+    GET    /users/check/nickname       닉네임 중복 확인
     POST   /users/email/send-code      이메일 OTP 발송
     POST   /users/email/verify-code    이메일 OTP 확인
     POST   /users/password/reset       비밀번호 재설정 (OTP 검증 포함)
@@ -212,6 +213,19 @@ def check_email(email: str):
     """
 
     return {"available": not user_service.is_email_taken(email)}
+
+@router.get("/check/nickname")
+def check_nickname(nickname: str):
+    """
+    닉네임 중복 확인.
+
+    프론트 요청 예시:
+        GET /users/check/nickname?nickname=길동이
+    응답:
+        { "available": true }
+    """
+
+    return {"available": not user_service.is_nickname_taken(nickname)}
 
 # ─────────────────────────────────────────────
 # 이메일 OTP 인증
