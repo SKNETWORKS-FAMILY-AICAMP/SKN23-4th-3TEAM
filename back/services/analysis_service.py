@@ -121,6 +121,29 @@ def get_latest_analysis(user_id: int) -> Optional[SkinAnalysisResult]:
     )
     return SkinAnalysisResult.from_dict(row) if row else None
 
+def has_today_detailed_analysis(user_id: int) -> bool:
+    """
+    오늘 날짜에 정밀 분석(detailed) 결과가 있는지 확인.
+
+    사용 예시:
+        done = has_today_detailed_analysis(1)
+        if done:
+            raise HTTPException(400, "오늘 이미 정밀 분석을 진행했습니다.")
+    """
+    row = execute_one(
+        """
+        SELECT analysis_id FROM skin_analysis_results
+        WHERE user_id = %s
+          AND model_type = 'detailed'
+          AND DATE(created_at) = CURDATE()
+          AND deleted_at IS NULL
+        LIMIT 1
+        """,
+        (user_id)
+    )
+
+    return row is not None
+
 def get_analysis_by_model_type(
     user_id: int,
     model_type: str

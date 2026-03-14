@@ -10,6 +10,7 @@ analysis_router.py
     POST   /analysis                       피부 분석 결과 저장
     GET    /analysis                       내 분석 히스토리 조회
     GET    /analysis/latest                가장 최근 분석 결과 조회
+    GET    /analysis/check/today           오늘 정밀 분석 여부 확인
     GET    /analysis/{analysis_id}         분석 결과 단건 조회
     DELETE /analysis/{analysis_id}         분석 결과 삭제 (soft delete)
 ─────────────────────────────────────────────────────────────
@@ -95,6 +96,19 @@ def get_latest_analysis(user_id: int = Depends(get_current_user_id)):
         raise HTTPException(status_code=404, detail="분석 결과가 없습니다.")
 
     return _analysis_to_response(result)
+
+@router.get("/check/today")
+def check_today_detailed(user_id: int = Depends(get_current_user_id)):
+    """
+    오늘 정밀 분석(detailed) 수행 여부 확인.
+
+    프론트 요청 예시:
+        GET /analysis/check/today
+    응답:
+        { "available": true }   # 아직 분석 안 함 → 분석 가능
+        { "available": false }  # 오늘 이미 분석함 → 분석 불가
+    """
+    return {"available": not analysis_service.has_today_detailed_analysis(user_id)}
 
 @router.get("/{analysis_id}", response_model=AnalysisResponse)
 def get_analysis(
