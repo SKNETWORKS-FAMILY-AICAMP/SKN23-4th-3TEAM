@@ -1,7 +1,9 @@
+from typing import List
+from datetime import date
 from .deps import get_current_user_id
 from services import analysis_service
-from db.schemas import AnalysisCreate, AnalysisResponse
 from fastapi import APIRouter, HTTPException, Depends, Query
+from db.schemas import AnalysisCreate, AnalysisResponse
 
 """
 analysis_router.py
@@ -11,6 +13,7 @@ analysis_router.py
     GET    /analysis                       내 분석 히스토리 조회
     GET    /analysis/latest                가장 최근 분석 결과 조회
     GET    /analysis/check/today           오늘 정밀 분석 여부 확인
+    GET    /analysis/dates                 정밀 분석 날짜 목록 조회
     GET    /analysis/by-date               날짜별 정밀 분석 결과 조회 (1~2개 날짜)
     GET    /analysis/{analysis_id}         분석 결과 단건 조회
     DELETE /analysis/{analysis_id}         분석 결과 삭제 (soft delete)
@@ -111,6 +114,18 @@ def check_today_detailed(user_id: int = Depends(get_current_user_id)):
     """
     return {"available": not analysis_service.has_today_detailed_analysis(user_id)}
 
+@router.get("/dates")
+def get_detailed_dates(user_id: int = Depends(get_current_user_id)):
+    """
+    사용자의 정밀 분석(detailed) 날짜 목록 조회 (최신순, YYYY-MM-DD).
+
+    프론트 요청 예시:
+        GET /analysis/dates
+    응답:
+        { "dates": ["2026-03-14", "2026-03-01", ...] }
+    """
+    return {"dates": analysis_service.get_detailed_dates(user_id)}
+
 @router.get("/by-date")
 def get_analysis_by_date(
     dates   : List[date] = Query(..., alias="dates", min_length=1, max_length=2, description="조회할 날짜 (1~2개, YYYY-MM-DD)"),
@@ -168,7 +183,7 @@ def get_analysis(
     user_id     : int = Depends(get_current_user_id),
 ):
     """
-    분석 결과 단건 조회.
+    분석 결과 단건 조회.    (front 작업 후 삭제 예정)
 
     프론트 요청 예시:
         GET /analysis/1

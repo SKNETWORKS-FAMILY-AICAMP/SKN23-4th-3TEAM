@@ -121,6 +121,32 @@ def get_latest_analysis(user_id: int) -> Optional[SkinAnalysisResult]:
     )
     return SkinAnalysisResult.from_dict(row) if row else None
 
+def get_detailed_dates(user_id: int) -> list[str]:
+    """
+    사용자의 정밀 분석(detailed) 결과가 존재하는 날짜 목록 조회.
+    최신순으로 반환하며, YYYY-MM-DD 형식 문자열 리스트.
+
+    사용 예시:
+        dates = get_detailed_dates(1)
+        # ["2026-03-14", "2026-03-01", ...]
+    """
+    from db.db_manager import execute_query
+
+    rows = execute_query(
+        """
+        SELECT DISTINCT DATE_FORMAT(created_at, '%%Y-%%m-%%d') AS date
+        FROM skin_analysis_results
+        WHERE user_id = %s
+          AND model_type = 'detailed'
+          AND deleted_at IS NULL
+        ORDER BY date DESC
+        """,
+        (user_id,)
+    )
+
+    return [row["date"] for row in rows]
+
+
 def get_detailed_by_date(user_id: int, date: str) -> Optional[SkinAnalysisResult]:
     """
     특정 날짜의 정밀 분석(detailed) 결과 조회.
