@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from services import user_service
 from services import auth_service
 from services import email_service
-from .deps import get_current_user_id
+from .deps import get_current_user_id, create_permanent_token
 from fastapi import APIRouter, HTTPException, Depends
 from db.schemas import UserCreate, UserUpdate, UserResponse, EmailSendRequest, EmailVerifyRequest, PasswordResetRequest
 
@@ -19,9 +19,11 @@ user_router.py
     GET    /users/me/social-links      소셜 연동 조회
     DELETE /users/me                   회원 탈퇴
     GET    /users/check/email          이메일 중복 확인
+    GET    /users/check/nickname       닉네임 중복 확인
     POST   /users/email/send-code      이메일 OTP 발송
     POST   /users/email/verify-code    이메일 OTP 확인
     POST   /users/password/reset       비밀번호 재설정 (OTP 검증 포함)
+    POST   /users/admin/token          관리자용 영구 토큰 발급
 ─────────────────────────────────────────────────────────────
 """
 
@@ -48,6 +50,10 @@ class LoginRequest(BaseModel):
 class TokenResponse(BaseModel):
     access_token : str
     token_type   : str = "bearer"
+
+class AdminTokenRequest(BaseModel):
+    email     : str
+    admin_key : str
 
 # ─────────────────────────────────────────────
 # 내부 헬퍼
@@ -213,6 +219,19 @@ def check_email(email: str):
 
     return {"available": not user_service.is_email_taken(email)}
 
+@router.get("/check/nickname")
+def check_nickname(nickname: str):
+    """
+    닉네임 중복 확인.
+
+    프론트 요청 예시:
+        GET /users/check/nickname?nickname=길동이
+    응답:
+        { "available": true }
+    """
+
+    return {"available": not user_service.is_nickname_taken(nickname)}
+
 # ─────────────────────────────────────────────
 # 이메일 OTP 인증
 # ─────────────────────────────────────────────
@@ -289,3 +308,39 @@ def reset_password(body: PasswordResetRequest):
         raise HTTPException(status_code=400, detail=str(e))
 
     return {"message": "비밀번호가 변경되었습니다."}
+
+# ─────────────────────────────────────────────
+# 관리자용 영구 토큰 발급
+# ─────────────────────────────────────────────
+
+@router.post("/admin/token", response_model=TokenResponse)
+def issue_admin_token(body: AdminTokenRequest):
+    """
+    관리자용 만료 없는 영구 토큰 발급.
+    - ADMIN_SECRET_KEY 환경변수와 일치해야 발급
+
+    포스트맨 요청 예시:
+        POST /users/admin/token
+        {
+            "email": "test@test.com",
+            "admin_key": "<ADMIN_SECRET_KEY 값>"
+        }
+    응답:
+        { "access_token": "...", "token_type": "bearer" }
+    """
+    admin_secret = os.getenv("ADMIN_SECRET_KEY", "")
+
+    if not admin_secret:
+        raise HTTPException(status_code=503, detail="관리자 키가 설정되지 않았습니다.")
+
+    if body.admin_key != admin_secret:
+        raise HTTPException(status_code=403, detail="관리자 키가 올바르지 않습니다.")
+
+    user = user_service.get_user_by_email(body.email)
+
+    if not user:
+        raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")
+
+    token = create_permanent_token(user.user_id)
+
+    return TokenResponse(access_token=token)

@@ -121,6 +121,78 @@ def get_latest_analysis(user_id: int) -> Optional[SkinAnalysisResult]:
     )
     return SkinAnalysisResult.from_dict(row) if row else None
 
+def get_detailed_dates(user_id: int) -> list[str]:
+    """
+    사용자의 정밀 분석(detailed) 결과가 존재하는 날짜 목록 조회.
+    최신순으로 반환하며, YYYY-MM-DD 형식 문자열 리스트.
+
+    사용 예시:
+        dates = get_detailed_dates(1)
+        # ["2026-03-14", "2026-03-01", ...]
+    """
+    from db.db_manager import execute_query
+
+    rows = execute_query(
+        """
+        SELECT DISTINCT DATE_FORMAT(created_at, '%%Y-%%m-%%d') AS date
+        FROM skin_analysis_results
+        WHERE user_id = %s
+          AND model_type = 'detailed'
+          AND deleted_at IS NULL
+        ORDER BY date DESC
+        """,
+        (user_id,)
+    )
+
+    return [row["date"] for row in rows]
+
+
+def get_detailed_by_date(user_id: int, date: str) -> Optional[SkinAnalysisResult]:
+    """
+    특정 날짜의 정밀 분석(detailed) 결과 조회.
+
+    사용 예시:
+        result = get_detailed_by_date(1, "2026-03-05")
+    """
+    row = execute_one(
+        """
+        SELECT * FROM skin_analysis_results
+        WHERE user_id = %s
+          AND model_type = 'detailed'
+          AND DATE(created_at) = %s
+          AND deleted_at IS NULL
+        ORDER BY created_at DESC
+        LIMIT 1
+        """,
+        (user_id, date)
+    )
+
+    return SkinAnalysisResult.from_dict(row) if row else None
+
+
+def has_today_detailed_analysis(user_id: int) -> bool:
+    """
+    오늘 날짜에 정밀 분석(detailed) 결과가 있는지 확인.
+
+    사용 예시:
+        done = has_today_detailed_analysis(1)
+        if done:
+            raise HTTPException(400, "오늘 이미 정밀 분석을 진행했습니다.")
+    """
+    row = execute_one(
+        """
+        SELECT analysis_id FROM skin_analysis_results
+        WHERE user_id = %s
+          AND model_type = 'detailed'
+          AND DATE(created_at) = CURDATE()
+          AND deleted_at IS NULL
+        LIMIT 1
+        """,
+        (user_id)
+    )
+
+    return row is not None
+
 def get_analysis_by_model_type(
     user_id: int,
     model_type: str
