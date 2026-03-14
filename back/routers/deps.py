@@ -73,3 +73,21 @@ def create_access_token(user_id: int) -> str:
     }
 
     return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+
+
+def create_permanent_token(user_id: int) -> str:
+    """
+    만료 기간 없는 관리자용 JWT access_token 생성.
+    exp 클레임을 포함하지 않아 영구적으로 유효.
+
+    사용 예시:
+        from .deps import create_permanent_token
+        token = create_permanent_token(user.user_id)
+    """
+
+    payload = {
+        "sub"  : str(user_id),
+        "admin": True,
+    }
+
+    return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
