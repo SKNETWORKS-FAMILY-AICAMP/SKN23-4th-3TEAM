@@ -121,6 +121,29 @@ def get_latest_analysis(user_id: int) -> Optional[SkinAnalysisResult]:
     )
     return SkinAnalysisResult.from_dict(row) if row else None
 
+def get_detailed_by_date(user_id: int, date: str) -> Optional[SkinAnalysisResult]:
+    """
+    특정 날짜의 정밀 분석(detailed) 결과 조회.
+
+    사용 예시:
+        result = get_detailed_by_date(1, "2026-03-05")
+    """
+    row = execute_one(
+        """
+        SELECT * FROM skin_analysis_results
+        WHERE user_id = %s
+          AND model_type = 'detailed'
+          AND DATE(created_at) = %s
+          AND deleted_at IS NULL
+        ORDER BY created_at DESC
+        LIMIT 1
+        """,
+        (user_id, date)
+    )
+
+    return SkinAnalysisResult.from_dict(row) if row else None
+
+
 def has_today_detailed_analysis(user_id: int) -> bool:
     """
     오늘 날짜에 정밀 분석(detailed) 결과가 있는지 확인.
