@@ -217,6 +217,7 @@ def init_db() -> None:
     statements = [s.strip() for s in sql_script.split(";") if s.strip()]
 
     conn = get_connection()
+
     try:
         with conn.cursor() as cursor:
             for statement in statements:

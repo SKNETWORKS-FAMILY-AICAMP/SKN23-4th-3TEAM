@@ -36,7 +36,6 @@ router = APIRouter(prefix="/users", tags=["Users"])
 class SignupRequest(BaseModel):
     """ 회원가입 요청: 사용자 정보 + 비밀번호 + 이메일 인증 코드 """
     email               : str
-    name                : str
     nickname            : str
     password            : str
     terms_agreed        : bool
@@ -61,17 +60,15 @@ class AdminTokenRequest(BaseModel):
 
 def _to_response(user) -> dict:
     return UserResponse(
-        user_id           = user.user_id,
-        email             = user.email,
-        name              = user.name,
-        nickname          = user.nickname,
-        age               = user.age,
-        gender            = user.gender,
-        skin_type         = user.skin_type,
-        skin_concern      = user.skin_concern,
-        profile_image_url = user.profile_image_url,
-        is_active         = user.is_active,
-        created_at        = user.created_at,
+        user_id      = user.user_id,
+        is_admin     = user.is_admin,
+        email        = user.email,
+        nickname     = user.nickname,
+        age          = user.age,
+        gender       = user.gender,
+        skin_type    = user.skin_type,
+        skin_concern = user.skin_concern,
+        created_at   = user.created_at,
     )
 
 # ─────────────────────────────────────────────
@@ -88,7 +85,6 @@ def signup(body: SignupRequest):
         POST /users/signup
         {
             "email": "test@test.com",
-            "name": "홍길동",
             "nickname": "길동이",
             "password": "pass1234!",
             "terms_agreed": true,
@@ -104,7 +100,6 @@ def signup(body: SignupRequest):
     try:
         user_data = UserCreate(
             email          = body.email,
-            name           = body.name,
             nickname       = body.nickname,
             terms_agreed   = body.terms_agreed,
             privacy_agreed = body.privacy_agreed,

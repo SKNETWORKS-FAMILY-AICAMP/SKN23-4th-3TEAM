@@ -32,7 +32,6 @@ class UserCreate(BaseModel):
     - 약관 동의 필수 검증
     """
     email          : EmailStr
-    name           : str
     nickname       : str
     terms_agreed   : bool
     privacy_agreed : bool
@@ -42,10 +41,10 @@ class UserCreate(BaseModel):
         """ 필수 약관 미동의 시 가입 차단 """
         if not self.terms_agreed:
             raise ValueError("서비스 이용약관 동의는 필수입니다.")
-        
+
         if not self.privacy_agreed:
             raise ValueError("개인정보 처리방침 동의는 필수입니다.")
-        
+
         return self
 
 class UserUpdate(BaseModel):
@@ -53,29 +52,26 @@ class UserUpdate(BaseModel):
     프로필 수정 시 프론트에서 받는 데이터
     - 모든 필드 선택적 (수정할 항목만 전달)
     """
-    nickname          : Optional[str] = None
-    age               : Optional[int] = None
-    gender            : Optional[Literal["male", "female"]] = None
-    skin_type         : Optional[int] = None   # keywords.keyword_id
-    skin_concern      : Optional[str] = None
-    profile_image_url : Optional[str] = None   # S3 URL
+    nickname     : Optional[str] = None
+    age          : Optional[int] = None
+    gender       : Optional[Literal["male", "female"]] = None
+    skin_type    : Optional[int] = None   # keywords.keyword_id
+    skin_concern : Optional[str] = None
 
 class UserResponse(BaseModel):
     """
     API 응답으로 내보내는 사용자 데이터
     - 비밀번호 등 민감 정보 제외
     """
-    user_id           : int
-    email             : str
-    name              : str
-    nickname          : str
-    age               : Optional[int]      = None
-    gender            : Optional[str]      = None
-    skin_type         : Optional[int]      = None
-    skin_concern      : Optional[str]      = None
-    profile_image_url : Optional[str]      = None
-    is_active         : bool
-    created_at        : datetime
+    user_id      : int
+    is_admin     : bool
+    email        : str
+    nickname     : str
+    age          : Optional[int] = None
+    gender       : Optional[str] = None
+    skin_type    : Optional[int] = None
+    skin_concern : Optional[str] = None
+    created_at   : datetime
 
     model_config = {"from_attributes": True}
 
@@ -99,7 +95,7 @@ class AuthProviderCreate(BaseModel):
         """ local 로그인인데 비밀번호 해시가 없으면 차단 """
         if self.provider_type == "local" and not self.password_hash:
             raise ValueError("local 로그인은 password_hash가 필요합니다.")
-        
+
         return self
 
 class LoginRequest(BaseModel):
@@ -154,21 +150,13 @@ class MessageCreate(BaseModel):
     메시지 저장 시 프론트에서 받는 데이터
     - role: user / assistant / system 만 허용
     - model_type: simple / detailed 만 허용
-    - content와 image_url 중 하나는 반드시 있어야 함
+    - image_urls: AI 파이프라인 전달용 (DB 저장 안 함)
     """
     chat_room_id : int
     role         : Literal["user", "assistant", "system"]
     model_type   : Literal["simple", "detailed", "ingredient", "default"] = "default"
-    content      : Optional[str]       = None  # 텍스트 메시지
-    image_url    : Optional[list[str]] = None  # S3 이미지 URL 배열
-
-    @model_validator(mode="after")
-    def check_content_or_image(self) -> "MessageCreate":
-        """ 텍스트도 없고 이미지도 없으면 차단 """
-        if not self.content and not self.image_url:
-            raise ValueError("content 또는 image_url 중 하나는 필수입니다.")
-        
-        return self
+    content      : Optional[str]       = None   # 텍스트 메시지
+    image_urls   : Optional[list[str]] = None   # AI 파이프라인 전달용 S3 URL (DB 미저장)
 
 class MessageResponse(BaseModel):
     """
@@ -178,9 +166,8 @@ class MessageResponse(BaseModel):
     chat_room_id : int
     role         : str
     model_type   : str
-    content      : Optional[str]       = None
-    image_url    : Optional[list[str]] = None
-    created_at   : Optional[datetime]  = None
+    content      : Optional[str]      = None
+    created_at   : Optional[datetime] = None
 
     model_config = {"from_attributes": True}
 
@@ -192,22 +179,13 @@ class AnalysisCreate(BaseModel):
     """
     피부 분석 결과 저장 시 데이터
     - model_type: simple / detailed 만 허용
-    - image_url: 분석에 사용된 S3 이미지 URL 배열
     - analysis_data: AI 분석 결과 구조화 데이터 (dict)
+    - skin_score: 피부 종합 점수 (선택)
     """
     user_id       : int
-    image_url     : list[str]          # S3 URL 배열 (simple: 1장, detailed: 3장)
     model_type    : Literal["simple", "detailed"]
     analysis_data : dict               # 정량 분석 결과 JSON
-
-    @field_validator("image_url")
-    @classmethod
-    def check_image_count(cls, v: list[str]) -> list[str]:
-        """ 이미지 URL이 비어있으면 차단 """
-        if not v:
-            raise ValueError("image_url은 최소 1개 이상이어야 합니다.")
-        
-        return v
+    skin_score    : Optional[int] = None
 
 class AnalysisResponse(BaseModel):
     """
@@ -215,9 +193,9 @@ class AnalysisResponse(BaseModel):
     """
     analysis_id   : int
     user_id       : int
-    image_url     : list[str]
     model_type    : str
     analysis_data : dict
+    skin_score    : Optional[int] = None
     created_at    : datetime
 
     model_config = {"from_attributes": True}
@@ -230,23 +208,21 @@ class WishlistAdd(BaseModel):
     """
     위시리스트 추가 시 프론트에서 받는 데이터
     """
-    user_id             : int
-    product_vector_id   : str            # 벡터DB 제품 고유 ID
-    product_name        : str            # 제품명
-    message_id          : Optional[int] = None  # 추천한 메시지 ID
-    product_description : Optional[str] = None  # 제품 간단 설명
+    user_id      : int
+    product_name : str                    # 제품명
+    message_id   : Optional[int] = None  # 추천한 메시지 ID
+    product_url  : Optional[str] = None  # 제품 URL
 
 class WishlistResponse(BaseModel):
     """
     위시리스트 조회 응답
     """
-    wish_id             : int
-    user_id             : int
-    product_vector_id   : str
-    product_name        : str
-    product_description : Optional[str]  = None
-    message_id          : Optional[int]  = None
-    added_at            : datetime
+    wish_id      : int
+    user_id      : int
+    product_name : str
+    product_url  : Optional[str] = None
+    message_id   : Optional[int] = None
+    added_at     : datetime
 
     model_config = {"from_attributes": True}
 

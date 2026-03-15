@@ -72,7 +72,6 @@ def create_user(data: UserCreate) -> User:
     사용 예시:
         user = create_user(UserCreate(
             email          = "test@test.com",
-            name           = "홍길동",
             nickname       = "길동이",
             terms_agreed   = True,
             privacy_agreed = True,
@@ -83,10 +82,10 @@ def create_user(data: UserCreate) -> User:
 
     user_id = execute_write(
         """
-        INSERT INTO users (email, name, nickname, terms_agreed, privacy_agreed)
-        VALUES (%s, %s, %s, %s, %s)
+        INSERT INTO users (email, nickname, terms_agreed, privacy_agreed)
+        VALUES (%s, %s, %s, %s)
         """,
-        (data.email, data.name, data.nickname, data.terms_agreed, data.privacy_agreed)
+        (data.email, data.nickname, data.terms_agreed, data.privacy_agreed)
     )
 
     return get_user_by_id(user_id)

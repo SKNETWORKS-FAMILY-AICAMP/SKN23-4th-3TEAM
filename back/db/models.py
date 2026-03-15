@@ -16,13 +16,13 @@ models.py
 포함 테이블:
     Keyword / User / AuthProvider / ChatRoom
     ChatMessage / SkinAnalysisResult / Wishlist
+    Image / EntityImage / AnalysisRecommendationTag / Qna
 ─────────────────────────────────────────────────────────────
 """
 
 # ─────────────────────────────────────────────
 # 1. Keyword
 # 테이블: keywords
-# 역할  : 피부타입/성별 등 공통 코드 (enum 역할)
 # ─────────────────────────────────────────────
 @dataclass
 class Keyword:
@@ -46,53 +46,45 @@ class Keyword:
 # ─────────────────────────────────────────────
 # 2. User
 # 테이블: users
-# 역할  : 서비스 사용자 기본 정보
 # ─────────────────────────────────────────────
 @dataclass
 class User:
-    user_id           : int
-    email             : str
-    name              : str
-    nickname          : str
-    is_email_verified : bool
-    is_active         : bool
-    terms_agreed      : bool
-    privacy_agreed    : bool
-    created_at        : datetime
-    updated_at        : datetime
-    profile_image_url : Optional[str]      = None  # S3 프로필 이미지 URL
-    age               : Optional[int]      = None
-    gender            : Optional[str]      = None  # male / female
-    skin_type         : Optional[int]      = None  # FK → keywords.keyword_id
-    skin_concern      : Optional[str]      = None  # 피부 고민 (트러블, 주름 등)
-    deleted_at        : Optional[datetime] = None  # soft delete 시각
+    user_id        : int
+    is_admin       : bool
+    email          : str
+    nickname       : str
+    terms_agreed   : bool
+    privacy_agreed : bool
+    created_at     : datetime
+    updated_at     : datetime
+    age            : Optional[int]      = None
+    gender         : Optional[str]      = None  # male / female
+    skin_type      : Optional[int]      = None  # FK → keywords.keyword_id
+    skin_concern   : Optional[str]      = None  # 피부 고민
+    deleted_at     : Optional[datetime] = None  # soft delete 시각
 
     @staticmethod
     def from_dict(row: dict) -> "User":
         """ DB 조회 결과 dict → User 객체 변환 """
         return User(
-            user_id           = row["user_id"],
-            email             = row["email"],
-            name              = row["name"],
-            nickname          = row["nickname"],
-            is_email_verified = bool(row["is_email_verified"]),
-            is_active         = bool(row["is_active"]),
-            terms_agreed      = bool(row["terms_agreed"]),
-            privacy_agreed    = bool(row["privacy_agreed"]),
-            created_at        = row["created_at"],
-            updated_at        = row["updated_at"],
-            profile_image_url = row.get("profile_image_url"),
-            age               = row.get("age"),
-            gender            = row.get("gender"),
-            skin_type         = row.get("skin_type"),
-            skin_concern      = row.get("skin_concern"),
-            deleted_at        = row.get("deleted_at"),
+            user_id        = row["user_id"],
+            is_admin       = bool(row["is_admin"]),
+            email          = row["email"],
+            nickname       = row["nickname"],
+            terms_agreed   = bool(row["terms_agreed"]),
+            privacy_agreed = bool(row["privacy_agreed"]),
+            created_at     = row["created_at"],
+            updated_at     = row["updated_at"],
+            age            = row.get("age"),
+            gender         = row.get("gender"),
+            skin_type      = row.get("skin_type"),
+            skin_concern   = row.get("skin_concern"),
+            deleted_at     = row.get("deleted_at"),
         )
 
 # ─────────────────────────────────────────────
 # 3. AuthProvider
 # 테이블: auth_providers
-# 역할  : 사용자 로그인 수단 관리 (local / google / kakao)
 # ─────────────────────────────────────────────
 @dataclass
 class AuthProvider:
@@ -116,9 +108,46 @@ class AuthProvider:
         )
 
 # ─────────────────────────────────────────────
-# 4. ChatRoom
+# 4. Image
+# 테이블: images
+# ─────────────────────────────────────────────
+@dataclass
+class Image:
+    image_id   : int
+    image_url  : str
+    created_at : Optional[datetime] = None
+
+    @staticmethod
+    def from_dict(row: dict) -> "Image":
+        return Image(
+            image_id   = row["image_id"],
+            image_url  = row["image_url"],
+            created_at = row.get("created_at"),
+        )
+
+# ─────────────────────────────────────────────
+# 5. EntityImage
+# 테이블: entity_images
+# ─────────────────────────────────────────────
+@dataclass
+class EntityImage:
+    entity_image_id : int
+    image_id        : int
+    entity_type     : str  # message / analysis
+    entity_id       : int
+
+    @staticmethod
+    def from_dict(row: dict) -> "EntityImage":
+        return EntityImage(
+            entity_image_id = row["entity_image_id"],
+            image_id        = row["image_id"],
+            entity_type     = row["entity_type"],
+            entity_id       = row["entity_id"],
+        )
+
+# ─────────────────────────────────────────────
+# 6. ChatRoom
 # 테이블: chat_rooms
-# 역할  : 사용자별 채팅 세션 단위
 # ─────────────────────────────────────────────
 @dataclass
 class ChatRoom:
@@ -140,9 +169,8 @@ class ChatRoom:
         )
 
 # ─────────────────────────────────────────────
-# 5. ChatMessage
+# 7. ChatMessage
 # 테이블: chat_messages
-# 역할  : 채팅방 내 메시지 (user / assistant / system)
 # ─────────────────────────────────────────────
 @dataclass
 class ChatMessage:
@@ -150,87 +178,115 @@ class ChatMessage:
     chat_room_id : int
     role         : str                          # user / assistant / system
     model_type   : str                          # simple / detailed
-    content      : Optional[str]      = None    # 텍스트 내용 (이미지 전용이면 None)
-    image_url    : Optional[list]     = None    # S3 이미지 URL 배열 (JSON)
+    content      : Optional[str]      = None    # 텍스트 내용
     created_at   : Optional[datetime] = None
 
     @staticmethod
     def from_dict(row: dict) -> "ChatMessage":
         """ DB 조회 결과 dict → ChatMessage 객체 변환 """
-        img_url = row.get("image_url")
-
-        if isinstance(img_url, str):
-            try:
-                parsed = json.loads(img_url)
-                img_url = parsed if isinstance(parsed, list) else [img_url]
-            except (json.JSONDecodeError, ValueError):
-                img_url = [u.strip() for u in img_url.split(",") if u.strip()]
-
         return ChatMessage(
             message_id   = row["message_id"],
             chat_room_id = row["chat_room_id"],
             role         = row["role"],
             model_type   = row["model_type"],
             content      = row.get("content"),
-            image_url    = img_url or [],
             created_at   = row.get("created_at"),
         )
 
 # ─────────────────────────────────────────────
-# 6. SkinAnalysisResult
+# 8. SkinAnalysisResult
 # 테이블: skin_analysis_results
-# 역할  : AI 피부 분석 결과 저장
 # ─────────────────────────────────────────────
 @dataclass
 class SkinAnalysisResult:
     analysis_id   : int
     user_id       : int
-    image_url     : list    # 분석에 사용된 S3 이미지 URL 배열 (JSON)
     model_type    : str     # simple / detailed
-    analysis_data : dict    # 피부 분석 구조화 데이터 (정량 지표 등, JSON)
+    analysis_data : dict    # 피부 분석 구조화 데이터 (JSON)
     created_at    : datetime
+    skin_score    : Optional[int]      = None  # 피부 종합 점수
     deleted_at    : Optional[datetime] = None  # soft delete 시각
 
     @staticmethod
     def from_dict(row: dict) -> "SkinAnalysisResult":
         """ DB 조회 결과 dict → SkinAnalysisResult 객체 변환 """
-        raw_img  = row["image_url"]
         raw_data = row["analysis_data"]
 
         return SkinAnalysisResult(
             analysis_id   = row["analysis_id"],
             user_id       = row["user_id"],
-            image_url     = json.loads(raw_img)  if isinstance(raw_img,  str) else raw_img,
             model_type    = row["model_type"],
             analysis_data = json.loads(raw_data) if isinstance(raw_data, str) else raw_data,
             created_at    = row["created_at"],
+            skin_score    = row.get("skin_score"),
             deleted_at    = row.get("deleted_at"),
         )
 
 # ─────────────────────────────────────────────
-# 7. Wishlist
+# 9. AnalysisRecommendationTag
+# 테이블: analysis_recommendation_tags
+# ─────────────────────────────────────────────
+@dataclass
+class AnalysisRecommendationTag:
+    analysis_id : int
+    keyword_id  : int
+
+    @staticmethod
+    def from_dict(row: dict) -> "AnalysisRecommendationTag":
+        return AnalysisRecommendationTag(
+            analysis_id = row["analysis_id"],
+            keyword_id  = row["keyword_id"],
+        )
+
+# ─────────────────────────────────────────────
+# 10. Wishlist
 # 테이블: wishlist
-# 역할  : 사용자가 추천받은 제품 중 저장한 목록
 # ─────────────────────────────────────────────
 @dataclass
 class Wishlist:
-    wish_id             : int
-    user_id             : int
-    product_vector_id   : str                    # 벡터DB 제품 고유 ID
-    product_name        : str                    # 제품명 (화면 표시용)
-    added_at            : datetime
-    message_id          : Optional[int]  = None  # 추천한 assistant 메시지 ID (삭제되면 None)
-    product_description : Optional[str]  = None  # 제품 간단 설명
+    wish_id      : int
+    user_id      : int
+    product_name : str                    # 제품명 (화면 표시용)
+    added_at     : datetime
+    message_id   : Optional[int]  = None  # 추천한 assistant 메시지 ID
+    product_url  : Optional[str]  = None  # 제품 URL
 
     @staticmethod
     def from_dict(row: dict) -> "Wishlist":
         """ DB 조회 결과 dict → Wishlist 객체 변환 """
         return Wishlist(
-            wish_id             = row["wish_id"],
-            user_id             = row["user_id"],
-            product_vector_id   = row["product_vector_id"],
-            product_name        = row["product_name"],
-            added_at            = row["added_at"],
-            message_id          = row.get("message_id"),
-            product_description = row.get("product_description"),
+            wish_id      = row["wish_id"],
+            user_id      = row["user_id"],
+            product_name = row["product_name"],
+            added_at     = row["added_at"],
+            message_id   = row.get("message_id"),
+            product_url  = row.get("product_url"),
+        )
+
+# ─────────────────────────────────────────────
+# 11. Qna
+# 테이블: qna
+# ─────────────────────────────────────────────
+@dataclass
+class Qna:
+    qna_id      : int
+    user_id     : int
+    question    : str
+    created_at  : datetime
+    updated_at  : datetime
+    manager_id  : Optional[int] = None
+    category_id : Optional[int] = None
+    answer      : Optional[str] = None
+
+    @staticmethod
+    def from_dict(row: dict) -> "Qna":
+        return Qna(
+            qna_id      = row["qna_id"],
+            user_id     = row["user_id"],
+            question    = row["question"],
+            created_at  = row["created_at"],
+            updated_at  = row["updated_at"],
+            manager_id  = row.get("manager_id"),
+            category_id = row.get("category_id"),
+            answer      = row.get("answer"),
         )
