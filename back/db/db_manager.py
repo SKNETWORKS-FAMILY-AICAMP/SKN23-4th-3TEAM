@@ -86,6 +86,7 @@ def get_connection() -> pymysql.connections.Connection:
         charset="utf8mb4",
         cursorclass=pymysql.cursors.DictCursor,
         autocommit=False,
+        ssl={"ssl": {}},  # RDS require_secure_transport=ON 대응
     )
 
     return conn
