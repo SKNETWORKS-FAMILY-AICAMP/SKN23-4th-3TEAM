@@ -86,6 +86,7 @@ def get_connection() -> pymysql.connections.Connection:
         charset="utf8mb4",
         cursorclass=pymysql.cursors.DictCursor,
         autocommit=False,
+        ssl={"ssl": {}},  # RDS require_secure_transport=ON 대응
     )
 
     return conn
@@ -216,6 +217,7 @@ def init_db() -> None:
     statements = [s.strip() for s in sql_script.split(";") if s.strip()]
 
     conn = get_connection()
+
     try:
         with conn.cursor() as cursor:
             for statement in statements:

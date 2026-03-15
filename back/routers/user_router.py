@@ -1,10 +1,11 @@
 import os
 
+from typing import Optional
 from pydantic import BaseModel
 from services import user_service
 from services import auth_service
 from services import email_service
-from .deps import get_current_user_id
+from .deps import get_current_user_id, create_permanent_token
 from fastapi import APIRouter, HTTPException, Depends
 from db.schemas import UserCreate, UserUpdate, UserResponse, EmailSendRequest, EmailVerifyRequest, PasswordResetRequest
 
@@ -19,9 +20,11 @@ user_router.py
     GET    /users/me/social-links      소셜 연동 조회
     DELETE /users/me                   회원 탈퇴
     GET    /users/check/email          이메일 중복 확인
+    GET    /users/check/nickname       닉네임 중복 확인
     POST   /users/email/send-code      이메일 OTP 발송
     POST   /users/email/verify-code    이메일 OTP 확인
     POST   /users/password/reset       비밀번호 재설정 (OTP 검증 포함)
+    POST   /users/admin/token          관리자용 영구 토큰 발급
 ─────────────────────────────────────────────────────────────
 """
 
@@ -34,8 +37,7 @@ router = APIRouter(prefix="/users", tags=["Users"])
 class SignupRequest(BaseModel):
     """ 회원가입 요청: 사용자 정보 + 비밀번호 + 이메일 인증 코드 """
     email               : str
-    name                : str
-    nickname            : str
+    nickname            : Optional[str] = None  # 미입력 시 랜덤 닉네임 자동 생성
     password            : str
     terms_agreed        : bool
     privacy_agreed      : bool
@@ -49,23 +51,24 @@ class TokenResponse(BaseModel):
     access_token : str
     token_type   : str = "bearer"
 
+class AdminTokenRequest(BaseModel):
+    email : str
+
 # ─────────────────────────────────────────────
 # 내부 헬퍼
 # ─────────────────────────────────────────────
 
 def _to_response(user) -> dict:
     return UserResponse(
-        user_id           = user.user_id,
-        email             = user.email,
-        name              = user.name,
-        nickname          = user.nickname,
-        age               = user.age,
-        gender            = user.gender,
-        skin_type         = user.skin_type,
-        skin_concern      = user.skin_concern,
-        profile_image_url = user.profile_image_url,
-        is_active         = user.is_active,
-        created_at        = user.created_at,
+        user_id      = user.user_id,
+        is_admin     = user.is_admin,
+        email        = user.email,
+        nickname     = user.nickname,
+        age          = user.age,
+        gender       = user.gender,
+        skin_type    = user.skin_type,
+        skin_concern = user.skin_concern,
+        created_at   = user.created_at,
     )
 
 # ─────────────────────────────────────────────
@@ -82,7 +85,6 @@ def signup(body: SignupRequest):
         POST /users/signup
         {
             "email": "test@test.com",
-            "name": "홍길동",
             "nickname": "길동이",
             "password": "pass1234!",
             "terms_agreed": true,
@@ -96,10 +98,10 @@ def signup(body: SignupRequest):
         raise HTTPException(status_code=400, detail="이메일 인증 코드가 유효하지 않거나 만료되었습니다.")
 
     try:
+        nickname = body.nickname or user_service.generate_random_nickname()
         user_data = UserCreate(
             email          = body.email,
-            name           = body.name,
-            nickname       = body.nickname,
+            nickname       = nickname,
             terms_agreed   = body.terms_agreed,
             privacy_agreed = body.privacy_agreed,
         )
@@ -213,6 +215,19 @@ def check_email(email: str):
 
     return {"available": not user_service.is_email_taken(email)}
 
+@router.get("/check/nickname")
+def check_nickname(nickname: str):
+    """
+    닉네임 중복 확인.
+
+    프론트 요청 예시:
+        GET /users/check/nickname?nickname=길동이
+    응답:
+        { "available": true }
+    """
+
+    return {"available": not user_service.is_nickname_taken(nickname)}
+
 # ─────────────────────────────────────────────
 # 이메일 OTP 인증
 # ─────────────────────────────────────────────
@@ -289,3 +304,31 @@ def reset_password(body: PasswordResetRequest):
         raise HTTPException(status_code=400, detail=str(e))
 
     return {"message": "비밀번호가 변경되었습니다."}
+
+# ─────────────────────────────────────────────
+# 관리자용 영구 토큰 발급
+# ─────────────────────────────────────────────
+
+@router.post("/admin/token", response_model=TokenResponse)
+def issue_admin_token(body: AdminTokenRequest):
+    """
+    관리자용 만료 없는 영구 토큰 발급.
+    - is_admin = 1인 계정만 발급 가능
+
+    포스트맨 요청 예시:
+        POST /users/admin/token
+        { "email": "admin@test.com" }
+    응답:
+        { "access_token": "...", "token_type": "bearer" }
+    """
+    user = user_service.get_user_by_email(body.email)
+
+    if not user:
+        raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")
+
+    if not user.is_admin:
+        raise HTTPException(status_code=403, detail="관리자 권한이 없는 계정입니다.")
+
+    token = create_permanent_token(user.user_id)
+
+    return TokenResponse(access_token=token)

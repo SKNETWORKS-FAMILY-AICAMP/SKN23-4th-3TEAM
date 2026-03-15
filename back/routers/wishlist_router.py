@@ -21,13 +21,12 @@ router = APIRouter(prefix="/wishlist", tags=["Wishlist"])
 
 def _wish_to_response(wish) -> WishlistResponse:
     return WishlistResponse(
-        wish_id             = wish.wish_id,
-        user_id             = wish.user_id,
-        product_vector_id   = wish.product_vector_id,
-        product_name        = wish.product_name,
-        product_description = wish.product_description,
-        message_id          = wish.message_id,
-        added_at            = wish.added_at,
+        wish_id      = wish.wish_id,
+        user_id      = wish.user_id,
+        product_name = wish.product_name,
+        product_url  = wish.product_url,
+        message_id   = wish.message_id,
+        added_at     = wish.added_at,
     )
 
 # ─────────────────────────────────────────────
@@ -61,11 +60,10 @@ def add_to_wishlist(
         POST /wishlist
         {
             "user_id": 1,
-            "product_vector_id": "vec_abc123",
             "product_name": "라로슈포제 시카플라스트 밤 B5",
             "message_id": 10,
-            "product_description": "민감한 피부 진정 크림"
-        }OnboardingPage
+            "product_url": "https://..."
+        }
     응답:
         { "wish_id": 3, "user_id": 1, "product_name": "라로슈포제...", ... }
     """

@@ -33,26 +33,24 @@ analysis_service.py
 def save_analysis(data: AnalysisCreate) -> SkinAnalysisResult:
     """
     피부 분석 결과 저장.
-    - image_url (list) → JSON 문자열 변환 후 저장
     - analysis_data (dict) → JSON 문자열 변환 후 저장
 
     사용 예시:
         result = save_analysis(AnalysisCreate(
             user_id       = 1,
-            image_url     = ["https://s3.../face1.jpg"],
             model_type    = "simple",
-            analysis_data = {"moisture": 72, "oil": 45, "pore": 30}
+            analysis_data = {"moisture": 72, "oil": 45, "pore": 30},
+            skin_score    = 85,
         ))
     """
-    image_url_json    = json.dumps(data.image_url,     ensure_ascii=False)
     analysis_data_json = json.dumps(data.analysis_data, ensure_ascii=False)
 
     analysis_id = execute_write(
         """
-        INSERT INTO skin_analysis_results (user_id, image_url, model_type, analysis_data)
+        INSERT INTO skin_analysis_results (user_id, model_type, analysis_data, skin_score)
         VALUES (%s, %s, %s, %s)
         """,
-        (data.user_id, image_url_json, data.model_type, analysis_data_json)
+        (data.user_id, data.model_type, analysis_data_json, data.skin_score)
     )
 
     return get_analysis_by_id(analysis_id)
@@ -75,7 +73,7 @@ def get_analysis_by_id(analysis_id: int) -> Optional[SkinAnalysisResult]:
         SELECT * FROM skin_analysis_results
         WHERE analysis_id = %s AND deleted_at IS NULL
         """,
-        (analysis_id)
+        (analysis_id,)
     )
 
     return SkinAnalysisResult.from_dict(row) if row else None
@@ -94,7 +92,7 @@ def get_analysis_history(user_id: int) -> list[SkinAnalysisResult]:
         WHERE user_id = %s AND deleted_at IS NULL
         ORDER BY created_at DESC
         """,
-        (user_id)
+        (user_id,)
     )
 
     return [SkinAnalysisResult.from_dict(row) for row in rows]
@@ -117,9 +115,79 @@ def get_latest_analysis(user_id: int) -> Optional[SkinAnalysisResult]:
         ORDER BY created_at DESC
         LIMIT 1
         """,
-        (user_id)
+        (user_id,)
     )
     return SkinAnalysisResult.from_dict(row) if row else None
+
+def get_detailed_dates(user_id: int) -> list[str]:
+    """
+    사용자의 정밀 분석(detailed) 결과가 존재하는 날짜 목록 조회.
+    최신순으로 반환하며, YYYY-MM-DD 형식 문자열 리스트.
+
+    사용 예시:
+        dates = get_detailed_dates(1)
+        # ["2026-03-14", "2026-03-01", ...]
+    """
+    rows = execute_query(
+        """
+        SELECT DISTINCT DATE_FORMAT(created_at, '%%Y-%%m-%%d') AS date
+        FROM skin_analysis_results
+        WHERE user_id = %s
+          AND model_type = 'detailed'
+          AND deleted_at IS NULL
+        ORDER BY date DESC
+        """,
+        (user_id,)
+    )
+
+    return [row["date"] for row in rows]
+
+
+def get_detailed_by_date(user_id: int, date: str) -> Optional[SkinAnalysisResult]:
+    """
+    특정 날짜의 정밀 분석(detailed) 결과 조회.
+
+    사용 예시:
+        result = get_detailed_by_date(1, "2026-03-05")
+    """
+    row = execute_one(
+        """
+        SELECT * FROM skin_analysis_results
+        WHERE user_id = %s
+          AND model_type = 'detailed'
+          AND DATE(created_at) = %s
+          AND deleted_at IS NULL
+        ORDER BY created_at DESC
+        LIMIT 1
+        """,
+        (user_id, date)
+    )
+
+    return SkinAnalysisResult.from_dict(row) if row else None
+
+
+def has_today_detailed_analysis(user_id: int) -> bool:
+    """
+    오늘 날짜에 정밀 분석(detailed) 결과가 있는지 확인.
+
+    사용 예시:
+        done = has_today_detailed_analysis(1)
+        if done:
+            raise HTTPException(400, "오늘 이미 정밀 분석을 진행했습니다.")
+    """
+    row = execute_one(
+        """
+        SELECT analysis_id FROM skin_analysis_results
+        WHERE user_id = %s
+          AND model_type = 'detailed'
+          AND DATE(created_at) = CURDATE()
+          AND deleted_at IS NULL
+        LIMIT 1
+        """,
+        (user_id,)
+    )
+
+    return row is not None
 
 def get_analysis_by_model_type(
     user_id: int,
@@ -163,7 +231,7 @@ def delete_analysis(analysis_id: int) -> bool:
         """,
         (datetime.now(), analysis_id)
     )
-    
+
     return affected > 0
 
 # ─────────────────────────────────────────────
@@ -173,41 +241,26 @@ def delete_analysis(analysis_id: int) -> bool:
 def add_to_wishlist(data: WishlistAdd) -> Wishlist:
     """
     위시리스트에 제품 추가.
-    - 이미 추가된 제품(동일 user_id + product_vector_id)이면 예외 발생
 
     사용 예시:
         wish = add_to_wishlist(WishlistAdd(
-            user_id           = 1,
-            product_vector_id = "vec_abc123",
-            product_name      = "라로슈포제 시카플라스트 밤 B5",
-            message_id        = 10,
-            product_description = "민감한 피부 진정 및 장벽 강화 크림"
+            user_id      = 1,
+            product_name = "라로슈포제 시카플라스트 밤 B5",
+            message_id   = 10,
+            product_url  = "https://..."
         ))
     """
-    # 중복 추가 방지
-    existing = execute_one(
-        """
-        SELECT wish_id FROM wishlist
-        WHERE user_id = %s AND product_vector_id = %s
-        """,
-        (data.user_id, data.product_vector_id)
-    )
-
-    if existing:
-        raise ValueError("이미 위시리스트에 추가된 제품입니다.")
-
     wish_id = execute_write(
         """
         INSERT INTO wishlist
-            (user_id, message_id, product_vector_id, product_name, product_description)
-        VALUES (%s, %s, %s, %s, %s)
+            (user_id, message_id, product_name, product_url)
+        VALUES (%s, %s, %s, %s)
         """,
         (
             data.user_id,
             data.message_id,
-            data.product_vector_id,
             data.product_name,
-            data.product_description,
+            data.product_url,
         )
     )
 
@@ -222,7 +275,7 @@ def get_wishlist_item_by_id(wish_id: int) -> Optional[Wishlist]:
     """
     row = execute_one(
         "SELECT * FROM wishlist WHERE wish_id = %s",
-        (wish_id)
+        (wish_id,)
     )
 
     return Wishlist.from_dict(row) if row else None
@@ -241,7 +294,7 @@ def get_wishlist_by_user(user_id: int) -> list[Wishlist]:
         WHERE user_id = %s
         ORDER BY wish_id DESC
         """,
-        (user_id)
+        (user_id,)
     )
 
     return [Wishlist.from_dict(row) for row in rows]
@@ -267,7 +320,6 @@ def remove_from_wishlist(wish_id: int, user_id: int) -> bool:
 def remove_all_wishlist(user_id: int) -> bool:
     """
     사용자의 위시리스트 전체 삭제.
-    - 회원 탈퇴 전 정리 또는 초기화 시 사용
 
     사용 예시:
         success = remove_all_wishlist(user_id=1)
