@@ -61,7 +61,7 @@ def is_email_taken(email: str) -> bool:
     """
     row = execute_one(
         "SELECT user_id FROM users WHERE email = %s AND deleted_at IS NULL",
-        (email)
+        (email,)
     )
 
     return row is not None
@@ -114,7 +114,12 @@ def create_user(data: UserCreate) -> User:
         (data.email, data.nickname, data.terms_agreed, data.privacy_agreed)
     )
 
-    return get_user_by_id(user_id)
+    user = get_user_by_id(user_id) or get_user_by_email(data.email)
+
+    if not user:
+        raise RuntimeError("회원 생성 후 사용자 조회에 실패했습니다.")
+
+    return user
 
 
 # ─────────────────────────────────────────────
@@ -131,7 +136,7 @@ def get_user_by_id(user_id: int) -> Optional[User]:
     """
     row = execute_one(
         "SELECT * FROM users WHERE user_id = %s AND deleted_at IS NULL",
-        (user_id)
+        (user_id,)
     )
 
     return User.from_dict(row) if row else None
@@ -147,7 +152,7 @@ def get_user_by_email(email: str) -> Optional[User]:
     """
     row = execute_one(
         "SELECT * FROM users WHERE email = %s AND deleted_at IS NULL",
-        (email)
+        (email,)
     )
 
     return User.from_dict(row) if row else None
@@ -189,8 +194,9 @@ def update_user(user_id: int, data: UserUpdate) -> User:
 def delete_user(user_id: int) -> bool:
     """
     회원 탈퇴 처리 (soft delete).
-    - deleted_at에 현재 시각 기록, is_active = FALSE 처리
+    - deleted_at에 현재 시각 기록
     - 실제 데이터는 삭제하지 않음 (복구 가능)
+    - auth_providers는 hard delete (재가입 시 충돌 방지)
 
     사용 예시:
         success = delete_user(1)
@@ -198,10 +204,18 @@ def delete_user(user_id: int) -> bool:
     affected = execute_write(
         """
         UPDATE users
-        SET deleted_at = %s, is_active = FALSE
+        SET deleted_at = %s,
+            email    = CONCAT('deleted_', user_id, '_', email),
+            nickname = CONCAT('deleted_', user_id, '_', nickname)
         WHERE user_id = %s AND deleted_at IS NULL
         """,
         (datetime.now(), user_id)
     )
+
+    if affected > 0:
+        execute_write(
+            "DELETE FROM auth_providers WHERE user_id = %s",
+            (user_id,)
+        )
 
     return affected > 0

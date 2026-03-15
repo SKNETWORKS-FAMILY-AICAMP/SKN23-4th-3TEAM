@@ -1,12 +1,13 @@
 import os
 import httpx
 import bcrypt
+import random
 import secrets
 
 from typing import Optional
 from dotenv import load_dotenv
 from routers.deps import create_access_token
-from services.user_service import (get_user_by_email, get_user_by_id, create_user)
+from services.user_service import (get_user_by_email, get_user_by_id, create_user, generate_random_nickname, is_nickname_taken)
 
 from db.db_manager import execute_one, execute_write, execute_query
 from db.models import AuthProvider, User
@@ -204,6 +205,7 @@ async def google_callback(code: str) -> dict:
         user_info   = user_res.json()
         provider_id = user_info.get("id")       # Google 고유 사용자 ID
         email       = user_info.get("email")
+        nickname    = user_info.get("name", "")
 
         if not provider_id or not email:
             raise ValueError("Google 사용자 정보 조회 실패")
@@ -213,6 +215,7 @@ async def google_callback(code: str) -> dict:
         provider_type = "google",
         provider_id   = provider_id,
         email         = email,
+        nickname      = nickname,
     )
 
     # 4. JWT 발급 (deps.py 사용)
@@ -284,6 +287,7 @@ async def kakao_callback(code: str) -> dict:
         provider_id   = str(user_info.get("id"))  # Kakao 고유 사용자 ID
         kakao_account = user_info.get("kakao_account", {})
         email         = kakao_account.get("email")
+        nickname      = kakao_account.get("profile", {}).get("nickname", "")
 
         if not provider_id or not email:
             raise ValueError("Kakao 사용자 정보 조회 실패 (이메일 동의 필요)")
@@ -293,6 +297,7 @@ async def kakao_callback(code: str) -> dict:
         provider_type = "kakao",
         provider_id   = provider_id,
         email         = email,
+        nickname      = nickname,
     )
 
     # 4. JWT 발급 (deps.py 사용)
@@ -369,6 +374,7 @@ async def naver_callback(code: str, state: str) -> dict:
         response    = user_info.get("response", {})
         provider_id = str(response.get("id", ""))
         email       = response.get("email")
+        nickname    = response.get("nickname", "")
 
         if not provider_id or not email:
             raise ValueError("Naver 사용자 정보 조회 실패 (이메일 동의 필요)")
@@ -378,6 +384,7 @@ async def naver_callback(code: str, state: str) -> dict:
         provider_type = "naver",
         provider_id   = provider_id,
         email         = email,
+        nickname      = nickname,
     )
 
     # 4. JWT 발급 (deps.py 사용)
@@ -394,6 +401,7 @@ def _get_or_create_social_user(
     provider_type : str,
     provider_id   : str,
     email         : str,
+    nickname      : str = "",
 ) -> tuple[User, bool]:
     """
     소셜 로그인 공통 처리.
@@ -411,7 +419,17 @@ def _get_or_create_social_user(
     )
 
     if auth_row:
-        return get_user_by_id(auth_row["user_id"]), False
+        user = get_user_by_id(auth_row["user_id"])
+
+        if user:
+            return user, False
+
+        # auth_providers 레코드는 있지만 users 레코드가 없는 경우 (탈퇴 후 재가입 등)
+        # 고아 auth_providers 레코드 삭제 후 신규 생성으로 처리
+        execute_write(
+            "DELETE FROM auth_providers WHERE provider_type = %s AND provider_id = %s",
+            (provider_type, provider_id)
+        )
 
     # 같은 이메일로 가입된 유저 확인 → 소셜 수단만 추가 연결
     existing_user = get_user_by_email(email)
@@ -428,14 +446,25 @@ def _get_or_create_social_user(
         return existing_user, False
 
     # 완전 신규 유저 → 자동 회원가입
-    # 닉네임 중복 방지를 위해 provider_id 뒤 6자리 붙임
-    nickname = f"user_{provider_id[-6:]}"
+    if not nickname:    # 닉네임이 없는 경우: 랜덤 닉네임 생성
+        nickname = generate_random_nickname()
+    elif is_nickname_taken(nickname):   # 소셜에서 닉네임을 받은 경우.. 중복이면 뒤에 랜덤 숫자 4자리 추가
+        for _ in range(10):
+            candidate = f"{nickname}_{random.randint(1000, 9999)}"
+
+            if not is_nickname_taken(candidate):
+                nickname = candidate
+                break
+        else:
+            nickname = generate_random_nickname()
+
     user = create_user(UserCreate(
         email          = email,
         nickname       = nickname,
         terms_agreed   = True,
         privacy_agreed = True,
     ))
+
     execute_write(
         """
         INSERT INTO auth_providers (user_id, provider_type, provider_id)
