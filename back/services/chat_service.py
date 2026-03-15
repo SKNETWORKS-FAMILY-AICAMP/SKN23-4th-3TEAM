@@ -1,5 +1,3 @@
-import json
-
 from typing import Optional
 from datetime import datetime
 
@@ -157,15 +155,12 @@ def save_message(data: MessageCreate) -> ChatMessage:
     if not room:
         raise ValueError(f"존재하지 않는 채팅방입니다. (chat_room_id: {data.chat_room_id})")
 
-    # image_url list → JSON 문자열 변환
-    image_url_json = json.dumps(data.image_url, ensure_ascii=False) if data.image_url else None
-
     message_id = execute_write(
         """
-        INSERT INTO chat_messages (chat_room_id, role, content, image_url, model_type)
-        VALUES (%s, %s, %s, %s, %s)
+        INSERT INTO chat_messages (chat_room_id, role, content, model_type)
+        VALUES (%s, %s, %s, %s)
         """,
-        (data.chat_room_id, data.role, data.content, image_url_json, data.model_type)
+        (data.chat_room_id, data.role, data.content, data.model_type)
     )
 
     return get_message_by_id(message_id)

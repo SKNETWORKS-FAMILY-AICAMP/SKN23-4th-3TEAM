@@ -120,9 +120,6 @@ def login_local(email: str, plain_password: str) -> dict:
 
     if not user:
         raise ValueError("존재하지 않는 이메일입니다.")
-    
-    if not user.is_active:
-        raise ValueError("비활성화된 계정입니다.")
 
     auth_row = execute_one(
         """
@@ -207,7 +204,6 @@ async def google_callback(code: str) -> dict:
         user_info   = user_res.json()
         provider_id = user_info.get("id")       # Google 고유 사용자 ID
         email       = user_info.get("email")
-        name        = user_info.get("name", "")
 
         if not provider_id or not email:
             raise ValueError("Google 사용자 정보 조회 실패")
@@ -217,7 +213,6 @@ async def google_callback(code: str) -> dict:
         provider_type = "google",
         provider_id   = provider_id,
         email         = email,
-        name          = name,
     )
 
     # 4. JWT 발급 (deps.py 사용)
@@ -289,7 +284,6 @@ async def kakao_callback(code: str) -> dict:
         provider_id   = str(user_info.get("id"))  # Kakao 고유 사용자 ID
         kakao_account = user_info.get("kakao_account", {})
         email         = kakao_account.get("email")
-        name          = kakao_account.get("profile", {}).get("nickname", "")
 
         if not provider_id or not email:
             raise ValueError("Kakao 사용자 정보 조회 실패 (이메일 동의 필요)")
@@ -299,7 +293,6 @@ async def kakao_callback(code: str) -> dict:
         provider_type = "kakao",
         provider_id   = provider_id,
         email         = email,
-        name          = name,
     )
 
     # 4. JWT 발급 (deps.py 사용)
@@ -376,7 +369,6 @@ async def naver_callback(code: str, state: str) -> dict:
         response    = user_info.get("response", {})
         provider_id = str(response.get("id", ""))
         email       = response.get("email")
-        name        = response.get("name", "")
 
         if not provider_id or not email:
             raise ValueError("Naver 사용자 정보 조회 실패 (이메일 동의 필요)")
@@ -386,7 +378,6 @@ async def naver_callback(code: str, state: str) -> dict:
         provider_type = "naver",
         provider_id   = provider_id,
         email         = email,
-        name          = name,
     )
 
     # 4. JWT 발급 (deps.py 사용)
@@ -403,7 +394,6 @@ def _get_or_create_social_user(
     provider_type : str,
     provider_id   : str,
     email         : str,
-    name          : str,
 ) -> tuple[User, bool]:
     """
     소셜 로그인 공통 처리.
@@ -439,10 +429,9 @@ def _get_or_create_social_user(
 
     # 완전 신규 유저 → 자동 회원가입
     # 닉네임 중복 방지를 위해 provider_id 뒤 6자리 붙임
-    nickname = f"{name}_{provider_id[-6:]}" if name else f"user_{provider_id[-6:]}"
+    nickname = f"user_{provider_id[-6:]}"
     user = create_user(UserCreate(
         email          = email,
-        name           = name or "소셜유저",
         nickname       = nickname,
         terms_agreed   = True,
         privacy_agreed = True,
@@ -521,9 +510,6 @@ def reset_password(email: str, new_password: str) -> None:
 
     if not user:
         raise ValueError("존재하지 않는 이메일입니다.")
-    
-    if not user.is_active:
-        raise ValueError("비활성화된 계정입니다.")
 
     # local 로그인 수단 존재 확인
     auth_row = execute_one(

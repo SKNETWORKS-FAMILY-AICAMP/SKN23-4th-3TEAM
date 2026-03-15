@@ -27,14 +27,12 @@ router = APIRouter(prefix="/analysis", tags=["Analysis"])
 # ─────────────────────────────────────────────
 
 def _analysis_to_response(result) -> AnalysisResponse:
-    img = result.image_url
-
     return AnalysisResponse(
         analysis_id   = result.analysis_id,
         user_id       = result.user_id,
-        image_url     = img if isinstance(img, list) else img.split(","),
         model_type    = result.model_type,
         analysis_data = result.analysis_data,
+        skin_score    = result.skin_score,
         created_at    = result.created_at,
     )
 
@@ -55,9 +53,9 @@ def save_analysis(
         POST /analysis
         {
             "user_id": 1,
-            "image_url": ["https://s3.../face1.jpg"],
             "model_type": "simple",
-            "analysis_data": { "moisture": 72, "oil": 45, "pore": 30 }
+            "analysis_data": { "moisture": 72, "oil": 45, "pore": 30 },
+            "skin_score": 85
         }
     응답:
         { "analysis_id": 1, "user_id": 1, "model_type": "simple", ... }
