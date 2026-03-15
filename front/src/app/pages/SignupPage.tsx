@@ -59,7 +59,7 @@ export function SignupPage() {
     const [password, setPassword]         = useState("");
     const [passwordConfirm, setPasswordConfirm] = useState("");
     const [showConfirm, setShowConfirm]   = useState(false);
-    const [name, setName]                 = useState("");
+    // const [name, setName]                 = useState("");
     const [nickname, setNickname]         = useState("");
     const [agreed] = useState(true);
 
@@ -83,7 +83,7 @@ export function SignupPage() {
     const isValid =
         email.length > 0 &&
         emailVerified &&
-        name.length > 0 &&
+        // name.length > 0 &&
         isPasswordStrong &&
         passwordMatch &&
         agreed;
@@ -143,11 +143,10 @@ export function SignupPage() {
         try {
             await authApi.signup({
                 email,
-                name,
-                nickname         : nickname.trim() || name,
+                nickname: nickname.trim(),
                 password,
-                terms_agreed     : agreed,
-                privacy_agreed   : agreed,
+                terms_agreed: agreed,
+                privacy_agreed: agreed,
                 verification_code: verifyCode,
             });
 
@@ -344,14 +343,14 @@ export function SignupPage() {
                             </div>
 
                             {/* ── 이름 ── */}
-                            <Input
+                            {/* <Input
                                 label="이름"
                                 required
                                 value={name}
                                 onChange={(e) => setName(e.target.value)}
                                 placeholder="실명 입력"
                                 maxLength={20}
-                            />
+                            /> */}
 
                             {/* ── 닉네임 ── */}
                             <Input
