@@ -1,9 +1,35 @@
 
+import json
+import random
+
+from pathlib import Path
 from db.models import User
 from typing import Optional
 from datetime import datetime
 from db.schemas import UserCreate, UserUpdate
 from db.db_manager import execute_one, execute_write
+
+_nicknames: list[str] = []
+
+def _load_nicknames() -> list[str]:
+    global _nicknames
+    if not _nicknames:
+        path = Path(__file__).parent.parent / "assets" / "nicknames.json"
+        _nicknames = json.loads(path.read_text(encoding="utf-8"))
+    return _nicknames
+
+def generate_random_nickname() -> str:
+    """
+    중복되지 않는 랜덤 닉네임 생성.
+    - assets/nicknames.json의 이름 뒤에 4자리 랜덤 숫자를 붙임
+    - 중복 시 숫자를 바꿔 최대 10회 재시도
+    """
+    names = _load_nicknames()
+    for _ in range(10):
+        nickname = f"{random.choice(names)}_{random.randint(1000, 9999)}"
+        if not is_nickname_taken(nickname):
+            return nickname
+    raise ValueError("사용 가능한 닉네임을 생성하지 못했습니다. 잠시 후 다시 시도해주세요.")
 
 """
 user_service.py

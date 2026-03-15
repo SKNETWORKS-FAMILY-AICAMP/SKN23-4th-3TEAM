@@ -1,5 +1,6 @@
 import os
 
+from typing import Optional
 from pydantic import BaseModel
 from services import user_service
 from services import auth_service
@@ -36,7 +37,7 @@ router = APIRouter(prefix="/users", tags=["Users"])
 class SignupRequest(BaseModel):
     """ 회원가입 요청: 사용자 정보 + 비밀번호 + 이메일 인증 코드 """
     email               : str
-    nickname            : str
+    nickname            : Optional[str] = None  # 미입력 시 랜덤 닉네임 자동 생성
     password            : str
     terms_agreed        : bool
     privacy_agreed      : bool
@@ -97,9 +98,10 @@ def signup(body: SignupRequest):
         raise HTTPException(status_code=400, detail="이메일 인증 코드가 유효하지 않거나 만료되었습니다.")
 
     try:
+        nickname = body.nickname or user_service.generate_random_nickname()
         user_data = UserCreate(
             email          = body.email,
-            nickname       = body.nickname,
+            nickname       = nickname,
             terms_agreed   = body.terms_agreed,
             privacy_agreed = body.privacy_agreed,
         )
