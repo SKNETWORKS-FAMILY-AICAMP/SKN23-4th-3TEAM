@@ -1,9 +1,35 @@
 
+import json
+import random
+
+from pathlib import Path
 from db.models import User
 from typing import Optional
 from datetime import datetime
 from db.schemas import UserCreate, UserUpdate
 from db.db_manager import execute_one, execute_write
+
+_nicknames: list[str] = []
+
+def _load_nicknames() -> list[str]:
+    global _nicknames
+    if not _nicknames:
+        path = Path(__file__).parent.parent / "assets" / "nicknames.json"
+        _nicknames = json.loads(path.read_text(encoding="utf-8"))
+    return _nicknames
+
+def generate_random_nickname() -> str:
+    """
+    중복되지 않는 랜덤 닉네임 생성.
+    - assets/nicknames.json의 이름 뒤에 4자리 랜덤 숫자를 붙임
+    - 중복 시 숫자를 바꿔 최대 10회 재시도
+    """
+    names = _load_nicknames()
+    for _ in range(10):
+        nickname = f"{random.choice(names)}_{random.randint(1000, 9999)}"
+        if not is_nickname_taken(nickname):
+            return nickname
+    raise ValueError("사용 가능한 닉네임을 생성하지 못했습니다. 잠시 후 다시 시도해주세요.")
 
 """
 user_service.py
@@ -35,7 +61,7 @@ def is_email_taken(email: str) -> bool:
     """
     row = execute_one(
         "SELECT user_id FROM users WHERE email = %s AND deleted_at IS NULL",
-        (email)
+        (email,)
     )
 
     return row is not None
@@ -88,7 +114,12 @@ def create_user(data: UserCreate) -> User:
         (data.email, data.nickname, data.terms_agreed, data.privacy_agreed)
     )
 
-    return get_user_by_id(user_id)
+    user = get_user_by_id(user_id) or get_user_by_email(data.email)
+
+    if not user:
+        raise RuntimeError("회원 생성 후 사용자 조회에 실패했습니다.")
+
+    return user
 
 
 # ─────────────────────────────────────────────
@@ -105,7 +136,7 @@ def get_user_by_id(user_id: int) -> Optional[User]:
     """
     row = execute_one(
         "SELECT * FROM users WHERE user_id = %s AND deleted_at IS NULL",
-        (user_id)
+        (user_id,)
     )
 
     return User.from_dict(row) if row else None
@@ -121,7 +152,7 @@ def get_user_by_email(email: str) -> Optional[User]:
     """
     row = execute_one(
         "SELECT * FROM users WHERE email = %s AND deleted_at IS NULL",
-        (email)
+        (email,)
     )
 
     return User.from_dict(row) if row else None
@@ -163,8 +194,9 @@ def update_user(user_id: int, data: UserUpdate) -> User:
 def delete_user(user_id: int) -> bool:
     """
     회원 탈퇴 처리 (soft delete).
-    - deleted_at에 현재 시각 기록, is_active = FALSE 처리
+    - deleted_at에 현재 시각 기록
     - 실제 데이터는 삭제하지 않음 (복구 가능)
+    - auth_providers는 hard delete (재가입 시 충돌 방지)
 
     사용 예시:
         success = delete_user(1)
@@ -172,10 +204,18 @@ def delete_user(user_id: int) -> bool:
     affected = execute_write(
         """
         UPDATE users
-        SET deleted_at = %s, is_active = FALSE
+        SET deleted_at = %s,
+            email    = CONCAT('deleted_', user_id, '_', email),
+            nickname = CONCAT('deleted_', user_id, '_', nickname)
         WHERE user_id = %s AND deleted_at IS NULL
         """,
         (datetime.now(), user_id)
     )
+
+    if affected > 0:
+        execute_write(
+            "DELETE FROM auth_providers WHERE user_id = %s",
+            (user_id,)
+        )
 
     return affected > 0
