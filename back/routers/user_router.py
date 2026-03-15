@@ -51,8 +51,7 @@ class TokenResponse(BaseModel):
     token_type   : str = "bearer"
 
 class AdminTokenRequest(BaseModel):
-    email     : str
-    admin_key : str
+    email : str
 
 # ─────────────────────────────────────────────
 # 내부 헬퍼
@@ -312,29 +311,21 @@ def reset_password(body: PasswordResetRequest):
 def issue_admin_token(body: AdminTokenRequest):
     """
     관리자용 만료 없는 영구 토큰 발급.
-    - ADMIN_SECRET_KEY 환경변수와 일치해야 발급
+    - is_admin = 1인 계정만 발급 가능
 
     포스트맨 요청 예시:
         POST /users/admin/token
-        {
-            "email": "test@test.com",
-            "admin_key": "<ADMIN_SECRET_KEY 값>"
-        }
+        { "email": "admin@test.com" }
     응답:
         { "access_token": "...", "token_type": "bearer" }
     """
-    admin_secret = os.getenv("ADMIN_SECRET_KEY", "")
-
-    if not admin_secret:
-        raise HTTPException(status_code=503, detail="관리자 키가 설정되지 않았습니다.")
-
-    if body.admin_key != admin_secret:
-        raise HTTPException(status_code=403, detail="관리자 키가 올바르지 않습니다.")
-
     user = user_service.get_user_by_email(body.email)
 
     if not user:
         raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")
+
+    if not user.is_admin:
+        raise HTTPException(status_code=403, detail="관리자 권한이 없는 계정입니다.")
 
     token = create_permanent_token(user.user_id)
 
