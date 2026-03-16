@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
-
+import { ReactNode } from "react";  // 프로필 닉네임 라벨에 <span> 넣기 위해 추가 260316
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
-    label?: string;
+    label?: ReactNode; // 상단의 이유랑 동일
     required?: boolean;
     error?: string;
 }

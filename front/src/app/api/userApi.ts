@@ -26,6 +26,7 @@ function getToken(): string {
 
 export interface UserResponse {
     user_id           : number;
+    is_admin: number | string;
     email             : string;
     name              : string;
     nickname          : string;
@@ -34,7 +35,6 @@ export interface UserResponse {
     skin_type         : number | null;
     skin_concern      : string | null;
     profile_image_url : string | null;
-    is_active         : boolean;
     created_at        : string;
 }
 export interface UserUpdateBody {
