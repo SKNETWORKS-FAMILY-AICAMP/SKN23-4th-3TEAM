@@ -134,7 +134,7 @@ export function LoginPage() {
                         </button>
 
                         {/* 카카오 로그인 */}
-                        {/* <button
+                        <button
                             type="button"
                             onClick={() => startSocialLogin("kakao")}
                             aria-label="카카오로 로그인"
@@ -148,7 +148,7 @@ export function LoginPage() {
                                     fillOpacity="0.85"
                                 />
                             </svg>
-                        </button> */}
+                        </button>
 
                         {/* 네이버 로그인 */}
                         <button
