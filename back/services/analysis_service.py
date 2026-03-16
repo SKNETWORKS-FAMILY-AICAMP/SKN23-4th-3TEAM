@@ -67,36 +67,135 @@ analysis_service.py
 """
 
 # ─────────────────────────────────────────────
+# factorial 헬퍼 (analysis_recommendation_tags)
+# ─────────────────────────────────────────────
+
+def _save_factorial_tags(analysis_id: int, labels: list[str]) -> None:
+    """
+    factorial label 목록을 keywords 테이블에서 keyword_id로 변환해
+    analysis_recommendation_tags에 저장.
+    매칭되지 않는 label은 무시.
+    """
+    for label in labels:
+        row = execute_one(
+            """
+            SELECT keyword_id FROM keywords
+            WHERE type = 'skin_care_routine' AND label = %s
+            LIMIT 1
+            """,
+            (label,)
+        )
+        if row:
+            execute_write(
+                """
+                INSERT IGNORE INTO analysis_recommendation_tags (analysis_id, keyword_id)
+                VALUES (%s, %s)
+                """,
+                (analysis_id, row["keyword_id"])
+            )
+
+
+def _get_factorial_labels(analysis_id: int) -> list[str]:
+    """
+    analysis_recommendation_tags + keywords JOIN으로 factorial label 목록 조회.
+    """
+    rows = execute_query(
+        """
+        SELECT k.label
+        FROM analysis_recommendation_tags art
+        JOIN keywords k ON art.keyword_id = k.keyword_id
+        WHERE art.analysis_id = %s
+        ORDER BY art.keyword_id
+        """,
+        (analysis_id,)
+    )
+    return [row["label"] for row in rows]
+
+
+def _get_factorial_labels_batch(analysis_ids: list[int]) -> dict[int, list[str]]:
+    """
+    여러 analysis_id의 factorial label을 한 번의 쿼리로 일괄 조회.
+    """
+    if not analysis_ids:
+        return {}
+    placeholders = ",".join(["%s"] * len(analysis_ids))
+    rows = execute_query(
+        f"""
+        SELECT art.analysis_id, k.label
+        FROM analysis_recommendation_tags art
+        JOIN keywords k ON art.keyword_id = k.keyword_id
+        WHERE art.analysis_id IN ({placeholders})
+        ORDER BY art.analysis_id, art.keyword_id
+        """,
+        tuple(analysis_ids)
+    )
+    result: dict[int, list[str]] = {}
+    for row in rows:
+        result.setdefault(row["analysis_id"], []).append(row["label"])
+    return result
+
+
+def _inject_factorial(result: SkinAnalysisResult) -> SkinAnalysisResult:
+    """
+    SkinAnalysisResult.factorial 필드에 label 목록을 주입.
+    """
+    result.factorial = _get_factorial_labels(result.analysis_id)
+    return result
+
+
+def _inject_factorial_batch(results: list[SkinAnalysisResult]) -> list[SkinAnalysisResult]:
+    """
+    여러 SkinAnalysisResult에 factorial 필드를 일괄 주입.
+    """
+    ids = [r.analysis_id for r in results]
+    labels_map = _get_factorial_labels_batch(ids)
+    for r in results:
+        r.factorial = labels_map.get(r.analysis_id, [])
+    return results
+
+
+# ─────────────────────────────────────────────
 # 1. 피부 분석 결과 저장
 # ─────────────────────────────────────────────
 
 def save_analysis(data: AnalysisCreate) -> SkinAnalysisResult:
     """
     피부 분석 결과 저장.
-    - analysis_data (dict) → JSON 문자열 변환 후 저장
-    - image_urls가 있으면 images + entity_images 테이블에 저장
+    - overall_score → skin_score 컬럼에 저장
+    - factorial → analysis_recommendation_tags 에 저장 (JSON에서 제외)
+    - image_url → images + entity_images 에 저장
 
     사용 예시:
         result = save_analysis(AnalysisCreate(
             user_id       = 1,
             model_type    = "simple",
-            analysis_data = {"moisture": 72, "oil": 45, "pore": 30},
-            skin_score    = 85,
-            image_urls    = ["https://s3.../image1.jpg"],
+            analysis_data = {"overall_score": 85, "metrics": {...}, "factorial": ["보습 강화"]},
+            image_url     = ["https://s3.../image1.jpg"],
         ))
     """
-    analysis_data_json = json.dumps(data.analysis_data, ensure_ascii=False)
+    analysis_data = dict(data.analysis_data)
+
+    # overall_score → skin_score 컬럼
+    skin_score = data.skin_score or analysis_data.get("overall_score")
+
+    # factorial은 별도 테이블에 저장하므로 JSON에서 제거
+    factorial_labels = analysis_data.pop("factorial", []) or []
+
+    analysis_data_json = json.dumps(analysis_data, ensure_ascii=False)
 
     analysis_id = execute_write(
         """
         INSERT INTO skin_analysis_results (user_id, model_type, analysis_data, skin_score)
         VALUES (%s, %s, %s, %s)
         """,
-        (data.user_id, data.model_type, analysis_data_json, data.skin_score)
+        (data.user_id, data.model_type, analysis_data_json, skin_score)
     )
 
+    # factorial → analysis_recommendation_tags 저장
+    if factorial_labels:
+        _save_factorial_tags(analysis_id, factorial_labels)
+
     # 이미지 URL → images + entity_images 저장
-    # 동일 URL이 이미 images 테이블에 존재하면 재사용 (중복 저장 방지)
     for url in (data.image_url or []):
         existing = execute_one(
             "SELECT image_id FROM images WHERE image_url = %s LIMIT 1",
@@ -140,6 +239,8 @@ def get_analysis_by_id(analysis_id: int) -> Optional[SkinAnalysisResult]:
     result = SkinAnalysisResult.from_dict(row)
     result.image_urls = _get_image_urls("analysis", analysis_id)
 
+    _inject_factorial(result)
+
     return result
 
 def get_analysis_history(user_id: int) -> list[SkinAnalysisResult]:
@@ -165,6 +266,8 @@ def get_analysis_history(user_id: int) -> list[SkinAnalysisResult]:
 
     for r in results:
         r.image_urls = images_map.get(r.analysis_id, [])
+
+    _inject_factorial_batch(results)
 
     return results
 
@@ -193,6 +296,8 @@ def get_latest_analysis(user_id: int) -> Optional[SkinAnalysisResult]:
 
     result = SkinAnalysisResult.from_dict(row)
     result.image_urls = _get_image_urls("analysis", result.analysis_id)
+
+    _inject_factorial(result)
 
     return result
 
@@ -245,6 +350,8 @@ def get_detailed_by_date(user_id: int, date: str) -> Optional[SkinAnalysisResult
 
     result = SkinAnalysisResult.from_dict(row)
     result.image_urls = _get_image_urls("analysis", result.analysis_id)
+    
+    _inject_factorial(result)
 
     return result
 
@@ -298,6 +405,8 @@ def get_analysis_by_model_type(
 
     for r in results:
         r.image_urls = images_map.get(r.analysis_id, [])
+
+    _inject_factorial_batch(results)
 
     return results
 

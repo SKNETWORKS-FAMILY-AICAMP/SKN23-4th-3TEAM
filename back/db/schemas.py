@@ -189,9 +189,9 @@ class AnalysisCreate(BaseModel):
     """
     user_id       : int
     model_type    : Literal["simple", "detailed"]
-    analysis_data : dict               # 정량 분석 결과 JSON
     skin_score    : Optional[int]      = None
     image_url     : Optional[list[str]] = None  # S3 이미지 URL (images + entity_images 저장)
+    analysis_data : dict               # 정량 분석 결과 JSON
 
 class AnalysisResponse(BaseModel):
     """
@@ -200,10 +200,11 @@ class AnalysisResponse(BaseModel):
     analysis_id   : int
     user_id       : int
     model_type    : str
+    skin_score    : Optional[int]  = None
+    image_url     : list[str]      = []   # entity_images 통해 조회된 이미지 URL 목록
+    factorial     : list[str]      = []   # analysis_recommendation_tags 통해 조회된 관리 키워드 목록
     analysis_data : dict
-    skin_score    : Optional[int] = None
     created_at    : datetime
-    image_url     : list[str]     = []   # entity_images 통해 조회된 이미지 URL 목록
 
     model_config = {"from_attributes": True}
 

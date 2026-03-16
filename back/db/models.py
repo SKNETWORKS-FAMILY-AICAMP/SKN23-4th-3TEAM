@@ -209,6 +209,7 @@ class SkinAnalysisResult:
     skin_score    : Optional[int]      = None  # 피부 종합 점수
     deleted_at    : Optional[datetime] = None  # soft delete 시각
     image_urls    : list               = field(default_factory=list)  # entity_images 조인 결과
+    factorial     : list               = field(default_factory=list)  # analysis_recommendation_tags 조인 결과
 
     @staticmethod
     def from_dict(row: dict) -> "SkinAnalysisResult":

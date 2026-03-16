@@ -31,10 +31,11 @@ def _analysis_to_response(result) -> AnalysisResponse:
         analysis_id   = result.analysis_id,
         user_id       = result.user_id,
         model_type    = result.model_type,
-        analysis_data = result.analysis_data,
         skin_score    = result.skin_score,
-        created_at    = result.created_at,
         image_url     = result.image_urls,
+        factorial     = result.factorial,
+        analysis_data = result.analysis_data,
+        created_at    = result.created_at,
     )
 
 # ─────────────────────────────────────────────
