@@ -9,6 +9,56 @@ from datetime import datetime
 from db.schemas import UserCreate, UserUpdate
 from db.db_manager import execute_one, execute_write
 
+# ─────────────────────────────────────────────
+# 프로필 이미지 헬퍼 (images + entity_images)
+# ─────────────────────────────────────────────
+
+def _get_profile_image_url(user_id: int) -> Optional[str]:
+    """
+    user_id에 연결된 프로필 이미지 URL 조회.
+    entity_type='profile' 기준으로 가장 최근 1개 반환.
+    """
+    row = execute_one(
+        """
+        SELECT i.image_url
+        FROM images i
+        JOIN entity_images ei ON i.image_id = ei.image_id
+        WHERE ei.entity_type = 'profile' AND ei.entity_id = %s
+        ORDER BY ei.entity_image_id DESC
+        LIMIT 1
+        """,
+        (user_id,)
+    )
+    return row["image_url"] if row else None
+
+def _upsert_profile_image(user_id: int, image_url: str) -> None:
+    """
+    프로필 이미지를 저장하거나 교체.
+    - images 테이블에 URL 중복 저장 방지 (기존 URL이면 재사용)
+    - entity_images에서 해당 user의 기존 매핑은 삭제 후 새 매핑 삽입 (1:1 유지)
+    """
+    # 1. images 테이블에서 URL 조회 또는 신규 삽입
+    existing = execute_one(
+        "SELECT image_id FROM images WHERE image_url = %s LIMIT 1",
+        (image_url,)
+    )
+    image_id = existing["image_id"] if existing else execute_write(
+        "INSERT INTO images (image_url) VALUES (%s)",
+        (image_url,)
+    )
+
+    # 2. 기존 프로필 매핑 삭제 (user당 프로필 이미지 1개 유지)
+    execute_write(
+        "DELETE FROM entity_images WHERE entity_type = 'profile' AND entity_id = %s",
+        (user_id,)
+    )
+
+    # 3. 새 매핑 삽입
+    execute_write(
+        "INSERT INTO entity_images (image_id, entity_type, entity_id) VALUES (%s, 'profile', %s)",
+        (image_id, user_id)
+    )
+
 _nicknames: list[str] = []
 
 def _load_nicknames() -> list[str]:
@@ -139,7 +189,13 @@ def get_user_by_id(user_id: int) -> Optional[User]:
         (user_id,)
     )
 
-    return User.from_dict(row) if row else None
+    if not row:
+        return None
+
+    user = User.from_dict(row)
+    user.profile_image_url = _get_profile_image_url(user_id)
+
+    return user
 
 
 def get_user_by_email(email: str) -> Optional[User]:
@@ -155,7 +211,13 @@ def get_user_by_email(email: str) -> Optional[User]:
         (email,)
     )
 
-    return User.from_dict(row) if row else None
+    if not row:
+        return None
+
+    user = User.from_dict(row)
+    user.profile_image_url = _get_profile_image_url(user.user_id)
+
+    return user
 
 
 # ─────────────────────────────────────────────
@@ -167,22 +229,35 @@ def update_user(user_id: int, data: UserUpdate) -> User:
     사용자 프로필 수정.
     - 변경할 필드만 골라서 UPDATE (None인 필드는 건너뜀)
     - 닉네임 변경 시 중복 확인 포함
+    - profile_image_url은 users 테이블이 아닌 images + entity_images에 저장
 
     사용 예시:
         updated = update_user(1, UserUpdate(nickname="새닉네임", age=25))
+        updated = update_user(1, UserUpdate(profile_image_url="https://s3.../profile.jpg"))
     """
-    fields = {k: v for k, v in data.model_dump().items() if v is not None}
+    raw = data.model_dump()
 
-    if not fields:
+    # profile_image_url은 users 테이블 컬럼이 아니므로 분리해서 처리
+    profile_image_url = raw.pop("profile_image_url", None)
+
+    fields = {k: v for k, v in raw.items() if v is not None}
+
+    if not fields and profile_image_url is None:
         raise ValueError("수정할 내용이 없습니다.")
 
-    set_clause = ", ".join([f"{key} = %s" for key in fields])
-    values = tuple(fields.values()) + (user_id,)
+    # users 테이블 업데이트
+    if fields:
+        set_clause = ", ".join([f"{key} = %s" for key in fields])
+        values = tuple(fields.values()) + (user_id,)
 
-    execute_write(
-        f"UPDATE users SET {set_clause} WHERE user_id = %s AND deleted_at IS NULL",
-        values
-    )
+        execute_write(
+            f"UPDATE users SET {set_clause} WHERE user_id = %s AND deleted_at IS NULL",
+            values
+        )
+
+    # 프로필 이미지 저장 (images + entity_images)
+    if profile_image_url:
+        _upsert_profile_image(user_id, profile_image_url)
 
     return get_user_by_id(user_id)
 
