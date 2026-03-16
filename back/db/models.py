@@ -49,19 +49,20 @@ class Keyword:
 # ─────────────────────────────────────────────
 @dataclass
 class User:
-    user_id        : int
-    is_admin       : bool
-    email          : str
-    nickname       : str
-    terms_agreed   : bool
-    privacy_agreed : bool
-    created_at     : datetime
-    updated_at     : datetime
-    age            : Optional[int]      = None
-    gender         : Optional[str]      = None  # male / female
-    skin_type      : Optional[int]      = None  # FK → keywords.keyword_id
-    skin_concern   : Optional[str]      = None  # 피부 고민
-    deleted_at     : Optional[datetime] = None  # soft delete 시각
+    user_id           : int
+    is_admin          : bool
+    email             : str
+    nickname          : str
+    terms_agreed      : bool
+    privacy_agreed    : bool
+    created_at        : datetime
+    updated_at        : datetime
+    age               : Optional[int]      = None
+    gender            : Optional[str]      = None  # male / female
+    skin_type         : Optional[int]      = None  # FK → keywords.keyword_id
+    skin_concern      : Optional[str]      = None  # 피부 고민
+    deleted_at        : Optional[datetime] = None  # soft delete 시각
+    profile_image_url : Optional[str]      = None  # entity_images 조인 결과
 
     @staticmethod
     def from_dict(row: dict) -> "User":
@@ -180,6 +181,7 @@ class ChatMessage:
     model_type   : str                          # simple / detailed
     content      : Optional[str]      = None    # 텍스트 내용
     created_at   : Optional[datetime] = None
+    image_urls   : list               = field(default_factory=list)  # entity_images 조인 결과
 
     @staticmethod
     def from_dict(row: dict) -> "ChatMessage":
@@ -206,6 +208,7 @@ class SkinAnalysisResult:
     created_at    : datetime
     skin_score    : Optional[int]      = None  # 피부 종합 점수
     deleted_at    : Optional[datetime] = None  # soft delete 시각
+    image_urls    : list               = field(default_factory=list)  # entity_images 조인 결과
 
     @staticmethod
     def from_dict(row: dict) -> "SkinAnalysisResult":

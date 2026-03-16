@@ -7,6 +7,46 @@ from db.models import SkinAnalysisResult, Wishlist
 from db.schemas import AnalysisCreate, WishlistAdd
 from db.db_manager import execute_one, execute_write, execute_query
 
+# ─────────────────────────────────────────────
+# 이미지 헬퍼 (images + entity_images)
+# ─────────────────────────────────────────────
+
+def _get_image_urls(entity_type: str, entity_id: int) -> list[str]:
+    rows = execute_query(
+        """
+        SELECT i.image_url
+        FROM images i
+        JOIN entity_images ei ON i.image_id = ei.image_id
+        WHERE ei.entity_type = %s AND ei.entity_id = %s
+        ORDER BY ei.entity_image_id
+        """,
+        (entity_type, entity_id)
+    )
+    return [row["image_url"] for row in rows]
+
+def _get_image_urls_batch(entity_type: str, entity_ids: list[int]) -> dict[int, list[str]]:
+    if not entity_ids:
+        return {}
+    
+    placeholders = ",".join(["%s"] * len(entity_ids))
+    rows = execute_query(
+        f"""
+        SELECT ei.entity_id, i.image_url
+        FROM images i
+        JOIN entity_images ei ON i.image_id = ei.image_id
+        WHERE ei.entity_type = %s AND ei.entity_id IN ({placeholders})
+        ORDER BY ei.entity_image_id
+        """,
+        (entity_type, *entity_ids)
+    )
+    result: dict[int, list[str]] = {}
+
+    for row in rows:
+        eid = row["entity_id"]
+        result.setdefault(eid, []).append(row["image_url"])
+
+    return result
+
 """
 analysis_service.py
 ─────────────────────────────────────────────────────────────
@@ -34,6 +74,7 @@ def save_analysis(data: AnalysisCreate) -> SkinAnalysisResult:
     """
     피부 분석 결과 저장.
     - analysis_data (dict) → JSON 문자열 변환 후 저장
+    - image_urls가 있으면 images + entity_images 테이블에 저장
 
     사용 예시:
         result = save_analysis(AnalysisCreate(
@@ -41,6 +82,7 @@ def save_analysis(data: AnalysisCreate) -> SkinAnalysisResult:
             model_type    = "simple",
             analysis_data = {"moisture": 72, "oil": 45, "pore": 30},
             skin_score    = 85,
+            image_urls    = ["https://s3.../image1.jpg"],
         ))
     """
     analysis_data_json = json.dumps(data.analysis_data, ensure_ascii=False)
@@ -53,8 +95,24 @@ def save_analysis(data: AnalysisCreate) -> SkinAnalysisResult:
         (data.user_id, data.model_type, analysis_data_json, data.skin_score)
     )
 
-    return get_analysis_by_id(analysis_id)
+    # 이미지 URL → images + entity_images 저장
+    # 동일 URL이 이미 images 테이블에 존재하면 재사용 (중복 저장 방지)
+    for url in (data.image_url or []):
+        existing = execute_one(
+            "SELECT image_id FROM images WHERE image_url = %s LIMIT 1",
+            (url,)
+        )
+        image_id = existing["image_id"] if existing else execute_write(
+            "INSERT INTO images (image_url) VALUES (%s)",
+            (url,)
+        )
 
+        execute_write(
+            "INSERT INTO entity_images (image_id, entity_type, entity_id) VALUES (%s, %s, %s)",
+            (image_id, "analysis", analysis_id)
+        )
+
+    return get_analysis_by_id(analysis_id)
 
 # ─────────────────────────────────────────────
 # 2. 피부 분석 결과 조회
@@ -62,7 +120,7 @@ def save_analysis(data: AnalysisCreate) -> SkinAnalysisResult:
 
 def get_analysis_by_id(analysis_id: int) -> Optional[SkinAnalysisResult]:
     """
-    analysis_id로 분석 결과 단건 조회.
+    analysis_id로 분석 결과 단건 조회
     삭제된 결과는 반환하지 않음 (soft delete 고려).
 
     사용 예시:
@@ -76,11 +134,17 @@ def get_analysis_by_id(analysis_id: int) -> Optional[SkinAnalysisResult]:
         (analysis_id,)
     )
 
-    return SkinAnalysisResult.from_dict(row) if row else None
+    if not row:
+        return None
+
+    result = SkinAnalysisResult.from_dict(row)
+    result.image_urls = _get_image_urls("analysis", analysis_id)
+
+    return result
 
 def get_analysis_history(user_id: int) -> list[SkinAnalysisResult]:
     """
-    사용자의 전체 피부 분석 히스토리 조회.
+    사용자의 전체 피부 분석 히스토리 조회
     최신 순(created_at DESC)으로 반환.
 
     사용 예시:
@@ -95,7 +159,14 @@ def get_analysis_history(user_id: int) -> list[SkinAnalysisResult]:
         (user_id,)
     )
 
-    return [SkinAnalysisResult.from_dict(row) for row in rows]
+    results    = [SkinAnalysisResult.from_dict(row) for row in rows]
+    ids        = [r.analysis_id for r in results]
+    images_map = _get_image_urls_batch("analysis", ids)
+
+    for r in results:
+        r.image_urls = images_map.get(r.analysis_id, [])
+
+    return results
 
 def get_latest_analysis(user_id: int) -> Optional[SkinAnalysisResult]:
     """
@@ -117,7 +188,13 @@ def get_latest_analysis(user_id: int) -> Optional[SkinAnalysisResult]:
         """,
         (user_id,)
     )
-    return SkinAnalysisResult.from_dict(row) if row else None
+    if not row:
+        return None
+
+    result = SkinAnalysisResult.from_dict(row)
+    result.image_urls = _get_image_urls("analysis", result.analysis_id)
+
+    return result
 
 def get_detailed_dates(user_id: int) -> list[str]:
     """
@@ -163,7 +240,13 @@ def get_detailed_by_date(user_id: int, date: str) -> Optional[SkinAnalysisResult
         (user_id, date)
     )
 
-    return SkinAnalysisResult.from_dict(row) if row else None
+    if not row:
+        return None
+
+    result = SkinAnalysisResult.from_dict(row)
+    result.image_urls = _get_image_urls("analysis", result.analysis_id)
+
+    return result
 
 
 def has_today_detailed_analysis(user_id: int) -> bool:
@@ -209,7 +292,14 @@ def get_analysis_by_model_type(
         (user_id, model_type)
     )
 
-    return [SkinAnalysisResult.from_dict(row) for row in rows]
+    results    = [SkinAnalysisResult.from_dict(row) for row in rows]
+    ids        = [r.analysis_id for r in results]
+    images_map = _get_image_urls_batch("analysis", ids)
+
+    for r in results:
+        r.image_urls = images_map.get(r.analysis_id, [])
+
+    return results
 
 # ─────────────────────────────────────────────
 # 3. 피부 분석 결과 삭제

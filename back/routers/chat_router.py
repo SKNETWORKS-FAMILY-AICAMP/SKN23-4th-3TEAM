@@ -51,6 +51,7 @@ def _msg_to_response(msg) -> MessageResponse:
         model_type   = msg.model_type,
         content      = msg.content,
         created_at   = msg.created_at,
+        image_url    = msg.image_urls,
     )
 
 # ─────────────────────────────────────────────
@@ -279,7 +280,7 @@ def send_message(
     ]
 
     # 4. LangGraph AI 파이프라인 실행
-    image_urls = body.image_urls or []
+    image_urls = body.image_url or []
     user_text  = body.content or ""
 
     try:

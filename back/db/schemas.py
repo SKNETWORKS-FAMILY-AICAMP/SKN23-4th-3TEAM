@@ -51,27 +51,30 @@ class UserUpdate(BaseModel):
     """
     프로필 수정 시 프론트에서 받는 데이터
     - 모든 필드 선택적 (수정할 항목만 전달)
+    - profile_image_url: S3 URL → images + entity_images 테이블에 저장
     """
-    nickname     : Optional[str] = None
-    age          : Optional[int] = None
-    gender       : Optional[Literal["male", "female"]] = None
-    skin_type    : Optional[int] = None   # keywords.keyword_id
-    skin_concern : Optional[str] = None
+    nickname          : Optional[str] = None
+    age               : Optional[int] = None
+    gender            : Optional[Literal["male", "female"]] = None
+    skin_type         : Optional[int] = None   # keywords.keyword_id
+    skin_concern      : Optional[str] = None
+    profile_image_url : Optional[str] = None   # S3 프로필 이미지 URL
 
 class UserResponse(BaseModel):
     """
     API 응답으로 내보내는 사용자 데이터
     - 비밀번호 등 민감 정보 제외
     """
-    user_id      : int
-    is_admin     : bool
-    email        : str
-    nickname     : str
-    age          : Optional[int] = None
-    gender       : Optional[str] = None
-    skin_type    : Optional[int] = None
-    skin_concern : Optional[str] = None
-    created_at   : datetime
+    user_id           : int
+    is_admin          : bool
+    email             : str
+    nickname          : str
+    age               : Optional[int] = None
+    gender            : Optional[str] = None
+    skin_type         : Optional[int] = None
+    skin_concern      : Optional[str] = None
+    created_at        : datetime
+    profile_image_url : Optional[str] = None   # entity_images 통해 조회된 프로필 이미지 URL
 
     model_config = {"from_attributes": True}
 
@@ -150,13 +153,13 @@ class MessageCreate(BaseModel):
     메시지 저장 시 프론트에서 받는 데이터
     - role: user / assistant / system 만 허용
     - model_type: simple / detailed 만 허용
-    - image_urls: AI 파이프라인 전달용 (DB 저장 안 함)
+    - image_url: S3 URL 목록 → images + entity_images 테이블에 저장
     """
     chat_room_id : int
     role         : Literal["user", "assistant", "system"]
     model_type   : Literal["simple", "detailed", "ingredient", "default"] = "default"
     content      : Optional[str]       = None   # 텍스트 메시지
-    image_urls   : Optional[list[str]] = None   # AI 파이프라인 전달용 S3 URL (DB 미저장)
+    image_url    : Optional[list[str]] = None   # S3 이미지 URL (images + entity_images 저장)
 
 class MessageResponse(BaseModel):
     """
@@ -168,6 +171,7 @@ class MessageResponse(BaseModel):
     model_type   : str
     content      : Optional[str]      = None
     created_at   : Optional[datetime] = None
+    image_url    : list[str]          = []      # entity_images 통해 조회된 이미지 URL 목록
 
     model_config = {"from_attributes": True}
 
@@ -181,11 +185,13 @@ class AnalysisCreate(BaseModel):
     - model_type: simple / detailed 만 허용
     - analysis_data: AI 분석 결과 구조화 데이터 (dict)
     - skin_score: 피부 종합 점수 (선택)
+    - image_url: 분석에 사용된 S3 이미지 URL 목록 → images + entity_images 저장
     """
     user_id       : int
     model_type    : Literal["simple", "detailed"]
     analysis_data : dict               # 정량 분석 결과 JSON
-    skin_score    : Optional[int] = None
+    skin_score    : Optional[int]      = None
+    image_url     : Optional[list[str]] = None  # S3 이미지 URL (images + entity_images 저장)
 
 class AnalysisResponse(BaseModel):
     """
@@ -197,6 +203,7 @@ class AnalysisResponse(BaseModel):
     analysis_data : dict
     skin_score    : Optional[int] = None
     created_at    : datetime
+    image_url     : list[str]     = []   # entity_images 통해 조회된 이미지 URL 목록
 
     model_config = {"from_attributes": True}
 

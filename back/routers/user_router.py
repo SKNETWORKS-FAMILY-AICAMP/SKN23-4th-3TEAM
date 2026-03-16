@@ -60,15 +60,16 @@ class AdminTokenRequest(BaseModel):
 
 def _to_response(user) -> dict:
     return UserResponse(
-        user_id      = user.user_id,
-        is_admin     = user.is_admin,
-        email        = user.email,
-        nickname     = user.nickname,
-        age          = user.age,
-        gender       = user.gender,
-        skin_type    = user.skin_type,
-        skin_concern = user.skin_concern,
-        created_at   = user.created_at,
+        user_id           = user.user_id,
+        is_admin          = user.is_admin,
+        email             = user.email,
+        nickname          = user.nickname,
+        age               = user.age,
+        gender            = user.gender,
+        skin_type         = user.skin_type,
+        skin_concern      = user.skin_concern,
+        created_at        = user.created_at,
+        profile_image_url = user.profile_image_url,
     )
 
 # ─────────────────────────────────────────────

@@ -34,6 +34,7 @@ def _analysis_to_response(result) -> AnalysisResponse:
         analysis_data = result.analysis_data,
         skin_score    = result.skin_score,
         created_at    = result.created_at,
+        image_url     = result.image_urls,
     )
 
 # ─────────────────────────────────────────────
