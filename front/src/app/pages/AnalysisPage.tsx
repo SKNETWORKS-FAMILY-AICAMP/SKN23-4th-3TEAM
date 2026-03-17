@@ -141,7 +141,7 @@ export function AnalysisPage() {
     const overallScore  = extractNum(ad.overall_score, 0);
     const skinType      = extractStr(ad.skin_type, "");
     const skinTypeDesc  = extractStr(ad.skin_type_detail, "");
-    const factorial     = ad?.factorial;
+    const factorial     = currentAnalysis?.factorial ?? [];
     const analysisImage = currentAnalysis?.image_url?.[0] ?? "";
 
     const skinMetrics = SKIN_METRICS.map((m) => {
@@ -153,7 +153,7 @@ export function AnalysisPage() {
     // ── 이전 분석 지표 ─────────────────────────────────────────────
     const prevAd   = previousAnalysis?.analysis_data ?? {};
     const prevApiM = (prevAd.metrics ?? {}) as Record<string, unknown>;
-    const prevOverallScore = extractNum(prevAd.overall_score, 0);
+    const prevOverallScore = extractNum(previousAnalysis?.skin_score, extractNum(prevAd.overall_score, 0));
     const prevSkinMetrics  = SKIN_METRICS.map((m) => {
         const raw = prevApiM[m.key];
 
