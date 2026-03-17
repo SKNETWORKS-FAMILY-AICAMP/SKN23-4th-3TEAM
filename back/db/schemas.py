@@ -188,7 +188,7 @@ class AnalysisCreate(BaseModel):
     - image_url: 분석에 사용된 S3 이미지 URL 목록 → images + entity_images 저장
     """
     user_id       : int
-    model_type    : Literal["simple", "detailed"]
+    model_type    : Literal["simple", "detailed", "ingredient"]
     skin_score    : Optional[int]      = None
     image_url     : Optional[list[str]] = None  # S3 이미지 URL (images + entity_images 저장)
     analysis_data : dict               # 정량 분석 결과 JSON

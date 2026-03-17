@@ -133,6 +133,7 @@ env.bak/
 venv.bak/
 *venv*/ 
 test_venv/
+.env_original
 
 # Spyder project settings
 .spyderproject
@@ -196,6 +197,7 @@ vector_store/
 node_modules/
 front/dist/
 outputs/
+front_back.zip
 
 *.md
 *.ipynb
@@ -213,3 +215,4 @@ checkpoint
 skin_ai/checkpoint/
 
 !README.md
+
