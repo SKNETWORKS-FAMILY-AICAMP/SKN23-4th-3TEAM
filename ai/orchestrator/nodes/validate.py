@@ -15,11 +15,15 @@ def _append_oliveyoung_links(chat_answer: str, products: list[dict]) -> str:
     형식: - [제품명](URL) | URL: https://...
     """
     links = []
+    seen_urls = set()  # URL 중복 제거
     for p in products:
         url     = p.get("oliveyoung_url", "")
         display = p.get("display_name") or p.get("name", "")
         if not url or not display:
             continue
+        if url in seen_urls:
+            continue
+        seen_urls.add(url)
         # 제품명에 하이퍼링크 + URL 텍스트 병기
         links.append(f"- [{display}]({url})  \n  🔗 {url}")
     if not links:
@@ -65,7 +69,7 @@ def _save_run(state: GraphState, report: dict):
         print(f"[SAVE_RUN ERROR] {repr(e)}", flush=True)
 
 
-# ── 피부 수치 → 0~100 정규화 ──────────────────────────────────
+# 피부 수치 → 0~100 정규화
 
 def _score_label(score: int) -> str:
     """0~100 점수 → 5단계 label"""
@@ -267,8 +271,11 @@ def _save_to_db(state: GraphState, vision_result: dict, llm_output: dict):
     if not vision_result or vision_result.get("mode") == "error":
         return
 
-    # model_type 매핑: "quick" → "simple", "detailed" → "detailed"
-    model_type = "simple" if analysis_type == "quick" else "detailed"
+    # model_type 매핑: "quick" → "simple", "detailed" → "detailed", "ingredient" → "ingredient"
+    _MODEL_TYPE_MAP = {"quick": "simple", "detailed": "detailed", "ingredient": "ingredient"}
+    model_type = _MODEL_TYPE_MAP.get(analysis_type)
+    if not model_type:
+        return
 
     # vision_result + llm_output → 정규화된 analysis_data
     analysis_data = _build_analysis_data(vision_result, llm_output)
@@ -284,9 +291,12 @@ def _save_to_db(state: GraphState, vision_result: dict, llm_output: dict):
         from db.schemas import AnalysisCreate
         from services.analysis_service import save_analysis
 
+        # 성분분석은 화장품 사진이므로 피부분석 페이지에 노출되지 않도록 이미지 저장 제외
+        image_urls = [] if analysis_type == "ingredient" else state.get("image_urls", [])
+
         data = AnalysisCreate(
             user_id       = user_id,
-            image_url     = state.get("image_urls", []),
+            image_url     = image_urls,
             model_type    = model_type,
             analysis_data = analysis_data,
         )
@@ -314,7 +324,7 @@ def validate_node(state: GraphState) -> GraphState:
     report_dict         = dict(state.get("llm_output", {}))
     oliveyoung_products = state.get("oliveyoung_products", [])
 
-    # ── 올리브영 링크 반영 ──────────────────────────────────
+    # 올리브영 링크 반영
     # 전략: oliveyoung_products(Tavily에서 실제 확인된 제품)를 신뢰의 근거로 삼음
     # LLM products 매칭은 oliveyoung_url 보완용. 링크는 항상 oliveyoung_products 기준.
     if route.needs_product and oliveyoung_products:
@@ -322,11 +332,16 @@ def validate_node(state: GraphState) -> GraphState:
         valid_oy = [p for p in oliveyoung_products if p.get("oliveyoung_url") and p.get("name")]
 
         # LLM products에 oliveyoung_url 보완 (fuzzy 매칭)
+        # 이미 매칭된 올리브영 제품은 재사용하지 않음 (중복 매칭 방지)
+        _matched_oy_urls = set()
+
         def _fuzzy_match(llm_name: str) -> dict | None:
             if not llm_name:
                 return None
             llm_clean = llm_name.replace(" ", "").lower()
             for oy in valid_oy:
+                if oy["oliveyoung_url"] in _matched_oy_urls:
+                    continue  # 이미 다른 LLM 제품에 매칭된 올리브영 제품은 스킵
                 oy_clean = oy["name"].replace(" ", "").lower()
                 if llm_clean == oy_clean:
                     return oy
@@ -343,16 +358,35 @@ def validate_node(state: GraphState) -> GraphState:
             if matched:
                 p["oliveyoung_url"] = matched["oliveyoung_url"]
                 p["display_name"]   = matched.get("display_name") or matched["name"]
-                print(f"[PRODUCTS] ✅ {p['name']} → {p['display_name']}", flush=True)
+                _matched_oy_urls.add(matched["oliveyoung_url"])
+                print(f"[PRODUCTS]  {p['name']} → {p['display_name']}", flush=True)
             else:
-                print(f"[PRODUCTS] ❌ 매칭 실패: '{p.get('name')}'", flush=True)
+                print(f"[PRODUCTS]  매칭 실패: '{p.get('name')}'", flush=True)
 
-        # report_dict products: LLM 답변 유지하되 url 보완
-        report_dict["products"] = llm_products if llm_products else valid_oy
+        # report_dict products: LLM 답변 유지하되 url 보완 + URL 중복 제품 제거
+        if llm_products:
+            seen_product_urls = set()
+            deduped = []
+            for p in llm_products:
+                url = p.get("oliveyoung_url", "")
+                if url and url in seen_product_urls:
+                    print(f"[PRODUCTS] 🔄 URL 중복 제거: {p.get('name')}", flush=True)
+                    continue
+                if url:
+                    seen_product_urls.add(url)
+                deduped.append(p)
+            report_dict["products"] = deduped
+        else:
+            report_dict["products"] = valid_oy
 
-        # 링크 섹션은 항상 valid_oy 기준으로 붙임 (LLM 매칭 실패와 무관하게 링크 보장)
+        # 링크 섹션: LLM이 설명한 제품 중 URL이 있는 것만 붙임
+        # (LLM이 설명 안 한 제품 링크가 달리는 문제 방지)
+        linked_products = [p for p in report_dict["products"] if p.get("oliveyoung_url")]
+        if not linked_products:
+            # LLM 매칭이 전부 실패한 경우 → 검색된 제품 전체 링크 (링크 보장)
+            linked_products = valid_oy
         report_dict["chat_answer"] = _append_oliveyoung_links(
-            report_dict.get("chat_answer", ""), valid_oy
+            report_dict.get("chat_answer", ""), linked_products
         )
 
     elif route.needs_product and not oliveyoung_products:
@@ -363,7 +397,7 @@ def validate_node(state: GraphState) -> GraphState:
             + (report_dict.get("chat_answer") or "")
         )
 
-    # ── 스키마 검증 ──────────────────────────────────────────
+    # 스키마 검증
     try:
         report = validate_report(report_dict).model_dump()
     except Exception as e:
@@ -372,7 +406,7 @@ def validate_node(state: GraphState) -> GraphState:
 
     report["intent"] = route.intent
 
-    # ── 비로그인 회원가입 유도 문구 추가 ────────────────────
+    # 비로그인 회원가입 유도 문구 추가
     if state.get("guest_upsell"):
         upsell_text = (
             "\n\n---\n"
@@ -383,7 +417,7 @@ def validate_node(state: GraphState) -> GraphState:
         )
         report["chat_answer"] = (report.get("chat_answer") or "") + upsell_text
 
-    # ── 채팅방 제목 ──────────────────────────────────────────
+    # 채팅방 제목
     if state.get("is_first_message"):
         text = (state.get("user_text") or "").strip()
         report["room_title"] = text[:18] + "…" if len(text) > 20 else text
@@ -394,7 +428,7 @@ def validate_node(state: GraphState) -> GraphState:
 
     _save_run(state, report)
 
-    # ── DB 저장: 분석 intent이고 vision_result 있을 때만 ──────
+    # DB 저장: 분석 intent이고 vision_result 있을 때만
     vision_result = state.get("vision_result")
     if vision_result and state.get("analysis_type"):
         _save_to_db(state, vision_result, state.get("llm_output", {}))
