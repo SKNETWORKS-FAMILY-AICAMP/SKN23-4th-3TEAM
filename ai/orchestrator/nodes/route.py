@@ -87,7 +87,7 @@ def _get_greeting(user_id: int | None) -> str:
         )
 
 # 즉시 응답 intent 목록
-_INSTANT_INTENTS = {"out_of_domain", "greeting", "login_required", "ask_for_context", "ask_for_category", "ask_for_skin_info"}
+_INSTANT_INTENTS = {"out_of_domain", "greeting", "login_required"}
 
 
 def _make_instant_response(intent: str, user_text: str, is_first_message: bool, user_id: int | None = None) -> dict:
@@ -112,11 +112,11 @@ def route_node(state: GraphState) -> GraphState:
     """
     [route_node]
     입력: user_text, analysis_type, images, user_id, chat_history
-    출력: route, instant_response(즉시 응답이면)
+    출력: route, detected_keywords, instant_response(즉시 응답이면)
     """
     t0 = time.perf_counter()
 
-    route = decide(
+    route, detected_keywords = decide(
         user_text=state["user_text"],
         analysis_type=state.get("analysis_type"),
         has_images=len(state.get("images", [])) > 0,
@@ -131,9 +131,11 @@ def route_node(state: GraphState) -> GraphState:
         f"| needs_context_check={route.needs_context_check}",
         flush=True
     )
+    if detected_keywords:
+        print(f"[ROUTE] 추출 키워드: {detected_keywords}", flush=True)
     print(f"[TIMER] route_node: {time.perf_counter()-t0:.3f}s", flush=True)
 
-    updates: GraphState = {"route": route}
+    updates: GraphState = {"route": route, "detected_keywords": detected_keywords}
 
     # 즉시 응답이면 미리 준비 (context_node 스킵됨)
     if route.intent in _INSTANT_INTENTS:

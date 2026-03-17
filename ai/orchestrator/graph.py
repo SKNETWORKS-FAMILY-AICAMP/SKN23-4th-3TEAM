@@ -37,10 +37,10 @@ from ai.orchestrator.nodes import (
 )
 
 # 즉시 반환 intent 목록 (context_node 이전에 종료)
-_INSTANT_INTENTS = {"out_of_domain", "greeting", "login_required", "ask_for_context"}
+_INSTANT_INTENTS = {"out_of_domain", "greeting"}
 
 
-# ── 조건부 엣지 함수 ──────────────────────────────────────────
+# 조건부 엣지 함수
 
 def route_condition(state: GraphState) -> str:
     """
@@ -65,7 +65,7 @@ def context_condition(state: GraphState) -> str:
     return "continue"
 
 
-# ── 그래프 빌드 ───────────────────────────────────────────────
+# 그래프 빌드
 
 def _build_graph() -> StateGraph:
     graph = StateGraph(GraphState)
@@ -110,12 +110,12 @@ def _build_graph() -> StateGraph:
     return graph
 
 
-# ── 컴파일 (모듈 import 시 1회만 실행) ───────────────────────
+# 컴파일 (모듈 import 시 1회만 실행)
 _graph = _build_graph()
 app = _graph.compile()
 
 
-# ── 외부에서 호출하는 메인 함수 ──────────────────────────────
+# 외부에서 호출하는 메인 함수
 
 def run(
     user_text: str,
@@ -149,6 +149,7 @@ def run(
         # 중간 상태 초기값
         "route":            None,
         "instant_response": None,
+        "detected_keywords": None,
         "user_profile":     None,
         "vision_result":    None,
         "rag_passages":     [],

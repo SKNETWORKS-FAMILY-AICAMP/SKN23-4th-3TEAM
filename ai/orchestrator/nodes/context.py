@@ -10,7 +10,11 @@ nodes/context.py
 import time
 from ai.orchestrator.state import GraphState
 from ai.orchestrator.context_builder import build_context
-from ai.orchestrator.router import _has_context, _CONTEXT_KW, _PRODUCT_CATEGORY_KW, _normalize_category, _has_any
+from ai.orchestrator.router import (
+    _has_context, _CONTEXT_KW, _PRODUCT_CATEGORY_KW,
+    _normalize_category, _has_any,
+    RouteDecision, _INTENT_FLAGS,
+)
 
 # 역질문 없이 바로 답변해도 되는 intent
 _NO_ASK_INTENTS = {
@@ -124,9 +128,126 @@ def context_node(state: GraphState) -> GraphState:
         "guest_upsell": False,  # 기본값
     }
 
-    # ── 1. 기존: 제품 추천 맥락 부족 역질문 ──────────────────
+    # 0. 회원 ask_for_context/ask_for_category 보정
+    # route_node 시점에는 user_profile=None이라 LLM이 프로필을 인식 못하는 경우가 있음
+    # context_node에서 DB 프로필을 로드한 후, 회원 프로필에 피부 정보가 있으면 route를 보정
+    if not is_guest and route.intent in ("ask_for_context", "ask_for_category"):
+        profile_has_skin = bool(
+            user_profile
+            and (user_profile.get("skin_type_label") or user_profile.get("skin_concern"))
+        )
+        if profile_has_skin:
+            # 현재 입력에서 카테고리 키워드 확인
+            user_text_lower = (state.get("user_text") or "").lower()
+            normalized_text = _normalize_category(user_text_lower)
+            has_category = any(kw in normalized_text for kw in _PRODUCT_CATEGORY_KW)
+
+            if route.intent == "ask_for_context" and has_category:
+                # 피부 정보 있고 + 카테고리 있음 → 바로 제품 검색
+                new_intent = "product_recommend"
+                flags = _INTENT_FLAGS[new_intent]
+                route = RouteDecision(
+                    intent=new_intent,
+                    needs_vision=flags["needs_vision"],
+                    needs_rag=flags["needs_rag"],
+                    needs_product=flags["needs_product"],
+                    needs_context_check=False,  # 프로필에 피부 정보 있으므로 체크 불필요
+                    reason=f"[CONTEXT 보정] 프로필에 피부 정보 있음 + 카테고리 있음 → {new_intent}",
+                )
+                updates["route"] = route
+                print(f"[CONTEXT] 회원 프로필 보정: ask_for_context → {new_intent}", flush=True)
+
+            elif route.intent == "ask_for_context" and not has_category:
+                # 피부 정보 있고 + 카테고리 없음 → 카테고리만 역질문
+                new_intent = "ask_for_category"
+                route = RouteDecision(
+                    intent=new_intent,
+                    needs_vision=False, needs_rag=False,
+                    needs_product=False, needs_context_check=False,
+                    reason="[CONTEXT 보정] 프로필에 피부 정보 있음 → 카테고리만 역질문",
+                )
+                updates["route"] = route
+                print(f"[CONTEXT] 회원 프로필 보정: ask_for_context → {new_intent}", flush=True)
+                # 카테고리 역질문 반환
+                result = {
+                    "chat_answer": (
+                        "어떤 종류의 제품을 찾고 계신가요? 😊\n\n"
+                        "예를 들어:\n"
+                        "- 수분크림\n- 세럼\n- 폼클렌징\n- 토너/스킨\n- 선크림\n- 로션\n\n"
+                        "원하시는 제품 종류를 알려주시면 올리브영에서 딱 맞는 제품을 찾아드릴게요!"
+                    ),
+                    "summary": "", "observations": [], "recommendations": [],
+                    "products": [], "warnings": [], "citations": [],
+                    "intent": "ask_for_category", "room_title": None,
+                }
+                if state.get("is_first_message"):
+                    text = (state.get("user_text") or "").strip()
+                    result["room_title"] = text[:18] + "…" if len(text) > 20 else text
+                updates["instant_response"] = result
+                return updates
+
+            # ask_for_category인데 프로필에 피부 정보 있음 → product_recommend로 보정
+            # (LLM이 product_recommend로 판단했으나 카테고리 미특정으로 ask_for_category가 됨
+            #  하지만 프로필 피부 정보가 있으면 카테고리 없이도 검색 가능 - 브랜드 검색, 피부타입 폴백 등)
+            if route.intent == "ask_for_category":
+                new_intent = "product_recommend"
+                flags = _INTENT_FLAGS[new_intent]
+                route = RouteDecision(
+                    intent=new_intent,
+                    needs_vision=flags["needs_vision"],
+                    needs_rag=flags["needs_rag"],
+                    needs_product=flags["needs_product"],
+                    needs_context_check=False,
+                    reason="[CONTEXT 보정] 프로필 피부 정보 있음 + ask_for_category → product_recommend",
+                )
+                updates["route"] = route
+                print(f"[CONTEXT] 회원 프로필 보정: ask_for_category → {new_intent}", flush=True)
+
+        else:
+            # 회원이지만 프로필에 피부 정보 없음 → 역질문 반환
+            print("[CONTEXT] 회원이지만 프로필에 피부 정보 없음 → 역질문 반환", flush=True)
+            if route.intent == "ask_for_context":
+                result = {
+                    "chat_answer": (
+                        "어떤 피부 타입이나 고민에 맞는 제품을 찾고 계신가요? 😊\n\n"
+                        "예를 들어:\n"
+                        "- **건성 피부**에 맞는 수분크림 추천해줘\n"
+                        "- **여드름** 고민인데 세럼 추천해줘\n"
+                        "- **지성 피부**에 맞는 선크림 알려줘\n\n"
+                        "피부 타입이나 고민을 알려주시면 딱 맞는 제품을 찾아드릴게요!"
+                    ),
+                    "summary": "", "observations": [], "recommendations": [],
+                    "products": [], "warnings": [], "citations": [],
+                    "intent": "ask_for_context", "room_title": None,
+                }
+            else:  # ask_for_category
+                result = {
+                    "chat_answer": (
+                        "어떤 종류의 제품을 찾고 계신가요? 😊\n\n"
+                        "예를 들어:\n"
+                        "- 수분크림\n- 세럼\n- 폼클렌징\n- 토너/스킨\n- 선크림\n- 로션\n\n"
+                        "원하시는 제품 종류를 알려주시면 올리브영에서 딱 맞는 제품을 찾아드릴게요!"
+                    ),
+                    "summary": "", "observations": [], "recommendations": [],
+                    "products": [], "warnings": [], "citations": [],
+                    "intent": "ask_for_category", "room_title": None,
+                }
+            if state.get("is_first_message"):
+                text = (state.get("user_text") or "").strip()
+                result["room_title"] = text[:18] + "…" if len(text) > 20 else text
+            updates["instant_response"] = result
+            return updates
+
+    # 1. 기존: 제품 추천 맥락 부족 역질문
     if route.needs_context_check:
-        if not _has_context(state["user_text"], user_profile, chat_history):
+        # 회원 DB 프로필에 피부타입이 있으면 역질문 스킵
+        profile_has_skin = bool(
+            user_profile
+            and (user_profile.get("skin_type_label") or user_profile.get("skin_concern"))
+        )
+        if profile_has_skin:
+            print("[CONTEXT] 회원 프로필에 피부 정보 있음 → 역질문 스킵", flush=True)
+        elif not _has_context(state["user_text"], user_profile, chat_history):
             print("[CONTEXT] 피부 맥락 부족 → 역질문 반환", flush=True)
             result = {
                 "chat_answer": (
@@ -147,7 +268,43 @@ def context_node(state: GraphState) -> GraphState:
             updates["instant_response"] = result
             return updates
 
-    # ── 2. 비로그인 전용 처리 ─────────────────────────────────
+    # 1-1. 비회원 ask_for_context/ask_for_category → 역질문 반환
+    # graph.py에서 ask_for_context가 즉시 종료되지 않으므로 여기서 처리
+    if is_guest and route.intent in ("ask_for_context", "ask_for_category"):
+        print(f"[CONTEXT] 비회원 {route.intent} → 역질문 반환", flush=True)
+        if route.intent == "ask_for_context":
+            result = {
+                "chat_answer": (
+                    "어떤 피부 타입이나 고민에 맞는 제품을 찾고 계신가요? 😊\n\n"
+                    "예를 들어:\n"
+                    "- **건성 피부**에 맞는 수분크림 추천해줘\n"
+                    "- **여드름** 고민인데 세럼 추천해줘\n"
+                    "- **지성 피부**에 맞는 선크림 알려줘\n\n"
+                    "피부 타입이나 고민을 알려주시면 딱 맞는 제품을 찾아드릴게요!"
+                ),
+                "summary": "", "observations": [], "recommendations": [],
+                "products": [], "warnings": [], "citations": [],
+                "intent": "ask_for_context", "room_title": None,
+            }
+        else:
+            result = {
+                "chat_answer": (
+                    "어떤 종류의 제품을 찾고 계신가요? 😊\n\n"
+                    "예를 들어:\n"
+                    "- 수분크림\n- 세럼\n- 폼클렌징\n- 토너/스킨\n- 선크림\n- 로션\n\n"
+                    "원하시는 제품 종류를 알려주시면 올리브영에서 딱 맞는 제품을 찾아드릴게요!"
+                ),
+                "summary": "", "observations": [], "recommendations": [],
+                "products": [], "warnings": [], "citations": [],
+                "intent": "ask_for_category", "room_title": None,
+            }
+        if state.get("is_first_message"):
+            text = (state.get("user_text") or "").strip()
+            result["room_title"] = text[:18] + "…" if len(text) > 20 else text
+        updates["instant_response"] = result
+        return updates
+
+    # 2. 비로그인 전용 처리
     if is_guest and route.intent not in _NO_ASK_INTENTS:
 
         # 2-1. 피부타입 미수집 시 역질문

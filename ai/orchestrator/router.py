@@ -151,12 +151,15 @@ _LLM_ROUTER_GUEST_PROMPT = """\
    - 이전 대화 맥락에서 어떤 주제를 논의 중이었는지 파악하여 해당 intent로 이어받기
    - 이전 맥락이 불명확하면 → "general_advice"
 4. "추천해줘" + 구체적 제품 카테고리(세럼, 크림, 토너 등) 있음 → "product_recommend"
-5. "추천해줘" + 피부 정보 있음 + 카테고리 없음 → "ask_for_category"
-6. "추천해줘" + 피부 정보 없음 + 카테고리 없음 → "ask_for_context"
-7. 성분 이름 언급 + 질문 → "ingredient_question"
-8. 피부 관리/습관/음식/일반 지식 → "general_advice"
-9. 피부와 전혀 무관 → "out_of_domain"
-10. 판단이 애매하면 "general_advice"로 분류 (보수적 처리)
+5. 성분 이름 + 제품 요청/보유 확인 표현("포함된거", "들어간거", "있어?", "추천") → "product_recommend" (⚠️ ingredient_question이 아님!)
+   예: "히알루론산 포함된거 있어?" → product_recommend (성분이 들어간 제품을 찾는 것)
+   예: "레티놀이 뭐야?" → ingredient_question (성분 자체에 대한 질문)
+6. "추천해줘" + 피부 정보 있음 + 카테고리 없음 → "ask_for_category"
+7. "추천해줘" + 피부 정보 없음 + 카테고리 없음 → "ask_for_context"
+8. 성분 이름 + 순수 질문("뭐야", "효과", "효능", "차이") → "ingredient_question"
+9. 피부 관리/습관/음식/일반 지식 → "general_advice"
+10. 피부와 전혀 무관 → "out_of_domain"
+11. 판단이 애매하면 "general_advice"로 분류 (보수적 처리)
 
 ⚠️ 주의사항:
 - "루틴 추천", "관리법 추천", "케어법 알려줘"는 제품 추천이 아니다. 반드시 routine_advice로 분류한다.
@@ -169,10 +172,13 @@ _LLM_ROUTER_GUEST_PROMPT = """\
 
 ## 응답 형식
 반드시 아래 JSON 형식으로만 응답. 다른 텍스트 없이 JSON만 출력:
-{{"intent": "<intent>", "reason": "<한국어 판단 근거 1줄>", "has_skin_context": <true/false>, "has_category": <true/false>}}
+{{"intent": "<intent>", "reason": "<한국어 판단 근거 1줄>", "has_skin_context": <true/false>, "has_category": <true/false>, "detected_ingredient": "<성분명 또는 빈 문자열>", "detected_brand": "<브랜드명 또는 빈 문자열>", "detected_category": "<제품 카테고리 또는 빈 문자열>"}}
 
 - has_skin_context: 사용자 메시지 또는 대화 이력에서 피부타입/고민 정보가 파악되는지
 - has_category: 제품 카테고리(크림, 세럼, 토너 등)가 특정되는지
+- detected_ingredient: 현재 메시지에서 언급된 화장품 성분명 (예: 히알루론산, 비타민C, 레티놀). 없으면 빈 문자열
+- detected_brand: 현재 메시지에서 언급된 화장품 브랜드명 (예: 토리든, 바닐라코, 이니스프리). 없으면 빈 문자열
+- detected_category: 현재 메시지에서 요청한 제품 카테고리 (예: 세럼, 크림, 선크림, 토너). 없으면 빈 문자열
 """
 
 
@@ -249,11 +255,14 @@ _LLM_ROUTER_MEMBER_PROMPT = """\
 ### 제품 추천 관련
 - 회원 프로필에 피부타입/고민이 있으면 has_skin_context=true로 판단
 - "추천해줘" + 구체적 제품 카테고리(세럼, 크림, 토너 등) 있음 → "product_recommend"
+- 성분 이름 + 제품 요청/보유 확인("포함된거", "들어간거", "있어?", "추천") → "product_recommend" (ingredient_question이 아님!)
+  예: "히알루론산 포함된거 있어?" → product_recommend
+  예: "레티놀이 뭐야?" → ingredient_question
 - "추천해줘" + 피부 정보 있음 + 카테고리 없음 → "ask_for_category"
 - "추천해줘" + 피부 정보 없음 + 카테고리 없음 → "ask_for_context"
 
 ### 일반 상담
-- 성분 이름 + 질문 → "ingredient_question"
+- 성분 이름 + 순수 질문("뭐야", "효과", "효능", "차이") → "ingredient_question"
 - 피부 관리/습관/음식/원인/이유 → "general_advice"
 - 피부과/치료/처방 → "medical_advice"
 - 피부와 전혀 무관 → "out_of_domain"
@@ -269,10 +278,13 @@ _LLM_ROUTER_MEMBER_PROMPT = """\
 
 ## 응답 형식
 반드시 아래 JSON만 출력:
-{{"intent": "<intent>", "reason": "<한국어 판단 근거 1줄>", "has_skin_context": <true/false>, "has_category": <true/false>}}
+{{"intent": "<intent>", "reason": "<한국어 판단 근거 1줄>", "has_skin_context": <true/false>, "has_category": <true/false>, "detected_ingredient": "<성분명 또는 빈 문자열>", "detected_brand": "<브랜드명 또는 빈 문자열>", "detected_category": "<제품 카테고리 또는 빈 문자열>"}}
 
 - has_skin_context: 메시지/대화이력/회원프로필에서 피부타입 또는 고민 정보가 있는지
 - has_category: 제품 카테고리(크림, 세럼, 토너 등)가 특정되는지
+- detected_ingredient: 현재 메시지에서 언급된 화장품 성분명 (예: 히알루론산, 비타민C, 레티놀). 없으면 빈 문자열
+- detected_brand: 현재 메시지에서 언급된 화장품 브랜드명 (예: 토리든, 바닐라코, 이니스프리). 없으면 빈 문자열
+- detected_category: 현재 메시지에서 요청한 제품 카테고리 (예: 세럼, 크림, 선크림, 토너). 없으면 빈 문자열
 """
 
 
@@ -331,6 +343,19 @@ def _parse_llm_response(raw: str) -> dict | None:
         return None
 
 
+def _extract_detected_keywords(result: dict) -> dict | None:
+    """
+    LLM 라우터 응답에서 detected_ingredient/brand/category를 추출합니다.
+    하나라도 비어 있지 않은 값이 있으면 dict 반환, 전부 빈 문자열이면 None 반환.
+    """
+    kw = {}
+    for key in ("ingredient", "brand", "category"):
+        val = (result.get(f"detected_{key}") or "").strip()
+        if val:
+            kw[key] = val
+    return kw if kw else None
+
+
 def _call_llm_router(system_prompt: str, user_payload: str) -> dict | None:
     """
     LLM 라우팅 공통 호출.
@@ -346,7 +371,7 @@ def _call_llm_router(system_prompt: str, user_payload: str) -> dict | None:
             ],
             temperature=0.0,
             response_format={"type": "json_object"},
-            max_tokens=200,
+            max_tokens=250,
         )
         raw = resp.choices[0].message.content or ""
         print(f"[LLM_ROUTER] raw: {raw}", flush=True)
@@ -361,10 +386,11 @@ def _call_llm_router(system_prompt: str, user_payload: str) -> dict | None:
 def _llm_decide_guest(
     user_text: str,
     chat_history: list | None = None,
-) -> RouteDecision | None:
+) -> tuple[RouteDecision, dict | None] | None:
     """
     비로그인 전용 LLM intent 분류.
     실패 시 None → 키워드 폴백.
+    성공 시 (RouteDecision, detected_keywords) tuple 반환.
     """
     t0 = time.perf_counter()
 
@@ -383,13 +409,14 @@ def _llm_decide_guest(
     reason = result.get("reason", "LLM 분류")
     has_skin_context = result.get("has_skin_context", False)
     has_category = result.get("has_category", False)
+    detected_keywords = _extract_detected_keywords(result)
 
     # 유효성 검증
     if intent not in _GUEST_ALLOWED_INTENTS:
         print(f"[LLM_ROUTER] 비로그인 허용되지 않은 intent '{intent}' → 폴백", flush=True)
         return None
 
-    # ── 피부타입/고민만 알려주는 메시지 감지 ──────────────────
+    # 피부타입/고민만 알려주는 메시지 감지
     # "나는 복합성이야", "지성이야", "여드름이 고민이야" 등
     # 이전 대화에서 역질문(피부타입 물어봄) 후 사용자가 답하는 패턴
     _SKIN_TYPE_DECLARE_KW = [
@@ -447,17 +474,20 @@ def _llm_decide_guest(
     elapsed = time.perf_counter() - t0
     print(
         f"[LLM_ROUTER] GUEST intent={intent} | ctx={has_skin_context} "
-        f"| cat={has_category} | {elapsed:.3f}s",
+        f"| cat={has_category} | kw={detected_keywords} | {elapsed:.3f}s",
         flush=True,
     )
 
-    return RouteDecision(
-        intent=intent,
-        needs_vision=flags["needs_vision"],
-        needs_rag=flags["needs_rag"],
-        needs_product=flags["needs_product"],
-        needs_context_check=needs_ctx,
-        reason=f"[LLM] {reason}",
+    return (
+        RouteDecision(
+            intent=intent,
+            needs_vision=flags["needs_vision"],
+            needs_rag=flags["needs_rag"],
+            needs_product=flags["needs_product"],
+            needs_context_check=needs_ctx,
+            reason=f"[LLM] {reason}",
+        ),
+        detected_keywords,
     )
 
 
@@ -469,7 +499,7 @@ def _llm_decide_member(
     has_images: bool,
     user_profile: dict | None,
     chat_history: list | None = None,
-) -> RouteDecision | None:
+) -> tuple[RouteDecision, dict | None] | None:
     """
     로그인 회원 전용 LLM intent 분류.
 
@@ -479,6 +509,7 @@ def _llm_decide_member(
     - 분석 intent 허용 (fast/deep/ingredient/history)
 
     실패 시 None → 키워드 폴백.
+    성공 시 (RouteDecision, detected_keywords) tuple 반환.
     """
     t0 = time.perf_counter()
 
@@ -505,13 +536,14 @@ def _llm_decide_member(
     reason = result.get("reason", "LLM 분류")
     has_skin_context = result.get("has_skin_context", False)
     has_category = result.get("has_category", False)
+    detected_keywords = _extract_detected_keywords(result)
 
     # 유효성 검증
     if intent not in _GUEST_ALLOWED_INTENTS:
         print(f"[LLM_ROUTER] 비로그인 허용되지 않은 intent '{intent}' → 폴백", flush=True)
         return None
 
-    # ── 피부타입/고민만 알려주는 메시지 감지 ──────────────────
+    # 피부타입/고민만 알려주는 메시지 감지
     # "나는 복합성이야", "지성이야", "여드름이 고민이야" 등
     # 이전 대화에서 역질문(피부타입 물어봄) 후 사용자가 답하는 패턴
     _SKIN_TYPE_DECLARE_KW = [
@@ -555,7 +587,7 @@ def _llm_decide_member(
         print(f"[LLM_ROUTER] 회원 허용되지 않은 intent '{intent}' → 폴백", flush=True)
         return None
 
-    # ── 분석 intent 후처리 ──────────────────────────────────
+    # 분석 intent 후처리
     # LLM이 분석 intent를 골랐지만 이미지가 없는 경우 → general_advice로 보정
     # (context_node 또는 llm_node에서 이미지 업로드 안내)
     _ANALYSIS_INTENTS = {"skin_analysis_fast", "skin_analysis_deep", "ingredient_analysis"}
@@ -570,7 +602,7 @@ def _llm_decide_member(
             intent = "general_advice"
             reason = "LLM: 분석 비교 요청이지만 이전 분석 이력 없음"
 
-    # ── 제품 추천 맥락 보정 ──────────────────────────────────
+    # 제품 추천 맥락 보정
     # DB 프로필에 피부 정보가 있으면 LLM 판단과 별개로 맥락 있음으로 처리
     profile_has_skin = bool(
         user_profile
@@ -597,17 +629,20 @@ def _llm_decide_member(
     elapsed = time.perf_counter() - t0
     print(
         f"[LLM_ROUTER] MEMBER intent={intent} | ctx={effective_skin_context} "
-        f"| cat={has_category} | img={has_images} | {elapsed:.3f}s",
+        f"| cat={has_category} | img={has_images} | kw={detected_keywords} | {elapsed:.3f}s",
         flush=True,
     )
 
-    return RouteDecision(
-        intent=intent,
-        needs_vision=flags["needs_vision"],
-        needs_rag=flags["needs_rag"],
-        needs_product=flags["needs_product"],
-        needs_context_check=needs_ctx,
-        reason=f"[LLM] {reason}",
+    return (
+        RouteDecision(
+            intent=intent,
+            needs_vision=flags["needs_vision"],
+            needs_rag=flags["needs_rag"],
+            needs_product=flags["needs_product"],
+            needs_context_check=needs_ctx,
+            reason=f"[LLM] {reason}",
+        ),
+        detected_keywords,
     )
 
 
@@ -817,35 +852,35 @@ def decide(
     user_id: int | None,
     user_profile: dict | None = None,
     chat_history: list | None = None,
-) -> RouteDecision:
+) -> tuple[RouteDecision, dict | None]:
     """
-    사용자 입력을 분석하여 RouteDecision을 반환합니다.
+    사용자 입력을 분석하여 (RouteDecision, detected_keywords) tuple을 반환합니다.
 
     처리 순서:
-    0. 프론트 분석 모드(analysis_type) → 무조건 우선
-    1. LLM 라우팅 시도
+    0. 프론트 분석 모드(analysis_type) → 무조건 우선 (키워드 없음)
+    1. LLM 라우팅 시도 → 성공 시 (RouteDecision, detected_keywords) 반환
        - 비로그인: _llm_decide_guest()
        - 로그인:   _llm_decide_member() (프로필+이미지 정보 포함)
-    2. LLM 실패 시 → 기존 키워드 폴백
+    2. LLM 실패 시 → 기존 키워드 폴백 (detected_keywords=None)
     """
 
-    # ── 0. 프론트 분석 모드 명시 (최우선) ────────────────────
+    # 0. 프론트 분석 모드 명시 (최우선)
     if analysis_type == "quick":
         if not user_id:
-            return RouteDecision("login_required", False, False, False, False, "비회원 분석 요청")
-        return RouteDecision("skin_analysis_fast", True, True, False, False, "빠른 분석 모드")
+            return RouteDecision("login_required", False, False, False, False, "비회원 분석 요청"), None
+        return RouteDecision("skin_analysis_fast", True, True, False, False, "빠른 분석 모드"), None
 
     if analysis_type == "detailed":
         if not user_id:
-            return RouteDecision("login_required", False, False, False, False, "비회원 분석 요청")
-        return RouteDecision("skin_analysis_deep", True, True, False, False, "정밀 분석 모드")
+            return RouteDecision("login_required", False, False, False, False, "비회원 분석 요청"), None
+        return RouteDecision("skin_analysis_deep", True, True, False, False, "정밀 분석 모드"), None
 
     if analysis_type == "ingredient":
         if not user_id:
-            return RouteDecision("login_required", False, False, False, False, "비회원 성분분석 요청")
-        return RouteDecision("ingredient_analysis", True, True, False, False, "성분 분석 모드")
+            return RouteDecision("login_required", False, False, False, False, "비회원 성분분석 요청"), None
+        return RouteDecision("ingredient_analysis", True, True, False, False, "성분 분석 모드"), None
 
-    # ── 1. LLM 라우팅 시도 ──────────────────────────────────
+    # 1. LLM 라우팅 시도
     if user_id is None:
         # 비로그인
         llm_result = _llm_decide_guest(user_text, chat_history)
@@ -859,9 +894,10 @@ def decide(
         )
 
     if llm_result is not None:
+        # llm_result = (RouteDecision, detected_keywords)
         return llm_result
 
-    # ── 2. LLM 실패 → 키워드 폴백 ──────────────────────────
+    # 2. LLM 실패 → 키워드 폴백 (detected_keywords=None)
     print(f"[ROUTER] LLM 실패 → 키워드 폴백 (user_id={'guest' if user_id is None else user_id})", flush=True)
 
 
@@ -870,11 +906,11 @@ def decide(
     text = _normalize_category((user_text or "").lower().strip())
     has_history = bool(chat_history and len(chat_history) >= 2)
 
-    # ── 인사/잡담 ────────────────────────────────────────────
+    # 인사/잡담
     if _has_any(text, _GREETING_KW) and not _has_any(text, _SKIN_DOMAIN_KW):
-        return RouteDecision("greeting", False, False, False, False, "인사/잡담")
+        return RouteDecision("greeting", False, False, False, False, "인사/잡담"), None
 
-    # ── 도메인 밖 차단 ───────────────────────────────────────
+    # 도메인 밖 차단
     _STRONG_OOD_KW = [
         "맛집", "레시피", "요리", "여행", "관광", "숙박", "호텔",
         "주식", "코인", "투자", "환율", "부동산",
@@ -885,9 +921,9 @@ def decide(
         "스포츠", "축구", "야구", "날씨",
     ]
     if _has_any(text, _STRONG_OOD_KW) and not _has_any(text, _SKIN_DOMAIN_KW):
-        return RouteDecision("out_of_domain", False, False, False, False, "도메인 외 질문")
+        return RouteDecision("out_of_domain", False, False, False, False, "도메인 외 질문"), None
 
-    # ── 피부 도메인 확인 ─────────────────────────────────────
+    # 피부 도메인 확인
     _PRODUCT_INTENT_KW = [
         "추천", "제품", "알려줘", "골라줘", "받고싶어", "사고싶어",
         "써보고 싶", "사보고 싶", "뭐써", "뭐쓰", "뭐 써", "뭐 발라",
@@ -924,33 +960,33 @@ def decide(
         print("[ROUTER] 팔로우업 발화 감지 → 맥락 이어받기", flush=True)
 
     if not is_skin:
-        return RouteDecision("out_of_domain", False, False, False, False, "피부 도메인 키워드 없음")
+        return RouteDecision("out_of_domain", False, False, False, False, "피부 도메인 키워드 없음"), None
 
     if _has_any(text, _STRONG_OOD_KW) and not _has_any(text, _SKIN_DOMAIN_KW) and not has_product_domain:
-        return RouteDecision("out_of_domain", False, False, False, False, "비피부 도메인 확인")
+        return RouteDecision("out_of_domain", False, False, False, False, "비피부 도메인 확인"), None
 
-    # ── 텍스트 분석 요청 ─────────────────────────────────────
+    # 텍스트 분석 요청
     if _has_any(text, _ANALYSIS_REQUEST_KW):
         if not user_id:
-            return RouteDecision("login_required", False, False, False, False, "비회원 분석 요청(텍스트)")
-        return RouteDecision("general_advice", False, True, False, False, "분석 요청 → 이미지 업로드 안내")
+            return RouteDecision("login_required", False, False, False, False, "비회원 분석 요청(텍스트)"), None
+        return RouteDecision("general_advice", False, True, False, False, "분석 요청 → 이미지 업로드 안내"), None
 
-    # ── 의료 질문 ────────────────────────────────────────────
+    # 의료 질문
     if _has_any(text, _MEDICAL_KW):
-        return RouteDecision("medical_advice", False, True, False, False, "의료 관련 질문")
+        return RouteDecision("medical_advice", False, True, False, False, "의료 관련 질문"), None
 
-    # ── 이전 분석 비교 ───────────────────────────────────────
+    # 이전 분석 비교
     if _has_any(text, _HISTORY_KW) and user_id:
-        return RouteDecision("history_compare", False, True, False, False, "분석 이력 비교")
+        return RouteDecision("history_compare", False, True, False, False, "분석 이력 비교"), None
 
-    # ── 루틴 + 제품 ──────────────────────────────────────────
+    # 루틴 + 제품
     _NON_PRODUCT_RECOMMEND_KW = [
         "음식", "식품", "영양", "먹", "식단", "채소", "과일", "비타민",
         "생활", "습관", "운동", "수면", "물", "수분섭취",
         "이유", "원인", "왜", "어떻게", "설명",
     ]
     if _has_any(text, _NON_PRODUCT_RECOMMEND_KW):
-        return RouteDecision("general_advice", False, True, False, False, "음식/생활 관련 일반 상담")
+        return RouteDecision("general_advice", False, True, False, False, "음식/생활 관련 일반 상담"), None
 
     has_routine        = _has_any(text, _ROUTINE_KW)
     has_category       = _has_any(text, _PRODUCT_CATEGORY_KW)
@@ -983,15 +1019,15 @@ def decide(
             return RouteDecision(
                 "routine_and_product", False, True, True,
                 not ctx_ok, "루틴 + 제품 복합 요청"
-            )
-        return RouteDecision("routine_advice", False, True, False, False, "루틴 관련 질문")
+            ), None
+        return RouteDecision("routine_advice", False, True, False, False, "루틴 관련 질문"), None
 
     if has_product_intent:
         ctx_ok = _has_context(text, user_profile, chat_history) or has_history
         return RouteDecision(
             "product_recommend", False, False, True,
             not ctx_ok, "제품 추천 요청"
-        )
+        ), None
 
     if has_vague:
         history_category = _extract_category_from_history(chat_history)
@@ -1001,14 +1037,14 @@ def decide(
             return RouteDecision(
                 "product_recommend", False, False, True,
                 not ctx_ok, f"맥락 이어받기 → {history_category} 제품 추천"
-            )
+            ), None
         return RouteDecision(
             "ask_for_category", False, False, False, False, "카테고리 미특정 → 역질문"
-        )
+        ), None
 
-    # ── 성분 질문 ────────────────────────────────────────────
+    # 성분 질문
     if _has_any(text, _INGREDIENT_QUESTION_KW):
-        return RouteDecision("ingredient_question", False, True, False, False, "성분 관련 질문")
+        return RouteDecision("ingredient_question", False, True, False, False, "성분 관련 질문"), None
 
-    # ── 기본: 일반 상담 ──────────────────────────────────────
-    return RouteDecision("general_advice", False, True, False, False, "일반 피부 상담")
+    # 기본: 일반 상담
+    return RouteDecision("general_advice", False, True, False, False, "일반 피부 상담"), None
