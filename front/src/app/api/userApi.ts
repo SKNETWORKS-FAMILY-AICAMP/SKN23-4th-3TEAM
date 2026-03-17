@@ -145,3 +145,23 @@ export async function fetchKeywords(type?: string): Promise<KeywordItem[]> {
 
     return res.json() as Promise<KeywordItem[]>;
 }
+
+/**
+ * 닉네임 중복 확인. (인증 불필요)
+ * 
+ * GET /users/check/nickname?nickname={nickname}
+ *
+ * @param nickname  중복 확인할 닉네임
+ */
+export async function checkNickname(nickname: string): Promise<{ available: boolean }> {
+    const res = await fetch(
+        `${API_BASE}/users/check/nickname?nickname=${encodeURIComponent(nickname)}`
+    );
+
+    if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error((data as { detail?: string }).detail ?? `서버 오류 (${res.status})`);
+    }
+
+    return res.json() as Promise<{ available: boolean }>;
+}
