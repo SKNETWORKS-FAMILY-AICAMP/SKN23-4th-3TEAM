@@ -5,7 +5,7 @@ import { Button } from "@/app/components/ui/button";
 import { useState, useEffect, useRef } from "react";
 import { Loading } from "@/app/components/ui/loading";
 import { motion, AnimatePresence } from "motion/react";
-import { User, Link2, MessageCircleQuestion, Check, ChevronRight, Loader2, Plus, X, UserX } from "lucide-react";
+import { User, Link2, MessageCircleQuestion, Check, ChevronRight, ChevronLeft, Loader2, Plus, X, UserX } from "lucide-react";
 import { fetchCurrentUser, updateCurrentUser, fetchKeywords, fetchSocialLinks, KeywordItem } from "@/app/api/userApi";
 // import { fetchAllQna, fetchMyQna, createQna, updateQnaAnswer } from "@/app/api/qnaApi";
 
@@ -962,33 +962,33 @@ export function SettingsPage() {
 
                                    {/* 페이지네이션 */}
                                         {totalPages > 1 && (
-                                            <div className="flex justify-center items-center gap-1.5 pt-1 flex-wrap">
+                                            <div className="flex items-center justify-center gap-1 mt-6">
                                                 <button
                                                     type="button"
-                                                    disabled={currentPage === 1}
                                                     onClick={() => setCurrentPage((prev) => prev - 1)}
-                                                    className="w-9 h-9 rounded-lg border border-gray-200 bg-white text-gray-500 flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed hover:border-onyou hover:text-onyou transition-colors"
+                                                    disabled={currentPage === 1}
+                                                    className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-[#6BA32E] hover:bg-[#E8F5D0] disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                                                 >
-                                                    {"<"}
+                                                    <ChevronLeft className="w-4 h-4" />
                                                 </button>
 
                                                 {getPageNumbers().map((page, idx) =>
                                                     page === "..." ? (
                                                         <span
                                                             key={`ellipsis-${idx}`}
-                                                            className="w-9 h-9 flex items-center justify-center text-sm text-gray-400"
+                                                            className="w-8 h-8 flex items-center justify-center text-xs text-gray-400"
                                                         >
-                                                            ...
+                                                            ···
                                                         </span>
                                                     ) : (
                                                         <button
                                                             key={page}
                                                             type="button"
                                                             onClick={() => setCurrentPage(Number(page))}
-                                                            className={`w-9 h-9 rounded-lg text-sm font-medium flex items-center justify-center transition-colors ${
+                                                            className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs font-medium transition-all ${
                                                                 currentPage === page
-                                                                    ? "bg-onyou text-white"
-                                                                    : "bg-white border border-gray-200 text-gray-600 hover:border-onyou hover:text-onyou"
+                                                                    ? "bg-[#85C13D] text-white"
+                                                                    : "text-gray-500 hover:text-[#6BA32E] hover:bg-[#E8F5D0]"
                                                             }`}
                                                         >
                                                             {page}
@@ -998,11 +998,11 @@ export function SettingsPage() {
 
                                                 <button
                                                     type="button"
-                                                    disabled={currentPage === totalPages}
                                                     onClick={() => setCurrentPage((prev) => prev + 1)}
-                                                    className="w-9 h-9 rounded-lg border border-gray-200 bg-white text-gray-500 flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed hover:border-onyou hover:text-onyou transition-colors"
+                                                    disabled={currentPage === totalPages}
+                                                    className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-[#6BA32E] hover:bg-[#E8F5D0] disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                                                 >
-                                                    {">"}
+                                                    <ChevronRight className="w-4 h-4" />
                                                 </button>
                                             </div>
                                         )}

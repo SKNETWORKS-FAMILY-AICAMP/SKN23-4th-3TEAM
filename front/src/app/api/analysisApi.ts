@@ -39,13 +39,14 @@ export interface SkinAnalysisData {
     skin_type?       : string;
     skin_type_detail?: string;
     metrics?         : SkinMetrics;
-    factorial?       : string[];
 }
 export interface AnalysisResult {
     analysis_id   : number;
     user_id       : number;
     image_url     : string[];
     model_type    : string;
+    skin_score    : number;
+    factorial?    : string[];
     analysis_data : SkinAnalysisData;
     created_at    : string;
 }

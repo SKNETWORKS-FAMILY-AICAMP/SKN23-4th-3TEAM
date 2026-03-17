@@ -27,18 +27,16 @@ function getToken(): string {
 export interface WishlistItem {
     wish_id             : number;
     user_id             : number;
-    product_vector_id   : string;
     product_name        : string;
-    product_description : string | null;
+    product_url         : string | null;
     message_id          : number | null;
     added_at            : string;
 }
 export interface WishlistAddBody {
     user_id             : number;
-    product_vector_id   : string;
     product_name        : string;
     message_id         ?: number | null;
-    product_description?: string | null;
+    product_url?: string | null;    
 }
 
 // ─────────────────────────────────────────────

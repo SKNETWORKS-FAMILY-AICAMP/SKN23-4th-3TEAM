@@ -9,7 +9,7 @@ import { uploadImage } from "@/app/api/uploadApi";
 import { useState, useRef, useEffect } from "react";
 import { fetchCurrentUser } from "@/app/api/userApi";
 import { Loading } from "@/app/components/ui/loading";
-import { addToWishlist } from "@/app/api/wishlistApi";
+import { addToWishlist, fetchWishlist } from "@/app/api/wishlistApi";
 import { motion, AnimatePresence } from "motion/react";
 import ChatLoading from "@/assets/animations/logo_pop_1.webm";
 import LogoTextWebm from "@/assets/animations/logo_text.webm";
@@ -328,11 +328,10 @@ export function ChatPage() {
             const goodsNo = new URL(link.url).searchParams.get("goodsNo") ?? link.name.slice(0, 50);
 
             await addToWishlist({
-                user_id             : cachedUserIdRef.current,
-                product_vector_id   : goodsNo,
-                product_name        : link.name,
-                message_id          : msgId,
-                product_description : link.url,
+                user_id      : cachedUserIdRef.current,
+                product_name : link.name,
+                product_url  : link.url,
+                message_id   : msgId,
             });
 
             setWishedUrls((prev) => new Set(prev).add(link.url));
@@ -438,6 +437,23 @@ export function ChatPage() {
     useEffect(() => {
         setUploadSlots(getUploadSlots(analysisType));
     }, [analysisType]);
+
+    // 새로 고침시 db에 저장된 product_ur 기준으로 채팅방에서 하트 유지
+    useEffect(() => {
+    if (!isLoggedIn) return;
+
+    fetchWishlist()
+        .then((items) => {
+            const urls = items
+                .map((item) => item.product_url)
+                .filter((url): url is string => !!url);
+
+            setWishedUrls(new Set(urls));
+        })
+        .catch((err) => {
+            console.error("위시리스트 조회 실패:", err);
+        });
+    }, [isLoggedIn]);
 
     // ── Handlers (새 채팅 - 이미지 업로드 슬롯) ──────────────────────────
     const handleUpload = (slotId: string, file: File) => {
