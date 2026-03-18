@@ -35,19 +35,19 @@ class ProductItem(BaseModel):
 
 
 class FinalReport(BaseModel):
-    # ── 프론트 메인 표시 ──────────────────────────
+    # 프론트 메인 표시
     chat_answer: str = ""               # 사용자에게 보여주는 최종 답변 (Markdown)
 
-    # ── 구조화 데이터 (추후 프론트 활용 가능) ─────
+    # 구조화 데이터 (추후 프론트 활용 가능)
     summary: str = ""
     observations: List[Observation] = []
     recommendations: List[Recommendation] = []
     products: List[ProductItem] = []
 
-    # ── 메타 ──────────────────────────────────────
+    # 메타
     intent: str = ""                    # 분류된 intent
     warnings: List[str] = []
     citations: List[Citation] = []
 
-    # ── 채팅방 제목 (첫 메시지일 때만 채워짐) ────
+    # 채팅방 제목 (첫 메시지일 때만 채워짐)
     room_title: Optional[str] = None

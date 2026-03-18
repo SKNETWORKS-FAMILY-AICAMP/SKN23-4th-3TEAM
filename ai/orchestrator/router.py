@@ -434,7 +434,7 @@ def _llm_decide_guest(
         and (_has_any(text_lower, _SKIN_TYPE_DECLARE_KW) or _has_any(text_lower, _CONCERN_DECLARE_KW))
     )
 
-    if is_type_declaration and intent in ("product_recommend", "ask_for_category", "ask_for_context"):
+    if is_type_declaration:
         # 이전 대화 맥락을 확인해서 적절한 intent로 리다이렉트
         prev_intent = None
         if chat_history:
@@ -443,16 +443,17 @@ def _llm_decide_guest(
                 if "루틴" in content:
                     prev_intent = "routine_advice"
                     break
-                if any(kw in content for kw in ["추천", "제품", "크림", "세럼", "토너"]):
+                if any(kw in content for kw in ["추천", "제품", "크림", "세럼", "토너", "폼클", "클렌징", "선크림", "로션", "앰플"]):
                     prev_intent = "product_recommend"
                     break
                 if any(kw in content for kw in ["관리", "케어", "방법", "어떻게"]):
                     prev_intent = "general_advice"
                     break
 
-        intent = prev_intent or "general_advice"
-        reason = f"피부타입 선언 → 이전 맥락 기반 '{intent}'으로 전환"
-        print(f"[LLM_ROUTER] 피부타입 선언 감지 → {intent}", flush=True)
+        if prev_intent:
+            intent = prev_intent
+            reason = f"피부타입 선언 → 이전 맥락 기반 '{intent}'으로 전환"
+            print(f"[LLM_ROUTER] 피부타입 선언 감지 → {intent}", flush=True)
 
     # 제품 추천 맥락 부족 → 역질문 보정
     elif intent == "product_recommend":
@@ -561,7 +562,7 @@ def _llm_decide_member(
         and (_has_any(text_lower, _SKIN_TYPE_DECLARE_KW) or _has_any(text_lower, _CONCERN_DECLARE_KW))
     )
 
-    if is_type_declaration and intent in ("product_recommend", "ask_for_category", "ask_for_context"):
+    if is_type_declaration:
         # 이전 대화 맥락을 확인해서 적절한 intent로 리다이렉트
         prev_intent = None
         if chat_history:
@@ -570,16 +571,17 @@ def _llm_decide_member(
                 if "루틴" in content:
                     prev_intent = "routine_advice"
                     break
-                if any(kw in content for kw in ["추천", "제품", "크림", "세럼", "토너"]):
+                if any(kw in content for kw in ["추천", "제품", "크림", "세럼", "토너", "폼클", "클렌징", "선크림", "로션", "앰플"]):
                     prev_intent = "product_recommend"
                     break
                 if any(kw in content for kw in ["관리", "케어", "방법", "어떻게"]):
                     prev_intent = "general_advice"
                     break
 
-        intent = prev_intent or "general_advice"
-        reason = f"피부타입 선언 → 이전 맥락 기반 '{intent}'으로 전환"
-        print(f"[LLM_ROUTER] 피부타입 선언 감지 → {intent}", flush=True)
+        if prev_intent:
+            intent = prev_intent
+            reason = f"피부타입 선언 → 이전 맥락 기반 '{intent}'으로 전환"
+            print(f"[LLM_ROUTER] 피부타입 선언 감지 → {intent}", flush=True)
 
 
     # 유효성 검증

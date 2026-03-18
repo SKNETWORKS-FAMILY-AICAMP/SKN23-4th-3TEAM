@@ -149,7 +149,10 @@ _PRODUCT_TYPE_QUERY = {
     "수분크림": "수분 크림",
     "보습크림": "보습 크림",
     "선크림": "선크림",
+    "썬크림": "선크림",
+    "선블록": "선크림",
     "아이크림": "아이크림",
+    "눈크림": "아이크림",
     "젤크림": "젤크림",
     "클렌징오일": "클렌징 오일",
     "클렌징 오일": "클렌징 오일",
@@ -157,17 +160,25 @@ _PRODUCT_TYPE_QUERY = {
     "폼클렌징": "폼 클렌저",
     "폼 클렌징": "폼 클렌저",
     "폼클렌저": "폼 클렌저",
+    "폼클": "폼 클렌저",
+    "폼클린저": "폼 클렌저",
     "크림": "크림",
     "세럼": "세럼",
+    "써럼": "세럼",
     "에센스": "에센스",
     "토너": "토너 스킨",
+    "스킨": "토너 스킨",
     "클렌저": "폼 클렌저",
     "클렌징": "폼 클렌저",
     "세안": "폼 클렌저",
     "세안제": "폼 클렌저",
     "마스크": "마스크팩",
+    "마스크팩": "마스크팩",
+    "시트마스크": "마스크팩",
     "로션": "로션",
+    "로숀": "로션",
     "앰플": "앰플",
+    "엠플": "앰플",
     "미스트": "미스트",
     "필링": "필링 패드",
     "패드": "패드",
@@ -245,7 +256,9 @@ def _build_oliveyoung_query(
             if ingredient:
                 parts.append(ingredient)
             if category:
-                parts.append(category)
+                # 기존 로직과 동일하게 카테고리 매핑 적용 (폼클렌징→폼 클렌저 등)
+                category_mapped = _PRODUCT_TYPE_QUERY.get(category, category)
+                parts.append(category_mapped)
             direct_query = " ".join(parts)
             print(f"[oliveyoung] LLM 키워드 검색: '{direct_query}'", flush=True)
             return direct_query
@@ -365,13 +378,15 @@ def _build_oliveyoung_query(
         direct_query = " ".join(parts).strip()
         print(f"[oliveyoung] 대화 맥락 기반 검색: '{direct_query}'", flush=True)
         return direct_query
-    # 1. 제품 카테고리 추출
+    # 1. 제품 카테고리 추출 (현재 입력 우선, 없으면 히스토리)
     category_query = product_type_hint
     if not category_query:
         for key, val in _PRODUCT_TYPE_QUERY.items():
             if key in user_text:
                 category_query = val
                 break
+    if not category_query and history_category:
+        category_query = history_category
 
     # 2. 고민 키워드 추출 (질문 + 프로필)
     concern_text = user_text
@@ -588,17 +603,19 @@ def search_products_for_context(
     # 카테고리 필터링: 사용자가 "로션", "세럼" 등 카테고리를 명시했으면
     # 해당 카테고리 제품만 우선 선별 (결과가 너무 적으면 필터 해제)
     _CATEGORY_FILTER_KW = {
+        "선크림": ["선크림", "선스크린", "썬크림", "sun", "spf", "자외선"],
+        "수분크림": ["수분크림", "수분 크림"],
+        "아이크림": ["아이크림", "눈크림", "eye cream"],
+        "클렌저": ["클렌저", "클렌징", "폼", "cleanser", "세안"],
         "크림": ["크림", "cream"],
         "로션": ["로션", "lotion"],
         "세럼": ["세럼", "serum"],
         "토너": ["토너", "토닉", "스킨", "toner"],
         "에센스": ["에센스", "essence"],
-        "선크림": ["선크림", "선스크린", "sun", "spf", "자외선"],
         "앰플": ["앰플", "ampoule"],
         "미스트": ["미스트", "mist"],
         "마스크팩": ["마스크", "팩", "mask"],
         "패드": ["패드", "pad"],
-        "클렌저": ["클렌저", "클렌징", "폼", "cleanser", "세안"],
         "오일": ["오일", "oil"],
     }
     user_text_lower = (user_text or "").lower()
@@ -619,6 +636,39 @@ def search_products_for_context(
             candidates = filtered
         else:
             print(f"[oliveyoung] 카테고리 필터 '{requested_category}' 결과 없음 → 필터 해제", flush=True)
+
+    # 후보가 부족하면 카테고리만으로 보충 검색
+    if len(candidates) < max_products and requested_category:
+        filter_kws = _CATEGORY_FILTER_KW.get(requested_category, [])
+        # 카테고리만으로 넓게 검색 (피부타입/고민 제외)
+        broad_query = _PRODUCT_TYPE_QUERY.get(requested_category, requested_category)
+        if broad_query != query:
+            print(f"[oliveyoung] 후보 부족({len(candidates)}개) → 보충 검색: '{broad_query}'", flush=True)
+            raw2 = _cached_tavily_search(broad_query, max_results=10)
+            for url, title, content in raw2:
+                if len(candidates) >= max_products:
+                    break
+                if not _is_product_url(url):
+                    continue
+                clean_url = _clean_url(url)
+                if clean_url in seen_urls:
+                    continue
+                display_name = _extract_display_name({"title": title, "url": url, "content": content})
+                if not display_name or len(display_name) < 10:
+                    continue
+                if not _is_skincare_product(display_name):
+                    continue
+                # 카테고리 필터 적용
+                if filter_kws and not any(kw in display_name.lower() for kw in filter_kws):
+                    continue
+                seen_urls.add(clean_url)
+                candidates.append({
+                    "name": display_name,
+                    "display_name": display_name,
+                    "why": "",
+                    "oliveyoung_url": clean_url,
+                    "evidence_source_id": "",
+                })
 
     # 후보 중 랜덤 샘플링 → 매번 다른 제품 조합
     if len(candidates) > max_products:
