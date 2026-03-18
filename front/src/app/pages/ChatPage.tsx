@@ -15,6 +15,7 @@ import ChatLoading from "@/assets/animations/logo_pop_1.webm";
 import LogoTextWebm from "@/assets/animations/logo_text.webm";
 import { X, ZoomIn, ImagePlus, ChevronDown, Lock, ExternalLink, Heart, Loader2 } from "lucide-react";
 import { createChatRoom, fetchMessages, sendMessage, sendGuestMessage, type ChatMessage } from "@/app/api/chatApi";
+import { checkTodayDetailedAnalysis } from "@/app/api/analysisApi";
 
 type AnalysisType = "default" | "simple" | "detailed" | "ingredient";
 
@@ -47,12 +48,14 @@ const ANALYSIS_OPTIONS = [
     { value: "simple",      label: "빠른 분석" },
     { value: "detailed",    label: "정밀 분석" },
     { value: "ingredient",  label: "성분 분석" },
+    { value: "personal",  label: "퍼스널 컬러 분석" },
 ];
 
 const ANALYSIS_HINTS: Record<string, string> = {
     simple: "얼굴 정면 1장으로 빠른 피부 상태 분석",
     detailed: "정면·좌·우측 3장으로 정밀 피부 분석",
     ingredient: "화장품 성분표 1장으로 성분 안전성 분석",
+    personal: "나도 몰랐던 내 퍼스널 컬러는?",
 };
 
 const getUploadSlots = (type: AnalysisType): UploadSlot[] => {
@@ -273,6 +276,23 @@ export function ChatPage() {
         toastTimerRef.current = setTimeout(() => setShowAnalysisToast(false), 3000);
     };
 
+
+    // llm 파트 마무리 전까지 봉인 jsw 0318 정밀분석(프론트)
+    // const [showDetailedLimitToast, setShowDetailedLimitToast] = useState(false);
+    // const detailedLimitToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    // const triggerDetailedLimitToast = () => {
+    //     if (detailedLimitToastTimerRef.current) {
+    //         clearTimeout(detailedLimitToastTimerRef.current);
+    //     }
+
+    //     setShowDetailedLimitToast(true);
+
+    //     detailedLimitToastTimerRef.current = setTimeout(() => {
+    //         setShowDetailedLimitToast(false);
+    //     }, 3000);
+    // };
+
     // 위시리스트 state
     const [wishedUrls, setWishedUrls] = useState<Set<string>>(new Set());
     const [wishingUrls, setWishingUrls] = useState<Set<string>>(new Set());
@@ -440,19 +460,19 @@ export function ChatPage() {
 
     // 새로 고침시 db에 저장된 product_ur 기준으로 채팅방에서 하트 유지
     useEffect(() => {
-    if (!isLoggedIn) return;
+        if (!isLoggedIn) return;
 
-    fetchWishlist()
-        .then((items) => {
-            const urls = items
-                .map((item) => item.product_url)
-                .filter((url): url is string => !!url);
+        fetchWishlist()
+            .then((items) => {
+                const urls = items
+                    .map((item) => item.product_url)
+                    .filter((url): url is string => !!url);
 
-            setWishedUrls(new Set(urls));
-        })
-        .catch((err) => {
-            console.error("위시리스트 조회 실패:", err);
-        });
+                setWishedUrls(new Set(urls));
+            })
+            .catch((err) => {
+                console.error("위시리스트 조회 실패:", err);
+            });
     }, [isLoggedIn]);
 
     // ── Handlers (새 채팅 - 이미지 업로드 슬롯) ──────────────────────────
@@ -471,10 +491,51 @@ export function ChatPage() {
     };
 
     const canSend = (input.trim().length > 0 || uploadSlots.some((s) => s.preview)) && !isSending;
+    
+    // llm 파트 마무리 전까지 봉인 jsw 0318 정밀분석(프론트)
+    // const handleSelectAnalysisType = async (type: AnalysisType) => {
+    //     if (type !== "detailed") {
+    //         setAnalysisType(type);
+    //         setAnalysisDropdownOpen(false);
+    //         return;
+    //     }
 
+    //     try {
+    //         const result = await checkTodayDetailedAnalysis();
+
+    //         if (!result.available) {
+    //             setAnalysisDropdownOpen(false);
+    //             triggerDetailedLimitToast();
+    //             return;
+    //         }
+
+    //         setAnalysisType("detailed");
+    //         setAnalysisDropdownOpen(false);
+    //     } catch (err) {
+    //         console.error("정밀 분석 가능 여부 확인 실패:", err);
+    //         alert("정밀 분석 가능 여부를 확인하지 못했습니다.");
+    //         setAnalysisDropdownOpen(false);
+    //     }
+    // };
     // ── 메시지 전송 ───────────────────────────────────────────────────────
     const handleSend = async () => {
         if (!canSend) return;
+
+        // llm 파트 마무리 전까지 봉인 jsw 0318 정밀분석(프론트)
+        // if (isLoggedIn && analysisType === "detailed") {
+        //     try {
+        //         const result = await checkTodayDetailedAnalysis();
+
+        //         if (!result.available) {
+        //             triggerDetailedLimitToast();
+        //             return;
+        //         }
+        //     } catch (err) {
+        //         console.error("정밀 분석 가능 여부 확인 실패:", err);
+        //         alert("정밀 분석 가능 여부를 확인하지 못했습니다.");
+        //         return;
+        //     }
+        // }
 
         const trimmedInput      = input.trim();
         const previews          = uploadSlots.filter((s) => s.preview).map((s) => s.preview!);
@@ -926,6 +987,7 @@ export function ChatPage() {
                                                 <button
                                                     key={opt.value}
                                                     onClick={() => { setAnalysisType(opt.value as AnalysisType); setAnalysisDropdownOpen(false); }}
+                                                    // onClick={() => handleSelectAnalysisType(opt.value as AnalysisType)} llm 파트 마무리 전까지 봉인 jsw 0318 정밀분석(프론트)
                                                     className={`w-full text-left px-4 py-2.5 text-xs font-medium transition-colors cursor-pointer ${
                                                         analysisType === opt.value ? "bg-[#E8F5D0] text-[#4A7A1E]" : "text-gray-700 hover:bg-gray-50"
                                                     }`}
@@ -1063,6 +1125,24 @@ export function ChatPage() {
                     </motion.div>
                 )}
             </AnimatePresence>
+            {/* // llm 파트 마무리 전까지 봉인 jsw 0318 정밀분석(프론트) */}
+            {/* <AnimatePresence>
+            {showDetailedLimitToast && (
+                <motion.div
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 16 }}
+                    transition={{ duration: 0.2 }}
+                    className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-4 py-3 rounded-2xl shadow-lg text-sm text-white bg-[#1F2937]"
+                    style={{ minWidth: "260px", maxWidth: "340px" }}
+                >
+                    <Lock className="w-4 h-4 flex-shrink-0 text-onyou" />
+                    <span className="flex-1 text-xs leading-relaxed">
+                        정밀 분석은 <strong>하루에 1번만</strong> 가능합니다.
+                    </span>
+                </motion.div>
+            )}
+        </AnimatePresence> */}
         </div>
     );
 }

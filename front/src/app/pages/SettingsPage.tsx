@@ -6,7 +6,7 @@ import { useState, useEffect, useRef } from "react";
 import { Loading } from "@/app/components/ui/loading";
 import { motion, AnimatePresence } from "motion/react";
 import { User, Link2, MessageCircleQuestion, Check, ChevronRight, ChevronLeft, Loader2, Plus, X, UserX } from "lucide-react";
-import { fetchCurrentUser, updateCurrentUser, fetchKeywords, fetchSocialLinks, KeywordItem } from "@/app/api/userApi";
+import { fetchCurrentUser, updateCurrentUser, fetchKeywords, fetchSocialLinks, KeywordItem, checkNickname } from "@/app/api/userApi";
 // import { fetchAllQna, fetchMyQna, createQna, updateQnaAnswer } from "@/app/api/qnaApi";
 
 /** API 응답이 없을 때 사용할 피부 타입 폴백 목록 -> 필요한가..? */
@@ -128,6 +128,15 @@ export function SettingsPage() {
     const [isWithdrawing, setIsWithdrawing] = useState(false);
     const [withdrawError, setWithdrawError] = useState<string | null>(null);
     
+
+    // 닉네임 중복확인
+    const [originalNickname, setOriginalNickname] = useState("");
+    const [nicknameChecked, setNicknameChecked] = useState(false);
+    const [nicknameAvailable, setNicknameAvailable] = useState<boolean | null>(null);
+    const [nicknameError, setNicknameError] = useState<string | null>(null);
+    const [isCheckingNickname, setIsCheckingNickname] = useState(false);
+    const [nicknameCheckTouched, setNicknameCheckTouched] = useState(false);
+
     // ─── 사용자 정보 + skin_type 키워드 목록 동시 조회 ───
     useEffect(() => {
         setIsLoadingUser(true);
@@ -143,6 +152,9 @@ export function SettingsPage() {
                 setEmail(user.email);
                 setProfileImageUrl(user.profile_image_url ?? null);
                 setNickname(user.nickname ?? "");
+                setOriginalNickname(user.nickname ?? "");
+                setNicknameChecked(true);
+                setNicknameAvailable(true);
                 setAge(user.age?.toString() ?? "");
                 setGender(user.gender ? (GENDER_LABEL[user.gender] ?? "") : "");
 
@@ -262,6 +274,15 @@ export function SettingsPage() {
 
             return;
         }
+        if (!nickname.trim()) {
+            setNicknameError("닉네임을 입력해 주세요.");
+            return;
+        }
+
+        if (nickname.trim() !== originalNickname.trim() && (!nicknameChecked || nicknameAvailable !== true)) {
+            setNicknameError("닉네임 중복 확인을 완료해 주세요.");
+            return;
+        }
 
         setFieldErrors({});
         setIsSaving(true);
@@ -278,6 +299,15 @@ export function SettingsPage() {
                 skin_concern     : selectedConcerns.length > 0 ? selectedConcerns.join(",") : null,
                 profile_image_url: profileImageUrl,
             });
+
+            // 저장된 닉네임을 현재 기준값으로 갱신하고, 중복 확인 상태를 초기화
+            setOriginalNickname(nickname.trim());
+            setNicknameChecked(true);
+            setNicknameAvailable(true);
+            setNicknameError(null);
+
+            // 저장 후 닉네임 중복확인 안내 문구 숨김
+            setNicknameCheckTouched(false);
 
             // 사이드바 프로필 이미지 갱신 알림
             window.dispatchEvent(new CustomEvent("profileUpdated"));
@@ -390,6 +420,47 @@ export function SettingsPage() {
             setIsWithdrawing(false);
         }
     };
+
+    // 닉네임 
+    const handleCheckNickname = async () => {
+        const value = nickname.trim();
+        
+        setNicknameCheckTouched(true);
+        
+        if (!value) {
+            setNicknameError("닉네임을 입력해 주세요.");
+            return;
+        }
+
+        if (value === originalNickname.trim()) {
+            setNicknameChecked(true);
+            setNicknameAvailable(true);
+            setNicknameError(null);
+            return;
+        }
+
+        setIsCheckingNickname(true);
+        setNicknameError(null);
+
+        try {
+            const data = await checkNickname(value);
+            setNicknameChecked(true);
+            setNicknameAvailable(data.available);
+
+            if (!data.available) {
+                setNicknameError("이미 사용 중인 닉네임입니다.");
+            }
+        } catch (err) {
+            setNicknameChecked(false);
+            setNicknameAvailable(null);
+            setNicknameError(err instanceof Error ? err.message : "닉네임 확인에 실패했습니다.");
+        } finally {
+            setIsCheckingNickname(false);
+        }
+    };
+
+
+
     return (
         <div className="h-full overflow-y-auto bg-[#F8FBF3]">
             <div className="max-w-5xl mx-auto px-4 py-6">
@@ -493,13 +564,53 @@ export function SettingsPage() {
                                                 </div>
 
                                                 {/* nickname */}
-                                                <Input
-                                                    label={<>닉네임 <span className="text-red-400">*</span></>}
-                                                    value={nickname}
-                                                    onChange={(e) => setNickname(e.target.value)}
-                                                    maxLength={12}
-                                                    placeholder="닉네임 입력"
-                                                />
+                                                <div>
+                                                    <label className="text-xs font-medium text-gray-500 block mb-1.5">
+                                                        닉네임 <span className="text-red-400">*</span>
+                                                    </label>
+
+                                                    <div className="flex gap-2 items-start">
+                                                        <div className="flex-1">
+                                                            <Input
+                                                                value={nickname}
+                                                                onChange={(e) => {
+                                                                    const value = e.target.value;
+                                                                    setNickname(value);
+                                                                    setNicknameCheckTouched(false);
+
+                                                                    if (value.trim() === originalNickname.trim()) {
+                                                                        setNicknameChecked(true);
+                                                                        setNicknameAvailable(true);
+                                                                        setNicknameError(null);
+                                                                    } else {
+                                                                        setNicknameChecked(false);
+                                                                        setNicknameAvailable(null);
+                                                                        setNicknameError(null);
+                                                                    }
+                                                                }}
+                                                                maxLength={12}
+                                                                placeholder="닉네임 입력"
+                                                            />
+                                                        </div>
+
+                                                        <button
+                                                            type="button"
+                                                            onClick={handleCheckNickname}
+                                                            disabled={!nickname.trim() || isCheckingNickname}
+                                                            className="px-4 h-[46px] rounded-xl text-sm font-medium text-white bg-onyou transition-all hover:brightness-95 disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+                                                        >
+                                                            {isCheckingNickname ? "확인 중..." : "중복 확인"}
+                                                        </button>
+                                                    </div>
+
+                                                    {nicknameError && (
+                                                        <p className="mt-1 text-sm text-red-500">{nicknameError}</p>
+                                                    )}
+
+                                                    {nicknameCheckTouched && nicknameChecked && nicknameAvailable === true && !nicknameError && (
+                                                        <p className="mt-1 text-sm text-onyou">사용 가능한 닉네임입니다.</p>
+                                                    )}
+                                                </div>
 
                                                 {/* Gender + Age */}
                                                 <div className="grid grid-cols-2 gap-4">
