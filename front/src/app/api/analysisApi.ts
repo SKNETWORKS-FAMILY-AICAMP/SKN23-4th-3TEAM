@@ -4,8 +4,11 @@
  * back/routers/analysis_router.py 의 /analysis 엔드포인트와 통신.
  *
  * 사용하는 엔드포인트:
- *   GET  /analysis             → fetchDetailAnalysis()
- *   GET  /analysis/factorials  → fetchFactorials()
+ *   GET  /analysis/model/detailed   → fetchDetailAnalysis()
+ *   GET  /keywords/factorials       → fetchFactorials()
+ *   GET  /analysis/check/today      → checkTodayDetailedAnalysis()
+ *   GET  /analysis/dates            → fetchDetailedAnalysisDates()
+ *   GET  /analysis/by-date          → fetchAnalysisByDate()
  * ─────────────────────────────────────────────────────────────
  */
 
@@ -56,42 +59,112 @@ export interface KeywordResponse {
     label      : string;
 }
 
+export interface TodayCheckResponse {
+    available: boolean;
+}
+
+export interface DetailedDatesResponse {
+    dates: string[];
+}
+
+export interface AnalysisByDateItem {
+    date: string;
+    result: AnalysisResult | null;
+}
+
+// ─────────────────────────────────────────────
+// 공통 응답 처리
+// ─────────────────────────────────────────────
+
+async function handleResponse<T>(res: Response): Promise<T> {
+    if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+
+        throw new Error((data as { detail?: string }).detail ?? `서버 오류 (${res.status})`);
+    }
+
+    return res.json() as Promise<T>;
+}
+
 // ─────────────────────────────────────────────
 // API 호출 함수
 // ─────────────────────────────────────────────
 
 /**
  * 사용자의 피부 정밀 분석 데이터 전체 조회. (최신순)
- * 
- * GET /analysis
+ *
+ * GET /analysis/model/detailed
  */
 export async function fetchDetailAnalysis(): Promise<AnalysisResult[]> {
     const res = await fetch(`${API_BASE}/analysis/model/detailed`, {
         headers: { Authorization: `Bearer ${getToken()}` },
     });
 
-    if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-
-        throw new Error((data as { detail?: string }).detail ?? `서버 오류 (${res.status})`);
-    }
-    
-    return res.json() as Promise<AnalysisResult[]>;
+    return handleResponse<AnalysisResult[]>(res);
 }
 
 /**
  * 추천 관리법 키워드 목록 전체 조회
- * 
- * GET /analysis/factorials
+ *
+ * GET /keywords/factorials
  */
 export async function fetchFactorials(): Promise<KeywordResponse[]> {
     const res = await fetch(`${API_BASE}/keywords/factorials`);
 
+    return handleResponse<KeywordResponse[]>(res);
+}
+
+/**
+ * 오늘 정밀 분석 가능 여부 확인
+ *
+ * GET /analysis/check/today
+ */
+export async function checkTodayDetailedAnalysis(): Promise<TodayCheckResponse> {
+    const res = await fetch(`${API_BASE}/analysis/check/today`, {
+        headers: { Authorization: `Bearer ${getToken()}` },
+    });
+
     if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-
         throw new Error((data as { detail?: string }).detail ?? `서버 오류 (${res.status})`);
     }
 
-    return res.json() as Promise<KeywordResponse[]>;
+    return res.json() as Promise<TodayCheckResponse>;
+}
+
+/**
+ * 정밀 분석 가능 날짜 목록 조회
+ *
+ * GET /analysis/dates
+ */
+export async function fetchDetailedAnalysisDates(): Promise<string[]> {
+    const res = await fetch(`${API_BASE}/analysis/dates`, {
+        headers: { Authorization: `Bearer ${getToken()}` },
+    });
+
+    const data = await handleResponse<DetailedDatesResponse>(res);
+
+    return data.dates;
+}
+
+/**
+ * 날짜별 정밀 분석 결과 조회
+ *
+ * GET /analysis/by-date?dates=2026-03-05
+ * GET /analysis/by-date?dates=2026-03-05&dates=2026-03-02
+ */
+export async function fetchAnalysisByDate(dates: string[]): Promise<AnalysisByDateItem[]> {
+    if (!dates.length) {
+        throw new Error("조회할 날짜가 없습니다.");
+    }
+
+    const params = new URLSearchParams();
+
+    dates.forEach((d) => params.append("dates", d));
+
+    const res = await fetch(`${API_BASE}/analysis/by-date?${params.toString()}`, {
+        headers: { Authorization: `Bearer ${getToken()}` },
+    });
+
+    return handleResponse<AnalysisByDateItem[]>(res);
 }

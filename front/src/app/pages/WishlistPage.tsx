@@ -3,7 +3,7 @@ import { Heart, ExternalLink, Trash2, ChevronLeft, ChevronRight } from "lucide-r
 import { motion } from "motion/react";
 import { fetchWishlist, removeFromWishlist, WishlistItem } from "@/app/api/wishlistApi";
 
-const PAGE_SIZE = 2;
+const PAGE_SIZE = 5;
 
 function getPageNumbers(current: number, total: number): (number | "...")[] {
   if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
