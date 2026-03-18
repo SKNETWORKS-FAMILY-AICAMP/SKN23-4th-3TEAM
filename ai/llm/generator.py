@@ -21,7 +21,7 @@ client = OpenAI(api_key=OPENAI_API_KEY)
 # 피부 분석 intent - LLM 프롬프트에서 skin_type/concern 제거 대상
 _ANALYSIS_INTENTS = {"skin_analysis_fast", "skin_analysis_deep"}
 
-# ── intent → 프롬프트 매핑 ────────────────────────────────────
+# intent → 프롬프트 매핑
 _PROMPT_MAP = {
     "general_advice":        GENERAL_CHAT_PROMPT,
     "routine_advice":        GENERAL_CHAT_PROMPT,

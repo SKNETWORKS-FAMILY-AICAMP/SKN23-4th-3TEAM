@@ -257,6 +257,12 @@ def search_node(state: GraphState) -> GraphState:
     rag_passages: list = []
     oliveyoung_products: list = []
 
+    # 사용자 요청 개수 파싱 (예: "3개 추천해줘", "4개 알려줘")
+    import re as _re
+    _count_match = _re.search(r'(\d+)\s*개', user_text or "")
+    requested_count = int(_count_match.group(1)) if _count_match else 3
+    requested_count = max(1, min(requested_count, 5))  # 1~5개 범위 제한
+
     def _run_rag():
         query = _build_rag_query(user_text, route.intent, vision_result)
         rag_profile = _get_rag_profile(route.intent, user_profile)
@@ -283,7 +289,7 @@ def search_node(state: GraphState) -> GraphState:
             user_profile=tavily_profile,
             chat_history=state.get("chat_history", []),
             detected_keywords=state.get("detected_keywords"),
-            max_products=3,
+            max_products=requested_count,
         )
 
     t0 = time.perf_counter()
