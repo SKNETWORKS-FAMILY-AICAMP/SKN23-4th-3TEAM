@@ -15,6 +15,12 @@ from ai.orchestrator.graph import run
 from fastapi import APIRouter, HTTPException, Depends
 from db.schemas import (ChatRoomCreate, ChatRoomResponse, MessageCreate, MessageResponse)
 
+# 페르소나 로딩 문구
+import json
+import random
+import openpyxl
+from fastapi.responses import StreamingResponse
+
 """
 chat_router.py
 ─────────────────────────────────────────────────────────────
@@ -30,6 +36,21 @@ chat_router.py
 """
 
 router = APIRouter(prefix="/chats", tags=["Chat"])
+
+# ─────────────────────────────────────────────
+# 페르소나 문구 로드 (서버 시작 시 1회만 실행)
+# ─────────────────────────────────────────────
+
+def _load_persona_messages():
+    _BASE = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    wb = openpyxl.load_workbook(os.path.join(_BASE, "assets", "ongle_contents_with_emoji.xlsx"))
+    return {
+        "loading"  : [row[1] for row in wb["로딩멘트"].iter_rows(min_row=2, values_only=True)],
+        "tips"     : [row[1] for row in wb["피부정보꿀팁"].iter_rows(min_row=2, values_only=True)],
+        "positive" : [row[1] for row in wb["긍정메시지"].iter_rows(min_row=2, values_only=True)],
+    }
+
+PERSONA_MESSAGES = _load_persona_messages()
 
 # ─────────────────────────────────────────────
 # 내부 헬퍼
@@ -333,3 +354,112 @@ def get_messages(
         messages = chat_service.get_messages_by_room(chat_room_id)
 
     return [_msg_to_response(m) for m in messages]
+
+# ─────────────────────────────────────────────
+# 비로그인 게스트 채팅 SSE (페르소나 포함)
+# ─────────────────────────────────────────────
+
+@router.post("/guest/message/stream")
+async def guest_message_stream(body: GuestMessageRequest):
+    """
+    비로그인 사용자 SSE 채팅.
+    인증 불필요, DB 저장 없음.
+    로딩 중 페르소나 문구 전송.
+    """
+    async def event_generator():
+        # ── 로딩 시작 신호 + 페르소나 문구 전송 ──
+        yield f"data: {json.dumps({'type': 'loading', 'message': random.choice(PERSONA_MESSAGES['loading'])}, ensure_ascii=False)}\n\n"
+
+        try:
+            ai_text = _run_ai_guest(body.content, chat_history=body.chat_history)
+
+            # ── 완료 신호 + AI 답변 전송 ──
+            yield f"data: {json.dumps({'type': 'done', 'content': ai_text}, ensure_ascii=False)}\n\n"
+
+        except Exception as e:
+            print(f"[guest_stream ERROR] {repr(e)}", flush=True)
+            yield f"data: {json.dumps({'type': 'error', 'message': '잠시 후 다시 시도해주세요.'}, ensure_ascii=False)}\n\n"
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control"    : "no-cache",
+            "X-Accel-Buffering": "no",
+        }
+    )
+
+# ─────────────────────────────────────────────
+# 메시지 전송 (SSE 스트리밍 - 로딩 페르소나 포함)
+# ─────────────────────────────────────────────
+
+@router.post("/{chat_room_id}/messages/stream")
+async def send_message_stream(
+    chat_room_id : int,
+    body         : MessageCreate,
+    user_id      : int = Depends(get_current_user_id),
+):
+    # 1. 채팅방 소유권 확인
+    room = chat_service.get_chat_room_by_id(chat_room_id)
+    if not room:
+        raise HTTPException(status_code=404, detail="채팅방을 찾을 수 없습니다.")
+    if room.user_id != user_id:
+        raise HTTPException(status_code=403, detail="접근 권한이 없습니다.")
+
+    # 2. 사용자 메시지 DB 저장
+    try:
+        user_msg = chat_service.save_message(body)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    # 3. 첫 메시지 제목 설정
+    is_first = not room.title
+    if is_first and body.content:
+        title = body.content[:30] + ("..." if len(body.content) > 30 else "")
+        chat_service.update_chat_room_title(chat_room_id, title)
+
+    # 4. 히스토리 조회
+    history_msgs = chat_service.get_messages_by_room(chat_room_id)
+    chat_history = [
+        {"role": m.role, "content": m.content or ""}
+        for m in history_msgs[:-1]
+        if m.role in ("user", "assistant") and m.content
+    ]
+
+    async def event_generator():
+        # ── 로딩 시작 신호 + 페르소나 문구 전송 ──
+        yield f"data: {json.dumps({'type': 'loading', 'message': random.choice(PERSONA_MESSAGES['loading'])}, ensure_ascii=False)}\n\n"
+
+        try:
+            ai_text = _run_ai(
+                user_text        = body.content or "",
+                image_urls       = body.image_url or [],
+                model_type       = body.model_type,
+                user_id          = user_id,
+                chat_history     = chat_history,
+                is_first_message = is_first,
+            )
+
+            # AI 응답 DB 저장
+            ai_msg = chat_service.save_message(MessageCreate(
+                chat_room_id = chat_room_id,
+                role         = "assistant",
+                model_type   = body.model_type,
+                content      = ai_text,
+            ))
+
+            # ── 완료 신호 + AI 답변 전송 ──
+            yield f"data: {json.dumps({'type': 'done', 'content': ai_text}, ensure_ascii=False)}\n\n"
+
+        except Exception as e:
+            print(f"[stream ERROR] {repr(e)}", flush=True)
+            yield f"data: {json.dumps({'type': 'error', 'message': '잠시 후 다시 시도해주세요.'}, ensure_ascii=False)}\n\n"
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control"    : "no-cache",
+            "X-Accel-Buffering": "no",
+        }
+    )
