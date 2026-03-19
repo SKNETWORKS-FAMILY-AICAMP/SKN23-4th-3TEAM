@@ -13,6 +13,7 @@ from routers.upload_router   import router as upload_router
 from routers.keyword_router  import router as keyword_router
 from routers.analysis_router import router as analysis_router
 from routers.wishlist_router import router as wishlist_router
+from routers.skin_mbti_router import router as skin_mbti_router
 
 """
 main.py
@@ -78,3 +79,4 @@ app.include_router(upload_router)    # /upload
 app.include_router(keyword_router)   # /keywords
 app.include_router(analysis_router)  # /analysis/...
 app.include_router(wishlist_router)  # /wishlist/...
+app.include_router(skin_mbti_router) # /skin_mbti/...
