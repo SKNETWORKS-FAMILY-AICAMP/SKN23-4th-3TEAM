@@ -8,6 +8,7 @@ import { WishlistPage } from "./pages/WishlistPage";
 import { OnboardingPage } from "./pages/OnboardingPage";
 import { OAuthCallbackPage } from "./pages/OAuthCallbackPage";
 import { ForgotPasswordPage } from "./pages/ForgotPasswordPage";
+import { FaqPage } from "./pages/FaqPage";
 import { createBrowserRouter, Navigate, Outlet } from "react-router";
 
 /** 로그인 필요 페이지 — 미인증 시 /chat으로 리다이렉트 */
@@ -23,9 +24,10 @@ export const router = createBrowserRouter([
         Component: Layout,
         children: [
             { index: true, element: <Navigate to="/chat" replace /> },
-            { path: "chat", Component: ChatPage },      // 비로그인 접근 가능
+            { path: "chat", Component: ChatPage },
+            { path: "faq", Component: FaqPage },
             {
-                element: <PrivateRoute />,              // 로그인 필요
+                element: <PrivateRoute />,
                 children: [
                     { path: "analysis", Component: AnalysisPage },
                     { path: "wishlist", Component: WishlistPage },

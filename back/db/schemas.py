@@ -157,7 +157,7 @@ class MessageCreate(BaseModel):
     """
     chat_room_id : int
     role         : Literal["user", "assistant", "system"]
-    model_type   : Literal["simple", "detailed", "ingredient", "default"] = "default"
+    model_type   : Literal["simple", "detailed", "ingredient", "personal", "default"] = "default"
     content      : Optional[str]       = None   # 텍스트 메시지
     image_url    : Optional[list[str]] = None   # S3 이미지 URL (images + entity_images 저장)
 
@@ -188,7 +188,7 @@ class AnalysisCreate(BaseModel):
     - image_url: 분석에 사용된 S3 이미지 URL 목록 → images + entity_images 저장
     """
     user_id       : int
-    model_type    : Literal["simple", "detailed", "ingredient"]
+    model_type    : Literal["simple", "detailed", "ingredient","personal"]
     skin_score    : Optional[int]      = None
     image_url     : Optional[list[str]] = None  # S3 이미지 URL (images + entity_images 저장)
     analysis_data : dict               # 정량 분석 결과 JSON
