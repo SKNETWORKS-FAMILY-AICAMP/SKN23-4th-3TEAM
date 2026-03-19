@@ -4,7 +4,8 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, field_validator
 from typing import List
 
-from services.skin_mbti_service import calculate_mbti
+from services.skin_mbti_service import calculate_mbti, get_saved_mbti_result
+
 
 router = APIRouter(
     prefix="/skin-mbti",
@@ -78,4 +79,22 @@ def get_skin_mbti(req: SkinMbtiRequest):
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e))
     except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+# ────────────────────────────────────────────
+# MBTI 저장 결과 읽기
+# ────────────────────────────────────────────
+@router.get("/{user_id}")
+def read_skin_mbti(user_id: int):
+    try:
+        result = get_saved_mbti_result(user_id)
+        # print("[skin_mbti] GET result =", result)
+
+        return {
+            "success": True,
+            "data": result,
+            "error": None,
+        }
+    except Exception as e:
+        print("[skin_mbti] GET error =", repr(e))
         raise HTTPException(status_code=500, detail=str(e))

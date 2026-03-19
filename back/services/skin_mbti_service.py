@@ -3,7 +3,7 @@
 import json
 from typing import List, Dict
 
-from db.db_manager import execute_write
+from db.db_manager import execute_write, execute_one
 
 
 # ────────────────────────────────────────────
@@ -259,6 +259,39 @@ MBTI_RESULT_MAP = {
         "accent_color": "0xFFD94F8A",
     },
 }
+
+# ────────────────────────────────────────────
+# MBTI 저장 결과 가져오는 함수
+# ────────────────────────────────────────────
+def get_saved_mbti_result(user_id: int):
+    sql = """
+        SELECT result_json
+        FROM user_test_results
+        WHERE user_id = %s
+          AND test_type = %s
+        LIMIT 1
+    """
+    row = execute_one(sql, (user_id, "skin_mbti"))
+
+    if not row:
+        return None
+
+    raw = row.get("result_json")
+
+    if raw is None:
+        return None
+
+    if isinstance(raw, dict):
+        return raw
+
+    if isinstance(raw, str):
+        try:
+            return json.loads(raw)
+        except Exception as e:
+            print("[skin_mbti] json.loads failed:", e)
+            raise RuntimeError(f"result_json 파싱 실패: {raw}") from e
+
+    return raw
 
 # 축별 문항 인덱스 (0-based: Q1=0, Q2=1, ...)
 SL_INDICES = [0, 3, 6, 9]   # Q1, Q4, Q7, Q10
