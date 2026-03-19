@@ -131,6 +131,7 @@ export async function login(email: string, password: string): Promise<void> {
  */
 export function logout(): void {
     localStorage.removeItem("access_token");
+    localStorage.removeItem("user_id");
 }
 
 /**
