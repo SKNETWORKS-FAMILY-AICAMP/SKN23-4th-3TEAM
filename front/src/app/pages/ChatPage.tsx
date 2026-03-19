@@ -17,7 +17,7 @@ import { X, ZoomIn, ImagePlus, ChevronDown, Lock, ExternalLink, Heart, Loader2 }
 import { createChatRoom, fetchMessages, sendMessage, sendGuestMessage, type ChatMessage } from "@/app/api/chatApi";
 import { checkTodayDetailedAnalysis } from "@/app/api/analysisApi";
 
-type AnalysisType = "default" | "simple" | "detailed" | "ingredient";
+type AnalysisType = "default" | "simple" | "detailed" | "ingredient" | "personal";
 
 interface UploadSlot {
     id      : string;
@@ -70,6 +70,8 @@ const getUploadSlots = (type: AnalysisType): UploadSlot[] => {
             ];
         case "ingredient":
             return [{ id: "label", label: "전성분 표시면", preview: null, file: null }];
+        case "personal":
+            return [{ id: "front", label: "정면 얼굴", preview: null, file: null }];
         default:
             return [];
     }

@@ -107,13 +107,14 @@ def _run_ai(
         "simple":     "quick",
         "detailed":   "detailed",
         "ingredient": "ingredient",
+        "personal":   "personal",
     }
     analysis_type = _type_map.get(model_type)
 
     # S3 URL → bytes 변환 (이미지가 있는 경우)
     image_bytes: list[bytes] = []
 
-    if image_urls and analysis_type in ("quick", "detailed", "ingredient"):
+    if image_urls and analysis_type in ("quick", "detailed", "ingredient", "personal"):
         for url in image_urls:
             try:
                 resp = _requests.get(url, timeout=10)
