@@ -272,13 +272,24 @@ def _save_to_db(state: GraphState, vision_result: dict, llm_output: dict):
         return
 
     # model_type 매핑: "quick" → "simple", "detailed" → "detailed", "ingredient" → "ingredient"
-    _MODEL_TYPE_MAP = {"quick": "simple", "detailed": "detailed", "ingredient": "ingredient"}
+    _MODEL_TYPE_MAP = {"quick": "simple", "detailed": "detailed", "ingredient": "ingredient", "personal": "personal"}
     model_type = _MODEL_TYPE_MAP.get(analysis_type)
     if not model_type:
         return
 
     # vision_result + llm_output → 정규화된 analysis_data
-    analysis_data = _build_analysis_data(vision_result, llm_output)
+    if analysis_type == "personal":
+        # 퍼스널컬러: vision_result에서 타입 정보 추출
+        type_result = vision_result.get("type_result", {})
+        analysis_data = {
+            "personal_color_type": type_result.get("name", ""),
+            "personal_color_keywords": type_result.get("keywords", ""),
+            "scores": type_result.get("scores", {}),
+            "mood": type_result.get("mood", ""),
+            "recommended_colors": type_result.get("recommended_colors", ""),
+        }
+    else:
+        analysis_data = _build_analysis_data(vision_result, llm_output)
 
     try:
         import sys, os as _os

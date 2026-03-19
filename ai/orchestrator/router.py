@@ -53,6 +53,9 @@ Intent = Literal[
     # OCR
     "ingredient_analysis",    # 화장품 전성분 이미지 분석
 
+    # 퍼스널컬러
+    "personal_color",         # 퍼스널컬러 분석 (이미지 1장)
+
     # 이력 기반
     "history_compare",        # 이전 분석 대비 변화
 ]
@@ -103,6 +106,7 @@ _INTENT_FLAGS = {
     "skin_analysis_fast":  {"needs_vision": True,  "needs_rag": True,  "needs_product": False, "needs_context_check": False},
     "skin_analysis_deep":  {"needs_vision": True,  "needs_rag": True,  "needs_product": False, "needs_context_check": False},
     "ingredient_analysis": {"needs_vision": True, "needs_rag": True,  "needs_product": False, "needs_context_check": False},
+    "personal_color":      {"needs_vision": True, "needs_rag": False, "needs_product": False, "needs_context_check": False},
     "history_compare":     {"needs_vision": False, "needs_rag": True,  "needs_product": False, "needs_context_check": False},
 }
 
@@ -881,6 +885,11 @@ def decide(
         if not user_id:
             return RouteDecision("login_required", False, False, False, False, "비회원 성분분석 요청"), None
         return RouteDecision("ingredient_analysis", True, True, False, False, "성분 분석 모드"), None
+
+    if analysis_type == "personal":
+        if not user_id:
+            return RouteDecision("login_required", False, False, False, False, "비회원 퍼스널컬러 요청"), None
+        return RouteDecision("personal_color", True, False, False, False, "퍼스널컬러 분석 모드"), None
 
     # 1. LLM 라우팅 시도
     if user_id is None:

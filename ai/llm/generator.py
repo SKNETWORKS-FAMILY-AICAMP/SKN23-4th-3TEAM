@@ -8,6 +8,7 @@ from openai import OpenAI
 
 from ai.config.settings import OPENAI_API_KEY, OPENAI_MODEL, OPENAI_TEMPERATURE
 from ai.llm.prompts.skin_analysis import FAST_ANALYSIS_PROMPT, DEEP_ANALYSIS_PROMPT
+from ai.llm.prompts.personal_color import ANSWER_PROMPT as PERSONAL_COLOR_PROMPT
 from ai.llm.prompts import (
     BASE_SYSTEM,
     GENERAL_CHAT_PROMPT,
@@ -19,7 +20,7 @@ from ai.llm.prompts import (
 client = OpenAI(api_key=OPENAI_API_KEY)
 
 # 피부 분석 intent - LLM 프롬프트에서 skin_type/concern 제거 대상
-_ANALYSIS_INTENTS = {"skin_analysis_fast", "skin_analysis_deep"}
+_ANALYSIS_INTENTS = {"skin_analysis_fast", "skin_analysis_deep", "personal_color"}
 
 # intent → 프롬프트 매핑
 _PROMPT_MAP = {
@@ -32,6 +33,7 @@ _PROMPT_MAP = {
     "product_recommend":     PRODUCT_RECOMMEND_PROMPT,
     "routine_and_product":   ROUTINE_AND_PRODUCT_PROMPT,
     "ingredient_analysis":   INGREDIENT_CHAT_PROMPT,
+    "personal_color":        PERSONAL_COLOR_PROMPT,
     "history_compare":       DEEP_ANALYSIS_PROMPT,
 }
 
@@ -151,18 +153,29 @@ def generate_report(
 
     # 프롬프트 변수 치환
     import json as _json
-    task_prompt = task_prompt_template.format(
-        user_profile_text=user_profile_text,
-        analysis_mode=analysis_mode_text,
-        history_summary=history_summary,
-        ingredients_text=", ".join(ingredients) if ingredients else "없음",
-        vision_result=_json.dumps(vision_result, ensure_ascii=False) if vision_result else "없음",
-    )
+    if intent == "personal_color" and vision_result and vision_result.get("type_result"):
+        tr = vision_result["type_result"]
+        task_prompt = task_prompt_template.format(
+            name=tr.get("name", ""),
+            keywords=tr.get("keywords", ""),
+            description=tr.get("description", ""),
+            mood=tr.get("mood", ""),
+            recommended_colors=tr.get("recommended_colors", ""),
+            scores=_json.dumps(tr.get("scores", {}), ensure_ascii=False),
+        )
+    else:
+        task_prompt = task_prompt_template.format(
+            user_profile_text=user_profile_text,
+            analysis_mode=analysis_mode_text,
+            history_summary=history_summary,
+            ingredients_text=", ".join(ingredients) if ingredients else "없음",
+            vision_result=_json.dumps(vision_result, ensure_ascii=False) if vision_result else "없음",
+        )
 
     # 히스토리 최근 N턴만
     # 분석 intent는 수치 기반 판단 → chat_history 불필요 → 토큰 절약
     from ai.config.settings import CHAT_HISTORY_TURNS
-    _ANALYSIS_INTENTS_NO_HISTORY = {"skin_analysis_fast", "skin_analysis_deep", "ingredient_analysis"}
+    _ANALYSIS_INTENTS_NO_HISTORY = {"skin_analysis_fast", "skin_analysis_deep", "ingredient_analysis", "personal_color"}
     if intent in _ANALYSIS_INTENTS_NO_HISTORY:
         recent_history = []
     else:
@@ -210,15 +223,46 @@ def generate_report(
             "구매 링크는 시스템이 자동으로 추가한다."
         )
 
-    resp = client.chat.completions.create(
-        model=OPENAI_MODEL,
-        messages=[
+    # 퍼스널컬러 맥락에서 제품 추천 시: 피부타입이 아닌 컬러 매칭 관점으로 설명
+    if intent == "product_recommend" and chat_history:
+        _PC_CHECK = ["추천 립 컬러", "추천 블러셔", "한 줄 무드", "이미지 키워드"]
+        pc_answer = None
+        for msg in reversed(chat_history):
+            if msg.get("role") == "assistant" and any(m in (msg.get("content") or "") for m in _PC_CHECK):
+                pc_answer = msg.get("content", "")
+                break
+        if pc_answer:
+            # 퍼스널컬러 타입명 추출
+            pc_type_name = ""
+            for line in pc_answer.split("\n"):
+                if "🎨" in line and "**" in line:
+                    pc_type_name = line.replace("🎨", "").replace("**", "").strip()
+                    break
+            payload["task_instruction"] += (
+                f"\n\n[퍼스널컬러 맥락 추천]"
+                f"\n이 사용자의 퍼스널컬러는 '{pc_type_name}'입니다."
+                f"\n제품 설명 시 피부타입(지성, 건성 등)이나 피부 고민(모공, 여드름 등) 관점이 아니라, "
+                f"퍼스널컬러 관점에서 설명해야 합니다."
+                f"\n- 이 컬러가 사용자의 퍼스널컬러에 왜 어울리는지"
+                f"\n- 이 제품의 색감/발색이 어떤 분위기를 연출하는지"
+                f"\n- 어떤 상황/룩에 활용하면 좋은지"
+                f"\n피부타입이나 피지, 모공 등의 단어는 사용하지 않는다."
+            )
+
+    # 퍼스널컬러는 답변이 길어서 max_tokens 제한으로 생성 시간 단축
+    create_kwargs = {
+        "model": OPENAI_MODEL,
+        "messages": [
             {"role": "system", "content": BASE_SYSTEM},
             {"role": "user", "content": json.dumps(payload, ensure_ascii=False)},
         ],
-        temperature=OPENAI_TEMPERATURE,
-        response_format={"type": "json_object"},
-    )
+        "temperature": OPENAI_TEMPERATURE,
+        "response_format": {"type": "json_object"},
+    }
+    if intent == "personal_color":
+        create_kwargs["max_tokens"] = 2000
+
+    resp = client.chat.completions.create(**create_kwargs)
 
     text = resp.choices[0].message.content
     return _safe_json_loads(text)
