@@ -327,6 +327,84 @@ def vision_node(state: GraphState) -> GraphState:
                     "성분 분석 모델을 사용할 수 없어요. 관리자에게 문의해주세요."
                 )
 
+        elif analysis_type == "personal":
+            if len(images) < 1:
+                raise ValueError("퍼스널컬러 분석에는 얼굴 사진 1장이 필요해요.")
+
+            # 얼굴 검증 (기존 빠른 분석과 동일)
+            print("[VISION QC] 퍼스널컬러 얼굴 검증 중...", flush=True)
+            qc = _validate_face_images(images, mode="quick")
+            if not qc["valid"]:
+                print(f"[VISION QC] 검증 실패 → 분석 중단", flush=True)
+                return {"vision_result": {
+                    "mode": "error",
+                    "error": qc["reason"],
+                    "qc": {"status": "fail", "reason": "invalid_image"}
+                }}
+
+            print("[VISION] 퍼스널컬러 분석 시작 (GPT 이미지 분석)", flush=True)
+
+            # GPT에게 이미지를 보여주고 8개 키워드 점수 산출
+            from openai import OpenAI as _OpenAI
+            from ai.config.settings import OPENAI_API_KEY as _API_KEY
+            from ai.llm.prompts.personal_color import SCORING_PROMPT, determine_type, TRADITIONAL_KEYWORDS
+            import json as _json
+
+            _client = _OpenAI(api_key=_API_KEY)
+            b64 = _encode_image_b64(images[0])
+
+            _scoring_messages = [{
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": SCORING_PROMPT},
+                    {"type": "image_url", "image_url": {
+                        "url": f"data:image/jpeg;base64,{b64}",
+                        "detail": "high"
+                    }},
+                ]
+            }]
+
+            # 최대 2회 시도 (점수 합이 0이면 재시도)
+            raw_scores = None
+            for attempt in range(2):
+                resp = _client.chat.completions.create(
+                    model="gpt-4o",
+                    messages=_scoring_messages,
+                    max_tokens=300,
+                    temperature=0.5,
+                    response_format={"type": "json_object"},
+                )
+                raw_content = resp.choices[0].message.content
+                print(f"[VISION] GPT 원본 응답 (시도 {attempt+1}): {raw_content}", flush=True)
+
+                parsed = _json.loads(raw_content)
+                # 새 형식: {"analysis": "...", "scores": {...}} 또는 기존 형식: {"봄 라이트": 0, ...}
+                if "scores" in parsed:
+                    raw_scores = parsed["scores"]
+                    analysis_text = parsed.get("analysis", "")
+                    if analysis_text:
+                        print(f"[VISION] GPT 분석: {analysis_text}", flush=True)
+                else:
+                    raw_scores = parsed
+
+                # 점수 합 검증
+                total = sum(raw_scores.get(k, 0) for k in TRADITIONAL_KEYWORDS)
+                if total >= 90:  # 100이어야 하지만 약간의 오차 허용
+                    break
+                print(f"[VISION] 점수 합계 {total} → 재시도", flush=True)
+
+            print(f"[VISION] 퍼스널컬러 점수: {raw_scores}", flush=True)
+
+            # 14타입 중 확정
+            type_result = determine_type(raw_scores)
+            print(f"[VISION] 확정 타입: {type_result['name']} ({type_result['type_key']})", flush=True)
+
+            vision_result = {
+                "mode": "personal_color",
+                "scores": raw_scores,
+                "type_result": type_result,
+            }
+
         else:
             raise ValueError(f"알 수 없는 analysis_type: {analysis_type}")
 
