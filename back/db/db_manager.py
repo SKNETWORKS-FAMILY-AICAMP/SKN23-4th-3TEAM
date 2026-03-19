@@ -87,6 +87,7 @@ def get_connection() -> pymysql.connections.Connection:
         cursorclass=pymysql.cursors.DictCursor,
         autocommit=False,
         ssl={"ssl": {}},  # RDS require_secure_transport=ON 대응
+        init_command="SET time_zone = 'Asia/Seoul'" # 타임존 한국시간으로 설정
     )
 
     return conn
