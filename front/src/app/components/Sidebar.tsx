@@ -46,7 +46,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     icon: IconName;
         }> = [
             { path: "/analysis", label: "피부 분석", icon: "beauty" },
-            { path: "/skin-mbti", label: "피부 MBTI", icon: "chat" },
+            { path: "/skin-mbti", label: "피부 MBTI", icon: "mbti" },
             { path: "/wishlist", label: "위시리스트", icon: "wish" },
         ];
 

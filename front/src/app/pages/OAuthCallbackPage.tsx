@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router";
 import { Loading } from "@/app/components/ui/loading";
+import { fetchCurrentUser } from "@/app/api/userApi";
 
 function clearGuestData(): void {
     localStorage.removeItem("guest_chats");
@@ -23,23 +24,41 @@ export function OAuthCallbackPage() {
     const navigate = useNavigate();
 
     useEffect(() => {
-        const params   = new URLSearchParams(window.location.search);
-        const token    = params.get("token");
-        const errorMsg = params.get("error");
-        const isNew    = params.get("is_new") === "true";
+        const run = async () => {
+            const params    = new URLSearchParams(window.location.search);
+            const token     = params.get("token");
+            const errorMsg  = params.get("error");
+            const isNew     = params.get("is_new") === "true";
 
-        if (token) {
-            localStorage.setItem("access_token", token);
+            if (!token) {
+                const msg = errorMsg ?? "소셜 로그인에 실패했습니다.";
+                navigate(`/login?error=${encodeURIComponent(msg)}`, { replace: true });
+                return;
+            }
 
-            clearGuestData();
+            try {
+                localStorage.setItem("access_token", token);
+
+                const me = await fetchCurrentUser();
+                if (me?.user_id != null) {
+                    localStorage.setItem("user_id", String(me.user_id));
+                }
+
+                clearGuestData();
 
             // 신규 가입 유저는 온보딩, 기존 유저는 채팅으로 이동
-            navigate(isNew ? "/onboarding" : "/chat", { replace: true });
-        } else {
-            const msg = errorMsg ?? "소셜 로그인에 실패했습니다.";
-            
-            navigate(`/login?error=${encodeURIComponent(msg)}`, { replace: true });
-        }
+                navigate(isNew ? "/onboarding" : "/chat", { replace: true });
+            } catch {
+                localStorage.removeItem("access_token");
+                localStorage.removeItem("user_id");
+
+                navigate(`/login?error=${encodeURIComponent("소셜 로그인 사용자 정보를 불러오지 못했습니다.")}`, {
+                    replace: true,
+                });
+            }
+        };
+
+        run();
     }, [navigate]);
 
     return <Loading />;
