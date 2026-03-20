@@ -20,10 +20,14 @@ services:
       - "8000"
     env_file:
       - .env
+    environment:
+      - PYTHONPATH=/app
     volumes:
       - ./vector_store:/app/vector_store
       - ./skin_ai:/app/skin_ai
       - ./ai:/app/ai
+    entrypoint: >
+      sh -c "ln -sf /app /app/back && uvicorn main:app --host 0.0.0.0 --port 8000"
     depends_on:
       - chromadb
 
