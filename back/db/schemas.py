@@ -18,6 +18,9 @@ schemas.py
     [ChatMessage]    MessageCreate / MessageResponse
     [Analysis]       AnalysisCreate / AnalysisResponse
     [Wishlist]       WishlistAdd / WishlistResponse
+    [Email]          EmailSendRequest / EmailVerifyRequest / PasswordResetRequest
+    [Keywords]       KeywordResponse
+    [QnA]            QnaCreate / QnaAnswerUpdate / QnaResponse
 ─────────────────────────────────────────────────────────────
 """
 
@@ -275,5 +278,40 @@ class KeywordResponse(BaseModel):
     keyword     : str
     label       : Optional[str] = None
     description : Optional[str] = None
+
+    model_config = {"from_attributes": True}
+
+# ─────────────────────────────────────────────
+# 9. QnA 스키마
+# ─────────────────────────────────────────────
+
+
+class QnaCreate(BaseModel):
+    """
+    문의 등록 시 프론트에서 받는 데이터 (사용자 전용)
+    - user_id는 JWT에서 추출하므로 body에 포함하지 않음
+    """
+    category : Optional[str] = None  # 문의 분류 (예: 서비스 이용, 결제, 기타)
+    question : str                   # 문의 내용
+
+class QnaAnswerUpdate(BaseModel):
+    """
+    관리자 답변 등록/수정 시 받는 데이터
+    """
+    answer : str  # 답변 내용
+
+class QnaResponse(BaseModel):
+    """
+    QnA 조회 응답
+    - 사용자/관리자 공통 사용
+    """
+    qna_id     : int
+    user_id    : int
+    manager_id : Optional[int] = None  # 답변 전이면 null
+    category   : Optional[str] = None
+    question   : str
+    answer     : Optional[str] = None  # 답변 전이면 null
+    created_at : datetime
+    updated_at : datetime
 
     model_config = {"from_attributes": True}
