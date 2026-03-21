@@ -5,9 +5,10 @@ import random
 import secrets
 
 from typing import Optional
+from datetime import datetime
 from dotenv import load_dotenv
 from routers.deps import create_access_token
-from services.user_service import (get_user_by_email, get_user_by_id, create_user, generate_random_nickname, is_nickname_taken)
+from services.user_service import (get_user_by_email, get_user_by_id, create_user, generate_random_nickname, is_nickname_taken, get_user_including_deleted, restore_user)
 
 from db.db_manager import execute_one, execute_write, execute_query
 from db.models import AuthProvider, User
@@ -19,8 +20,8 @@ auth_service.py
 목적  : 인증 및 로그인 관련 비즈니스 로직 담당
 역할  :
     1. local 로그인 수단 등록 (비밀번호 해시 포함)
-    2. local 이메일/비밀번호 로그인 검증
-    3. Google / Kakao 소셜 로그인 처리
+    2. local 이메일/비밀번호 로그인 검증 (탈퇴 예정 계정 자동 복구 포함)
+    3. Google / Kakao / Naver 소셜 로그인 처리 (탈퇴 예정 계정 자동 복구 포함)
     4. 로그인 수단 조회
 
 흐름:
@@ -31,6 +32,10 @@ auth_service.py
 의존성:
     auth_service → user_service (단방향)
     JWT 발급은 routers/deps.py의 create_access_token() 사용
+
+탈퇴 복구 정책:
+    - 탈퇴 후 10일 이내 로그인 시 자동 복구 (deleted_at → NULL)
+    - 10일 초과 시 로그인 거부 → 스케줄러가 하드 삭제 처리
 ─────────────────────────────────────────────────────────────
 """
 
@@ -109,19 +114,53 @@ def register_local_auth(user_id: int, email: str, plain_password: str) -> AuthPr
 def login_local(email: str, plain_password: str) -> dict:
     """
     local 이메일/비밀번호 로그인 검증.
-    - 성공 시 JWT 토큰과 User 반환
-    - JWT 발급은 deps.py의 create_access_token() 사용
-
-    사용 예시:
-        result = login_local("test@test.com", "plain_password_123")
-        token  = result["access_token"]
-        user   = result["user"]
+    - 탈퇴 예정(deleted_at IS NOT NULL) 계정도 로그인 허용
+    - 10일 이내 → 비밀번호 검증 통과 시 자동 복구 후 정상 로그인
+    - 10일 초과 → 로그인 거부
+    - restored: True이면 프론트에서 복구 안내 메시지 표시
     """
-    user = get_user_by_email(email)
+    from datetime import timedelta
+
+    # 탈퇴 계정 포함 조회
+    user = get_user_including_deleted(email)
 
     if not user:
         raise ValueError("존재하지 않는 이메일입니다.")
 
+    # ── 탈퇴 예정 계정 처리 ──────────────────────
+    if user.deleted_at is not None:
+
+        if datetime.now() - user.deleted_at >= timedelta(days=10):
+            raise ValueError("탈퇴 처리가 완료된 계정입니다. 재가입 후 이용해주세요.")
+
+        # 10일 이내 → 비밀번호 먼저 검증
+        auth_row = execute_one(
+            """
+            SELECT password_hash FROM auth_providers
+            WHERE user_id = %s AND provider_type = 'local'
+            """,
+            (user.user_id,)
+        )
+
+        if not auth_row:
+            raise ValueError("local 로그인 수단이 등록되지 않은 계정입니다.")
+
+        if not _verify_password(plain_password, auth_row["password_hash"]):
+            raise ValueError("비밀번호가 일치하지 않습니다.")
+
+        # 검증 통과 → 탈퇴 복구
+        restore_user(user.user_id)
+        token = create_access_token(user.user_id)
+
+        return {
+            "access_token" : token,
+            "token_type"   : "bearer",
+            "user"         : user,
+            "restored"     : True,
+        }
+    # ─────────────────────────────────────────────
+
+    # 일반 로그인
     auth_row = execute_one(
         """
         SELECT password_hash FROM auth_providers
@@ -132,15 +171,18 @@ def login_local(email: str, plain_password: str) -> dict:
 
     if not auth_row:
         raise ValueError("local 로그인 수단이 등록되지 않은 계정입니다.")
-    
+
     if not _verify_password(plain_password, auth_row["password_hash"]):
         raise ValueError("비밀번호가 일치하지 않습니다.")
 
-    # deps.py의 create_access_token 사용 (user_id만 전달)
     token = create_access_token(user.user_id)
 
-    return {"access_token": token, "token_type": "bearer", "user": user}
-
+    return {
+        "access_token" : token,
+        "token_type"   : "bearer",
+        "user"         : user,
+        "restored"     : False,
+    }
 
 # ─────────────────────────────────────────────
 # 3. Google 소셜 로그인
@@ -419,13 +461,27 @@ def _get_or_create_social_user(
     )
 
     if auth_row:
-        user = get_user_by_id(auth_row["user_id"])
+        from datetime import timedelta
+
+        user = get_user_by_id(auth_row["user_id"])  # deleted_at IS NULL 조건 포함
 
         if user:
             return user, False
 
-        # auth_providers 레코드는 있지만 users 레코드가 없는 경우 (탈퇴 후 재가입 등)
-        # 고아 auth_providers 레코드 삭제 후 신규 생성으로 처리
+        # users가 없으면 탈퇴 예정 계정인지 확인
+        deleted_row = execute_one(
+            "SELECT user_id, deleted_at FROM users WHERE user_id = %s AND deleted_at IS NOT NULL",
+            (auth_row["user_id"],)
+        )
+
+        if deleted_row:
+            if datetime.now() - deleted_row["deleted_at"] < timedelta(days=10):
+                # 10일 이내 → 소셜 로그인으로 자동 복구
+                restore_user(deleted_row["user_id"])
+                user = get_user_by_id(deleted_row["user_id"])
+                return user, False
+
+        # 10일 초과 or 완전 삭제 → 고아 행 정리 후 신규 생성으로 처리
         execute_write(
             "DELETE FROM auth_providers WHERE provider_type = %s AND provider_id = %s",
             (provider_type, provider_id)

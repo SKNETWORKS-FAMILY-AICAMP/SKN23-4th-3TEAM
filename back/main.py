@@ -6,6 +6,8 @@ from contextlib import asynccontextmanager
 from db.db_manager import init_db, close_tunnel
 from fastapi.middleware.cors import CORSMiddleware
 
+from services.cleanup_scheduler import start_scheduler, stop_scheduler
+
 from routers.auth_router     import router as auth_router
 from routers.chat_router     import router as chat_router
 from routers.user_router     import router as user_router
@@ -24,7 +26,8 @@ FastAPI 앱 진입점.
     1. FastAPI 앱 인스턴스 생성
     2. CORS 미들웨어 설정 (프론트 개발 서버 허용)
     3. 라우터 등록 (auth / chat / users / upload / keywords / analysis / wishlist / skin_mbti / qna)
-    4. 앱 시작 시 DB 초기화 / 종료 시 SSH 터널 정리
+    4. 앱 시작 시 DB 초기화 + 탈퇴 하드 삭제 스케줄러 시작
+    5. 앱 종료 시 스케줄러 정지 + SSH 터널 정리
 ─────────────────────────────────────────────────────────────
 """
 
@@ -38,7 +41,9 @@ load_dotenv()
 async def lifespan(app: FastAPI):
     """ 앱 시작 시 DB 초기화, 종료 시 SSH 터널 닫기 """
     init_db()
+    start_scheduler()
     yield
+    stop_scheduler()
     close_tunnel()
 
 # ─────────────────────────────────────────────

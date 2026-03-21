@@ -14,11 +14,11 @@ user_router.py
 ─────────────────────────────────────────────────────────────
 엔드포인트 목록:
     POST   /users/signup               회원가입 (local, OTP 검증 포함)
-    POST   /users/login                로그인 (local)
+    POST   /users/login                로그인 (local, 탈퇴 예정 계정 자동 복구 포함)
     GET    /users/me                   프로필 조회
     PATCH  /users/me                   프로필 수정
     GET    /users/me/social-links      소셜 연동 조회
-    DELETE /users/me                   회원 탈퇴
+    DELETE /users/me                   회원 탈퇴 (soft delete, 10일 후 하드 삭제)
     GET    /users/check/email          이메일 중복 확인
     GET    /users/check/nickname       닉네임 중복 확인
     POST   /users/email/send-code      이메일 OTP 발송
@@ -49,7 +49,8 @@ class LoginRequest(BaseModel):
 
 class TokenResponse(BaseModel):
     access_token : str
-    token_type   : str = "bearer"
+    token_type   : str  = "bearer"
+    restored     : bool = False  # 탈퇴 복구 여부 (프론트 안내 메시지용)
 
 class AdminTokenRequest(BaseModel):
     email : str
@@ -129,7 +130,10 @@ def login(body: LoginRequest):
     except ValueError as e:
         raise HTTPException(status_code=401, detail=str(e))
 
-    return TokenResponse(access_token=result["access_token"])
+    return TokenResponse(
+    access_token = result["access_token"],
+    restored     = result.get("restored", False),
+    )
 
 # ─────────────────────────────────────────────
 # 프로필
