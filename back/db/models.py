@@ -16,7 +16,7 @@ models.py
 포함 테이블:
     Keyword / User / AuthProvider / ChatRoom
     ChatMessage / SkinAnalysisResult / Wishlist
-    Image / EntityImage / AnalysisRecommendationTag / Qna
+    Image / EntityImage / AnalysisRecommendationTag / Qna / UserTestResult
 ─────────────────────────────────────────────────────────────
 """
 
@@ -279,7 +279,7 @@ class Qna:
     created_at  : datetime
     updated_at  : datetime
     manager_id  : Optional[int] = None
-    category_id : Optional[int] = None
+    category    : Optional[str] = None
     answer      : Optional[str] = None
 
     @staticmethod
@@ -291,6 +291,33 @@ class Qna:
             created_at  = row["created_at"],
             updated_at  = row["updated_at"],
             manager_id  = row.get("manager_id"),
-            category_id = row.get("category_id"),
+            category    = row.get("category"),
             answer      = row.get("answer"),
+        )
+
+# ─────────────────────────────────────────────
+# 12. UserTestResult
+# 테이블: user_test_results
+# ─────────────────────────────────────────────
+@dataclass
+class UserTestResult:
+    result_id   : int
+    user_id     : int
+    test_type   : str                   # 테스트 종류 (ex: skin_mbti)
+    created_at  : datetime
+    updated_at  : datetime
+    result_code : Optional[str] = None  # 결과 코드 (ex: SBC)
+    result_json : Optional[dict] = None # 테스트 상세 결과 JSON
+
+    @staticmethod
+    def from_dict(row: dict) -> "UserTestResult":
+        raw = row.get("result_json")
+        return UserTestResult(
+            result_id   = row["result_id"],
+            user_id     = row["user_id"],
+            test_type   = row["test_type"],
+            created_at  = row["created_at"],
+            updated_at  = row["updated_at"],
+            result_code = row.get("result_code"),
+            result_json = json.loads(raw) if isinstance(raw, str) else raw,
         )

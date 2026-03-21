@@ -14,6 +14,7 @@ from routers.keyword_router  import router as keyword_router
 from routers.analysis_router import router as analysis_router
 from routers.wishlist_router import router as wishlist_router
 from routers.skin_mbti_router import router as skin_mbti_router
+from routers.qna_router import router as qna_router
 
 """
 main.py
@@ -22,7 +23,7 @@ FastAPI 앱 진입점.
 역할  :
     1. FastAPI 앱 인스턴스 생성
     2. CORS 미들웨어 설정 (프론트 개발 서버 허용)
-    3. 라우터 등록 (users / chats / analysis)
+    3. 라우터 등록 (auth / chat / users / upload / keywords / analysis / wishlist / skin_mbti / qna)
     4. 앱 시작 시 DB 초기화 / 종료 시 SSH 터널 정리
 ─────────────────────────────────────────────────────────────
 """
@@ -80,3 +81,4 @@ app.include_router(keyword_router)   # /keywords
 app.include_router(analysis_router)  # /analysis/...
 app.include_router(wishlist_router)  # /wishlist/...
 app.include_router(skin_mbti_router) # /skin_mbti/...
+app.include_router(qna_router)       # /qna/...
