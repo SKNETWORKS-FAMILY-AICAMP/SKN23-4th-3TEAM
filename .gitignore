@@ -133,6 +133,8 @@ env.bak/
 venv.bak/
 *venv*/ 
 test_venv/
+django_venv/
+django_venv
 
 # Spyder project settings
 .spyderproject

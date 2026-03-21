@@ -5,7 +5,7 @@ import secrets
 
 from typing import Optional
 from dotenv import load_dotenv
-from routers.deps import create_access_token
+from api.middleware import create_access_token
 from services.user_service import (get_user_by_email, get_user_by_id, create_user)
 
 from db.db_manager import execute_one, execute_write, execute_query
