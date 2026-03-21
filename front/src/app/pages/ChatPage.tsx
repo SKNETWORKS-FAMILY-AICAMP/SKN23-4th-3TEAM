@@ -9,14 +9,82 @@ import { uploadImage } from "@/app/api/uploadApi";
 import { useState, useRef, useEffect } from "react";
 import { fetchCurrentUser } from "@/app/api/userApi";
 import { Loading } from "@/app/components/ui/loading";
-import { addToWishlist } from "@/app/api/wishlistApi";
+import { addToWishlist, fetchWishlist } from "@/app/api/wishlistApi";
 import { motion, AnimatePresence } from "motion/react";
 import ChatLoading from "@/assets/animations/logo_pop_1.webm";
 import LogoTextWebm from "@/assets/animations/logo_text.webm";
 import { X, ZoomIn, ImagePlus, ChevronDown, Lock, ExternalLink, Heart, Loader2 } from "lucide-react";
 import { createChatRoom, fetchMessages, sendMessage, sendGuestMessage, type ChatMessage } from "@/app/api/chatApi";
+import { checkTodayDetailedAnalysis } from "@/app/api/analysisApi";
 
-type AnalysisType = "default" | "simple" | "detailed" | "ingredient";
+// 퍼스널컬러 일러스트 매핑
+// 파일명만 바꾸면 승연님이 만든 일러스트로 교체 가능
+const PC_ILLUSTRATIONS: Record<string, string> = {
+    "복숭아 크림 웜":      "/assets/personal-color/pc_spring_light.png",
+    "레몬 캔디 웜":        "/assets/personal-color/pc_spring_bright.png",
+    "새벽 소다 쿨":        "/assets/personal-color/pc_summer_light.png",
+    "안개 로즈 쿨":        "/assets/personal-color/pc_summer_mute.png",
+    "밀크티 올리브 웜":    "/assets/personal-color/pc_autumn_mute.png",
+    "메이플 시나몬 웜":    "/assets/personal-color/pc_autumn_deep.png",
+    "체리 글라스 쿨":      "/assets/personal-color/pc_winter_bright.png",
+    "벨벳 자두 쿨":        "/assets/personal-color/pc_winter_deep.png",
+    "살구 버블 웜":        "/assets/personal-color/pc_bridge_spring.png",
+    "안개 이슬 쿨":        "/assets/personal-color/pc_bridge_summer.png",
+    "메이플 포그 웜":      "/assets/personal-color/pc_bridge_autumn.png",
+    "별빛 베리 쿨":        "/assets/personal-color/pc_bridge_winter.png",
+    "코튼 피치 뉴트럴":    "/assets/personal-color/pc_bridge_neutral_light.png",
+    "로즈 티 포그 뉴트럴":  "/assets/personal-color/pc_bridge_neutral_mute.png",
+};
+
+// 퍼스널컬러 감성 멘트 매핑
+const PC_CATCHPHRASES: Record<string, string> = {
+    "복숭아 크림 웜":      "햇살이 머무는 자리마다 꽃이 피는 사람",
+    "레몬 캔디 웜":        "웃는 것만으로 주변이 환해지는 비타민 같은 존재",
+    "새벽 소다 쿨":        "투명한 새벽 공기처럼 맑고 여린 빛을 가진 사람",
+    "안개 로즈 쿨":        "조용히 피어난 장미처럼 은은하게 시선을 잡는 사람",
+    "밀크티 올리브 웜":    "함께 있으면 편안해지는, 밀크티 같은 온기를 가진 사람",
+    "메이플 시나몬 웜":    "가만히 있어도 깊이가 느껴지는 가을의 향기",
+    "체리 글라스 쿨":      "한 번 보면 잊기 어려운 선명하고 강렬한 존재감",
+    "벨벳 자두 쿨":        "가만히 있어도 기품이 느껴지는 인간 명품",
+    "살구 버블 웜":        "상큼한 햇살처럼 얼굴에 생기와 사랑스러움을 가득 채운 사람",
+    "안개 이슬 쿨":        "이슬 맺힌 아침처럼 청초하고 투명한 아름다움",
+    "메이플 포그 웜":      "안개 낀 숲속처럼 부드럽고 깊은 분위기를 가진 사람",
+    "별빛 베리 쿨":        "밤하늘의 별처럼 또렷하고 강한 빛을 품은 사람",
+    "코튼 피치 뉴트럴":    "솜사탕처럼 포근하고 맑은 빛으로 사람을 편안하게 만드는 존재",
+    "로즈 티 포그 뉴트럴":  "잔잔한 감성으로 세련된 무드를 완성하는 당신만의 컬러",
+};
+
+// 퍼스널컬러 추천 컬러 HEX 매핑
+const PC_COLOR_HEX: Record<string, string[]> = {
+    "복숭아 크림 웜":      ["#FFDAB9", "#F7B39B", "#FBC4AB", "#F5E6A3", "#F5E6CC"],
+    "레몬 캔디 웜":        ["#FFF44F", "#FF6F61", "#8DB600", "#FF7F32", "#40E0D0"],
+    "새벽 소다 쿨":        ["#87CEEB", "#FFB6C1", "#B4A7D6", "#B0C4DE", "#F4C2C2"],
+    "안개 로즈 쿨":        ["#D4A5A5", "#967BB6", "#C9ADA7", "#A4B8C4", "#B8A99A"],
+    "밀크티 올리브 웜":    ["#808000", "#C19A6B", "#6F4E37", "#E8967A", "#A0785A"],
+    "메이플 시나몬 웜":    ["#8B4513", "#CB4154", "#556B2F", "#D2691E", "#3E2723"],
+    "체리 글라스 쿨":      ["#DC143C", "#FF00FF", "#4169E1", "#FFFFFF", "#000000"],
+    "벨벳 자두 쿨":        ["#8E4585", "#722F37", "#000080", "#36454F", "#3D0C11"],
+    "살구 버블 웜":        ["#F7A38E", "#FFB5A7", "#FFA552", "#F5E6A3", "#98D8A8"],
+    "안개 이슬 쿨":        ["#B4A7C7", "#F4C2C2", "#A4C8E1", "#D4B5A0", "#C3A6C9"],
+    "메이플 포그 웜":      ["#8B4513", "#A0785A", "#897B6D", "#C8826E", "#6B6F4A"],
+    "별빛 베리 쿨":        ["#722F37", "#C154C1", "#1A1A2E", "#8E4585", "#F0F0F0"],
+    "코튼 피치 뉴트럴":    ["#FFDAB9", "#FFB6C1", "#C8A2C8", "#F5E6CC", "#B0C4DE"],
+    "로즈 티 포그 뉴트럴":  ["#C9ADA7", "#C4A69D", "#B8988A", "#A89B8C", "#8B7D6B"],
+};
+
+// 퍼스널컬러 답변 감지 함수
+function parsePersonalColor(content: string): { typeName: string; colorHexList: string[] } | null {
+    // 🎨 **감성이름** 패턴으로 타입명 추출
+    const nameMatch = content.match(/🎨\s*\*\*(.+?)\*\*/);
+    if (!nameMatch) return null;
+    const typeName = nameMatch[1].trim();
+    if (!PC_CATCHPHRASES[typeName]) return null;
+
+    const colorHexList = PC_COLOR_HEX[typeName] || [];
+    return { typeName, colorHexList };
+}
+
+type AnalysisType = "default" | "simple" | "detailed" | "ingredient" | "personal";
 
 interface UploadSlot {
     id      : string;
@@ -47,12 +115,14 @@ const ANALYSIS_OPTIONS = [
     { value: "simple",      label: "빠른 분석" },
     { value: "detailed",    label: "정밀 분석" },
     { value: "ingredient",  label: "성분 분석" },
+    { value: "personal",  label: "퍼스널 컬러 분석" },
 ];
 
 const ANALYSIS_HINTS: Record<string, string> = {
     simple: "얼굴 정면 1장으로 빠른 피부 상태 분석",
     detailed: "정면·좌·우측 3장으로 정밀 피부 분석",
     ingredient: "화장품 성분표 1장으로 성분 안전성 분석",
+    personal: "나도 몰랐던 내 퍼스널 컬러는?",
 };
 
 const getUploadSlots = (type: AnalysisType): UploadSlot[] => {
@@ -67,6 +137,8 @@ const getUploadSlots = (type: AnalysisType): UploadSlot[] => {
             ];
         case "ingredient":
             return [{ id: "label", label: "전성분 표시면", preview: null, file: null }];
+        case "personal":
+            return [{ id: "front", label: "정면 얼굴", preview: null, file: null }];
         default:
             return [];
     }
@@ -273,6 +345,23 @@ export function ChatPage() {
         toastTimerRef.current = setTimeout(() => setShowAnalysisToast(false), 3000);
     };
 
+
+    // llm 파트 마무리 전까지 봉인 jsw 0318 정밀분석(프론트)
+    // const [showDetailedLimitToast, setShowDetailedLimitToast] = useState(false);
+    // const detailedLimitToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    // const triggerDetailedLimitToast = () => {
+    //     if (detailedLimitToastTimerRef.current) {
+    //         clearTimeout(detailedLimitToastTimerRef.current);
+    //     }
+
+    //     setShowDetailedLimitToast(true);
+
+    //     detailedLimitToastTimerRef.current = setTimeout(() => {
+    //         setShowDetailedLimitToast(false);
+    //     }, 3000);
+    // };
+
     // 위시리스트 state
     const [wishedUrls, setWishedUrls] = useState<Set<string>>(new Set());
     const [wishingUrls, setWishingUrls] = useState<Set<string>>(new Set());
@@ -328,11 +417,10 @@ export function ChatPage() {
             const goodsNo = new URL(link.url).searchParams.get("goodsNo") ?? link.name.slice(0, 50);
 
             await addToWishlist({
-                user_id             : cachedUserIdRef.current,
-                product_vector_id   : goodsNo,
-                product_name        : link.name,
-                message_id          : msgId,
-                product_description : link.url,
+                user_id      : cachedUserIdRef.current,
+                product_name : link.name,
+                product_url  : link.url,
+                message_id   : msgId,
             });
 
             setWishedUrls((prev) => new Set(prev).add(link.url));
@@ -439,6 +527,23 @@ export function ChatPage() {
         setUploadSlots(getUploadSlots(analysisType));
     }, [analysisType]);
 
+    // 새로 고침시 db에 저장된 product_ur 기준으로 채팅방에서 하트 유지
+    useEffect(() => {
+        if (!isLoggedIn) return;
+
+        fetchWishlist()
+            .then((items) => {
+                const urls = items
+                    .map((item) => item.product_url)
+                    .filter((url): url is string => !!url);
+
+                setWishedUrls(new Set(urls));
+            })
+            .catch((err) => {
+                console.error("위시리스트 조회 실패:", err);
+            });
+    }, [isLoggedIn]);
+
     // ── Handlers (새 채팅 - 이미지 업로드 슬롯) ──────────────────────────
     const handleUpload = (slotId: string, file: File) => {
         const url = URL.createObjectURL(file);
@@ -455,10 +560,51 @@ export function ChatPage() {
     };
 
     const canSend = (input.trim().length > 0 || uploadSlots.some((s) => s.preview)) && !isSending;
+    
+    // llm 파트 마무리 전까지 봉인 jsw 0318 정밀분석(프론트)
+    // const handleSelectAnalysisType = async (type: AnalysisType) => {
+    //     if (type !== "detailed") {
+    //         setAnalysisType(type);
+    //         setAnalysisDropdownOpen(false);
+    //         return;
+    //     }
 
+    //     try {
+    //         const result = await checkTodayDetailedAnalysis();
+
+    //         if (!result.available) {
+    //             setAnalysisDropdownOpen(false);
+    //             triggerDetailedLimitToast();
+    //             return;
+    //         }
+
+    //         setAnalysisType("detailed");
+    //         setAnalysisDropdownOpen(false);
+    //     } catch (err) {
+    //         console.error("정밀 분석 가능 여부 확인 실패:", err);
+    //         alert("정밀 분석 가능 여부를 확인하지 못했습니다.");
+    //         setAnalysisDropdownOpen(false);
+    //     }
+    // };
     // ── 메시지 전송 ───────────────────────────────────────────────────────
     const handleSend = async () => {
         if (!canSend) return;
+
+        // llm 파트 마무리 전까지 봉인 jsw 0318 정밀분석(프론트)
+        // if (isLoggedIn && analysisType === "detailed") {
+        //     try {
+        //         const result = await checkTodayDetailedAnalysis();
+
+        //         if (!result.available) {
+        //             triggerDetailedLimitToast();
+        //             return;
+        //         }
+        //     } catch (err) {
+        //         console.error("정밀 분석 가능 여부 확인 실패:", err);
+        //         alert("정밀 분석 가능 여부를 확인하지 못했습니다.");
+        //         return;
+        //     }
+        // }
 
         const trimmedInput      = input.trim();
         const previews          = uploadSlots.filter((s) => s.preview).map((s) => s.preview!);
@@ -741,9 +887,43 @@ export function ChatPage() {
                                             {/* 텍스트 */}
                                             {msg.role === "bot" ? (() => {
                                                 const { mainText, links } = parseOliveYoungLinks(msg.content);
+                                                const pcInfo = parsePersonalColor(msg.content);
 
                                                 return (
                                                     <>
+                                                        {/* 퍼스널컬러 카드 (퍼스널컬러 답변일 때만) */}
+                                                        {pcInfo && (
+                                                            <div className="flex flex-col items-center bg-gradient-to-b from-gray-50 to-white px-4 pt-5 pb-3 gap-3">
+                                                                {/* 일러스트 */}
+                                                                {PC_ILLUSTRATIONS[pcInfo.typeName] && (
+                                                                    <img
+                                                                        src={PC_ILLUSTRATIONS[pcInfo.typeName]}
+                                                                        alt={pcInfo.typeName}
+                                                                        className="w-32 h-32 object-contain rounded-full"
+                                                                    />
+                                                                )}
+                                                                {/* 감성 멘트 */}
+                                                                <p className="text-sm text-gray-500 italic text-center leading-relaxed">
+                                                                    "{PC_CATCHPHRASES[pcInfo.typeName]}"
+                                                                </p>
+                                                                {/* 추천 컬러칩 */}
+                                                                {pcInfo.colorHexList.length > 0 && (
+                                                                    <div className="flex flex-col items-center gap-1.5 mt-1">
+                                                                        <p className="text-xs text-gray-400 font-medium">추천 컬러 팔레트</p>
+                                                                        <div className="flex gap-2">
+                                                                            {pcInfo.colorHexList.map((hex, i) => (
+                                                                                <div
+                                                                                    key={i}
+                                                                                    className="w-10 h-10 rounded-lg shadow-sm border border-gray-200"
+                                                                                    style={{ backgroundColor: hex }}
+                                                                                    title={hex}
+                                                                                />
+                                                                            ))}
+                                                                        </div>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        )}
                                                         <div className="px-4 py-3">
                                                             <ReactMarkdown
                                                                 components={{
@@ -910,6 +1090,7 @@ export function ChatPage() {
                                                 <button
                                                     key={opt.value}
                                                     onClick={() => { setAnalysisType(opt.value as AnalysisType); setAnalysisDropdownOpen(false); }}
+                                                    // onClick={() => handleSelectAnalysisType(opt.value as AnalysisType)} llm 파트 마무리 전까지 봉인 jsw 0318 정밀분석(프론트)
                                                     className={`w-full text-left px-4 py-2.5 text-xs font-medium transition-colors cursor-pointer ${
                                                         analysisType === opt.value ? "bg-[#E8F5D0] text-[#4A7A1E]" : "text-gray-700 hover:bg-gray-50"
                                                     }`}
@@ -1047,6 +1228,24 @@ export function ChatPage() {
                     </motion.div>
                 )}
             </AnimatePresence>
+            {/* // llm 파트 마무리 전까지 봉인 jsw 0318 정밀분석(프론트) */}
+            {/* <AnimatePresence>
+            {showDetailedLimitToast && (
+                <motion.div
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 16 }}
+                    transition={{ duration: 0.2 }}
+                    className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-4 py-3 rounded-2xl shadow-lg text-sm text-white bg-[#1F2937]"
+                    style={{ minWidth: "260px", maxWidth: "340px" }}
+                >
+                    <Lock className="w-4 h-4 flex-shrink-0 text-onyou" />
+                    <span className="flex-1 text-xs leading-relaxed">
+                        정밀 분석은 <strong>하루에 1번만</strong> 가능합니다.
+                    </span>
+                </motion.div>
+            )}
+        </AnimatePresence> */}
         </div>
     );
 }

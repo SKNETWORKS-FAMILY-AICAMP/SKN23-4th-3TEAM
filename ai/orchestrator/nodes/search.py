@@ -44,7 +44,7 @@ def _infer_skin_type_from_metrics(vision_result: dict | None) -> str | None:
         pigmentation = metrics.get("pigmentation", {}).get("value", 0.3)
         elasticity = metrics.get("elasticity", {}).get("value", 0.5)
 
-        # ── 모델 출력 범위: 0.4~0.6 중심 (Sigmoid 특성)
+        # 모델 출력 범위: 0.4~0.6 중심 (Sigmoid 특성)
         # 상대적 순위 기반으로 판단하여 5가지 타입 골고루 분류
 
         # 1. 종합 점수 계산 (각 지표의 상대적 위치)
@@ -93,7 +93,7 @@ def _infer_skin_type_from_metrics(vision_result: dict | None) -> str | None:
         if not measurements:
             return None
 
-        # ── 수분 관련 수치 수집 ──────────────────────────────
+        # 수분 관련 수치 수집
         moisture_keys = [k for k in measurements if "moisture" in k]
         moisture_vals = [measurements[k] for k in moisture_keys if measurements[k] is not None]
         avg_moisture  = sum(moisture_vals) / len(moisture_vals) if moisture_vals else 50
@@ -105,22 +105,22 @@ def _infer_skin_type_from_metrics(vision_result: dict | None) -> str | None:
 
         chin_moisture = measurements.get("chin_moisture", 50)
 
-        # ── 모공 수치 수집 ────────────────────────────────────
+        # 모공 수치 수집
         l_pore = measurements.get("l_cheek_pore", 0) or 0
         r_pore = measurements.get("r_cheek_pore", 0) or 0
         avg_pore = (l_pore + r_pore) / 2 if (l_pore or r_pore) else 0
         max_pore = max(l_pore, r_pore)
 
-        # ── 탄력 수치 수집 ────────────────────────────────────
+        # 탄력 수치 수집
         elasticity_keys = [k for k in measurements if k.endswith("_R2")]
         elasticity_vals = [measurements[k] for k in elasticity_keys if measurements[k] is not None]
         avg_elasticity  = sum(elasticity_vals) / len(elasticity_vals) if elasticity_vals else 0.5
         min_elasticity  = min(elasticity_vals) if elasticity_vals else 0.5
 
-        # ── 기타 ─────────────────────────────────────────────
+        # 기타
         pigmentation = measurements.get("pigmentation_count", 100) or 100
 
-        # ── 피부타입 판단 (우선순위 순) ───────────────────────
+        # 피부타입 판단 (우선순위 순)
         wrinkle_keys = [k for k in measurements if k.endswith("_Ra")]
         wrinkle_vals = [measurements[k] for k in wrinkle_keys if measurements[k] is not None]
         avg_wrinkle = sum(wrinkle_vals) / len(wrinkle_vals) if wrinkle_vals else 20
@@ -257,6 +257,12 @@ def search_node(state: GraphState) -> GraphState:
     rag_passages: list = []
     oliveyoung_products: list = []
 
+    # 사용자 요청 개수 파싱 (예: "3개 추천해줘", "4개 알려줘")
+    import re as _re
+    _count_match = _re.search(r'(\d+)\s*개', user_text or "")
+    requested_count = int(_count_match.group(1)) if _count_match else 3
+    requested_count = max(1, min(requested_count, 5))  # 1~5개 범위 제한
+
     def _run_rag():
         query = _build_rag_query(user_text, route.intent, vision_result)
         rag_profile = _get_rag_profile(route.intent, user_profile)
@@ -271,10 +277,19 @@ def search_node(state: GraphState) -> GraphState:
         )
 
     def _run_tavily():
+        # vision_result에 확정 피부타입이 있으면 user_profile에 반영
+        # (분석 직후 제품 추천 시 분석 결과를 활용)
+        tavily_profile = user_profile
+        if vision_result and vision_result.get("determined_skin_type"):
+            tavily_profile = dict(user_profile) if user_profile else {}
+            tavily_profile["skin_type_label"] = vision_result["determined_skin_type"]
+            print(f"[SEARCH] Tavily에 분석 피부타입 반영: {vision_result['determined_skin_type']}", flush=True)
         return search_products_for_context(
             user_text=user_text,
-            user_profile=user_profile,
-            max_products=3,
+            user_profile=tavily_profile,
+            chat_history=state.get("chat_history", []),
+            detected_keywords=state.get("detected_keywords"),
+            max_products=requested_count,
         )
 
     t0 = time.perf_counter()

@@ -7,7 +7,7 @@ import { Button } from "@/app/components/ui/button";
 import { motion, AnimatePresence } from "motion/react";
 import LogoIdle from "@/assets/animations/logo_idle_1.webm";
 import { Eye, EyeOff, Check, X, AlertCircle, Mail, Loader2 } from "lucide-react";
-
+import { checkNickname } from "@/app/api/userApi"; // 중복 체크 
 function PasswordStrength({ password }: { password: string }) {
     const checks = [
         { label: "8자 이상",    pass: password.length >= 8 },
@@ -59,7 +59,7 @@ export function SignupPage() {
     const [password, setPassword]         = useState("");
     const [passwordConfirm, setPasswordConfirm] = useState("");
     const [showConfirm, setShowConfirm]   = useState(false);
-    const [name, setName]                 = useState("");
+    // const [name, setName]                 = useState("");
     const [nickname, setNickname]         = useState("");
     const [agreed] = useState(true);
 
@@ -70,6 +70,12 @@ export function SignupPage() {
     const [emailError, setEmailError]   = useState("");
     const [verifyError, setVerifyError] = useState("");
     const [signupError, setSignupError] = useState("");
+
+    // 닉네임 중복 체크
+    const [nicknameChecked, setNicknameChecked] = useState(false);
+    const [nicknameAvailable, setNicknameAvailable] = useState<boolean | null>(null);
+    const [nicknameError, setNicknameError] = useState("");
+    const [isCheckingNickname, setIsCheckingNickname] = useState(false);
 
     const isPasswordStrong = [
         password.length >= 8,
@@ -83,7 +89,9 @@ export function SignupPage() {
     const isValid =
         email.length > 0 &&
         emailVerified &&
-        name.length > 0 &&
+        nickname.trim().length > 0 &&
+        nicknameChecked &&
+        nicknameAvailable === true &&
         isPasswordStrong &&
         passwordMatch &&
         agreed;
@@ -143,11 +151,10 @@ export function SignupPage() {
         try {
             await authApi.signup({
                 email,
-                name,
-                nickname         : nickname.trim() || name,
+                nickname: nickname.trim(),
                 password,
-                terms_agreed     : agreed,
-                privacy_agreed   : agreed,
+                terms_agreed: agreed,
+                privacy_agreed: agreed,
                 verification_code: verifyCode,
             });
 
@@ -171,6 +178,36 @@ export function SignupPage() {
             }
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const handleCheckNickname = async () => {
+        const value = nickname.trim();
+
+        if (!value) {
+            setNicknameError("닉네임을 입력해 주세요.");
+            setNicknameChecked(false);
+            setNicknameAvailable(null);
+            return;
+        }
+
+        setIsCheckingNickname(true);
+        setNicknameError("");
+
+        try {
+            const data = await checkNickname(value);
+            setNicknameChecked(true);
+            setNicknameAvailable(data.available);
+
+            if (!data.available) {
+                setNicknameError("이미 사용 중인 닉네임입니다.");
+            }
+        } catch (e) {
+            setNicknameChecked(false);
+            setNicknameAvailable(null);
+            setNicknameError(e instanceof Error ? e.message : "닉네임 확인에 실패했습니다.");
+        } finally {
+            setIsCheckingNickname(false);
         }
     };
 
@@ -344,23 +381,51 @@ export function SignupPage() {
                             </div>
 
                             {/* ── 이름 ── */}
-                            <Input
+                            {/* <Input
                                 label="이름"
                                 required
                                 value={name}
                                 onChange={(e) => setName(e.target.value)}
                                 placeholder="실명 입력"
                                 maxLength={20}
-                            />
+                            /> */}
 
                             {/* ── 닉네임 ── */}
-                            <Input
-                                label="닉네임"
-                                value={nickname}
-                                onChange={(e) => setNickname(e.target.value)}
-                                placeholder="닉네임 (선택, 미입력 시 이름으로 설정)"
-                                maxLength={12}
-                            />
+                            <div>
+                                <label className="text-xs font-medium text-gray-500 block mb-1.5">
+                                    닉네임 <span className="text-red-400">*</span>
+                                </label>
+
+                                <div className="flex gap-2 items-start">
+                                    <div className="flex-1">
+                                        <Input
+                                            value={nickname}
+                                            onChange={(e) => {
+                                                setNickname(e.target.value);
+                                                setNicknameChecked(false);
+                                                setNicknameAvailable(null);
+                                                setNicknameError("");
+                                            }}
+                                            placeholder="닉네임 입력"
+                                            maxLength={12}
+                                            error={nicknameError}
+                                        />
+                                    </div>
+
+                                    <button
+                                        type="button"
+                                        onClick={handleCheckNickname}
+                                        disabled={!nickname.trim() || isCheckingNickname}
+                                        className="w-[90px] h-[45px] px-3 py-3 rounded-xl text-sm font-semibold text-white bg-onyou disabled:opacity-50 transition-all hover:brightness-95 disabled:cursor-not-allowed shrink-0"
+                                    >
+                                        {isCheckingNickname ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : "중복확인"}
+                                    </button>
+                                </div>
+
+                                {nicknameChecked && nicknameAvailable === true && !nicknameError && (
+                                    <p className="text-[11px] text-onyou mt-1.5">사용 가능한 닉네임입니다.</p>
+                                )}
+                            </div>
 
 
                             {/* 가입 에러 */}

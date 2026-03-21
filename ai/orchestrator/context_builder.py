@@ -7,7 +7,7 @@ import re
 from typing import Optional
 
 
-# ── DB 연동 (back/services 활용) ─────────────────────────────
+# DB 연동 (back/services 활용)
 def _load_from_db(user_id: int) -> dict | None:
     """
     DB에서 사용자 프로필과 최근 분석 이력을 로드합니다.
@@ -63,7 +63,7 @@ def _load_from_db(user_id: int) -> dict | None:
         return None
 
 
-# ── 비회원: chat_history에서 임시 프로필 추출 ─────────────────
+# 비회원: chat_history에서 임시 프로필 추출
 _SKIN_TYPE_PATTERNS = {
     "건성": ["건성", "건조"],
     "지성": ["지성", "피지"],
@@ -114,7 +114,7 @@ def _extract_temp_profile(chat_history: list) -> dict:
     }
 
 
-# ── 메인 함수 ─────────────────────────────────────────────────
+# 메인 함수
 def build_context(
     user_id: int | None,
     chat_history: list,

@@ -5,6 +5,7 @@ import ChatSvg from "@/assets/icons/chat.svg";
 import PoreSvg from "@/assets/icons/pore.svg";
 import SaveSvg from "@/assets/icons/save.svg";
 import WishSvg from "@/assets/icons/wish.svg";
+import MbtiSvg from "@/assets/icons/mbti.svg";
 import BeautySvg from "@/assets/icons/beauty.svg";
 import WrinkleSvg from "@/assets/icons/wrinkle.svg";
 import MoistureSvg from "@/assets/icons/moisture.svg";
@@ -13,7 +14,7 @@ import SendActiveSvg from "@/assets/icons/send_active.svg";
 import SendDisableSvg from "@/assets/icons/send_disabled.svg";
 import PigmentationSvg from "@/assets/icons/pigmentation.svg";
 
-export type IconName = "pore" | "send_active" | "send_disable" | "chat" | "save" | "wish" | "beauty" | "wrinkle" | "moisture" | "elasticity" | "pigmentation";
+export type IconName = "pore" | "send_active" | "send_disable" | "chat" | "save" | "wish" | "mbti" | "beauty" | "wrinkle" | "moisture" | "elasticity" | "pigmentation";
 export type IconVariant = "green" | "white";
 
 interface IconProps {
@@ -30,6 +31,7 @@ const ICON_SRC: Record<IconName, string> = {
     chat:           ChatSvg,
     save:           SaveSvg,
     wish:           WishSvg,
+    mbti:           MbtiSvg,
     beauty:         BeautySvg,
     wrinkle:        WrinkleSvg,
     moisture:       MoistureSvg,

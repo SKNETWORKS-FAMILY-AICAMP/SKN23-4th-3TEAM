@@ -19,7 +19,7 @@ from typing import Optional
 from ai.config.settings import TAVILY_API_KEY
 
 
-# ── 공통 유틸 ─────────────────────────────────────────────────
+# 공통 유틸
 
 def _tavily_search(query: str, max_results: int = 5) -> list[dict]:
     """Tavily API 호출"""
@@ -119,7 +119,7 @@ def _result_to_product(item: dict) -> dict | None:
     }
 
 
-# ── 핵심 함수 1: 피부 맥락 기반 올리브영 직접 검색 ─────────────
+# 핵심 함수 1: 피부 맥락 기반 올리브영 직접 검색
 
 # 고민 → 올리브영 검색 키워드 (짧고 직접적인 상품명 스타일)
 _CONCERN_QUERY = {
@@ -143,32 +143,47 @@ _CONCERN_QUERY = {
 }
 
 # 제품 카테고리 → 검색 키워드
+# ⚠️ 순서 중요: 구체적 키워드(선크림, 수분크림)가 일반 키워드(크림)보다 앞에 와야 함
+#    "크림" in "선크림" → True 이므로, "선크림"을 먼저 매칭해야 함
 _PRODUCT_TYPE_QUERY = {
     "수분크림": "수분 크림",
-    "크림": "크림",
-    "세럼": "세럼",
-    "에센스": "에센스",
-    "토너": "토너 스킨",
+    "보습크림": "보습 크림",
     "선크림": "선크림",
-    "클렌저": "폼 클렌저",
-    "클렌징": "폼 클렌저",
+    "썬크림": "선크림",
+    "선블록": "선크림",
+    "아이크림": "아이크림",
+    "눈크림": "아이크림",
+    "젤크림": "젤크림",
+    "클렌징오일": "클렌징 오일",
+    "클렌징 오일": "클렌징 오일",
+    "클렌징밤": "클렌징 밤",
     "폼클렌징": "폼 클렌저",
     "폼 클렌징": "폼 클렌저",
     "폼클렌저": "폼 클렌저",
+    "폼클": "폼 클렌저",
+    "폼클린저": "폼 클렌저",
+    "크림": "크림",
+    "세럼": "세럼",
+    "써럼": "세럼",
+    "에센스": "에센스",
+    "토너": "토너 스킨",
+    "스킨": "토너 스킨",
+    "클렌저": "폼 클렌저",
+    "클렌징": "폼 클렌저",
     "세안": "폼 클렌저",
     "세안제": "폼 클렌저",
     "마스크": "마스크팩",
+    "마스크팩": "마스크팩",
+    "시트마스크": "마스크팩",
     "로션": "로션",
-    "아이크림": "아이크림",
+    "로숀": "로션",
     "앰플": "앰플",
+    "엠플": "앰플",
     "미스트": "미스트",
     "필링": "필링 패드",
     "패드": "패드",
     "오일": "클렌징 오일",
-    "클렌징오일": "클렌징 오일",
-    "클렌징 오일": "클렌징 오일",
     "밤": "클렌징 밤",
-    "클렌징밤": "클렌징 밤",
 }
 
 # 피부타입 → 검색 키워드 (단독으로는 잘 안 씀, 고민 없을 때 폴백용)
@@ -187,23 +202,286 @@ def _build_oliveyoung_query(
     user_text: str,
     user_profile: dict | None,
     product_type_hint: str = "",
+    chat_history: list | None = None,
+    detected_keywords: dict | None = None,
 ) -> str:
     """
     피부 맥락 + 유저 질문에서 올리브영 검색 쿼리를 만듭니다.
 
     전략:
+    0. LLM 라우터가 추출한 detected_keywords가 있으면 우선 사용
     1. 제품 카테고리 먼저 추출 (폼클렌징, 세럼, 크림 등)
     2. 피부타입 / 고민 키워드 추출
     3. "피부타입/고민 + 카테고리" 조합으로 쿼리 생성
        예: "지성 피부 폼 클렌저", "홍조 진정 크림"
     """
-    # 1. 제품 카테고리 추출
+    # 퍼스널컬러 맥락 기반 제품 검색
+    # 전체 히스토리에서 퍼스널컬러 답변을 찾고, 사용자 요청에 맞는 컬러로 검색
+    text_lower_check = (user_text or "").lower()
+    _pc_context = None  # 퍼스널컬러 답변에서 추출한 구조화 데이터
+    if chat_history:
+        _PC_MARKERS = ["추천 립 컬러", "추천 블러셔", "한 줄 무드", "이미지 키워드"]
+        for msg in reversed(chat_history):
+            if msg.get("role") != "assistant":
+                continue
+            content = msg.get("content") or ""
+            if any(marker in content for marker in _PC_MARKERS):
+                # 퍼스널컬러 답변에서 모든 추천 정보 구조화 추출
+                _pc_context = {"raw": content, "lip": "", "blusher": "", "eye": "", "hair": "", "overall": "", "type_name": ""}
+                for line in content.split("\n"):
+                    line_stripped = line.strip()
+                    if "추천 립 컬러" in line_stripped:
+                        _pc_context["lip"] = line_stripped.split(":")[-1].strip()
+                    elif "추천 블러셔" in line_stripped:
+                        _pc_context["blusher"] = line_stripped.split(":")[-1].strip()
+                    elif "추천 아이" in line_stripped:
+                        _pc_context["eye"] = line_stripped.split(":")[-1].strip()
+                    elif "추천 헤어" in line_stripped:
+                        _pc_context["hair"] = line_stripped.split(":")[-1].strip()
+                    elif "추천 컬러" in line_stripped and "피해야" not in line_stripped and "뉴트럴" not in line_stripped and "립" not in line_stripped and "블러셔" not in line_stripped:
+                        _pc_context["overall"] = line_stripped.split(":")[-1].strip()
+                    elif "🎨" in line_stripped and "**" in line_stripped and not "추천" in line_stripped:
+                        _pc_context["type_name"] = line_stripped.replace("🎨", "").replace("**", "").strip()
+                print(f"[oliveyoung] 퍼스널컬러 맥락 감지: 타입={_pc_context.get('type_name', '?')}", flush=True)
+                break
+
+    if _pc_context:
+        # 사용자 요청에서 카테고리 + 컬러 매칭
+        # 카테고리별 매핑: 사용자 키워드 → (검색용 카테고리, pc_context 필드)
+        _MAKEUP_MAP = {
+            "립": ("립", "lip"), "립스틱": ("립스틱", "lip"), "립틴트": ("립틴트", "lip"),
+            "틴트": ("틴트", "lip"), "립글로즈": ("립글로즈", "lip"), "립밤": ("립밤", "lip"),
+            "블러셔": ("블러셔", "blusher"), "블러쉬": ("블러셔", "blusher"), "치크": ("치크", "blusher"),
+            "아이섀도": ("아이섀도", "eye"), "아이섀도우": ("아이섀도", "eye"), "섀도": ("아이섀도", "eye"),
+            "아이라이너": ("아이라이너", "eye"), "마스카라": ("마스카라", "eye"),
+            "헤어": ("헤어 컬러", "hair"), "염색": ("헤어 컬러", "hair"),
+        }
+
+        matched_category = None
+        matched_field = None
+        for kw, (cat, field) in _MAKEUP_MAP.items():
+            if kw in text_lower_check:
+                matched_category = cat
+                matched_field = field
+                break
+
+        if matched_category:
+            # 해당 카테고리의 추천 컬러 가져오기
+            color_list_str = _pc_context.get(matched_field, "") or _pc_context.get("overall", "")
+            colors = [c.strip() for c in color_list_str.split(",") if c.strip()]
+
+            # 사용자가 특정 컬러를 직접 언급했는지 확인
+            user_color = None
+            for color in colors:
+                if color.lower().replace(" ", "") in text_lower_check.replace(" ", ""):
+                    user_color = color
+                    break
+
+            chosen = user_color or (colors[0] if colors else "")
+            if chosen:
+                query = f"{chosen} {matched_category}"
+                label = "(사용자 지정)" if user_color else ""
+                print(f"[oliveyoung] 퍼스널컬러 기반 검색 {label}: '{query}'", flush=True)
+                return query
+
+        # 카테고리 키워드 없이 퍼스널컬러 추천 컬러를 직접 언급한 경우
+        # 해당 컬러가 어떤 카테고리에 속하는지 추적해서 카테고리를 붙여줌
+        _FIELD_TO_CATEGORY = {"lip": "립", "blusher": "블러셔", "eye": "아이섀도", "hair": "헤어", "overall": ""}
+        for field in ("lip", "blusher", "eye", "overall"):
+            for c in _pc_context.get(field, "").split(","):
+                c = c.strip()
+                if c and c.lower().replace(" ", "") in text_lower_check.replace(" ", ""):
+                    # 이전 대화에서 마지막으로 요청한 카테고리 확인 (폴백)
+                    fallback_cat = _FIELD_TO_CATEGORY.get(field, "")
+                    # 히스토리에서 최근 사용자가 요청한 메이크업 카테고리 찾기
+                    if not fallback_cat and chat_history:
+                        _ALL_MAKEUP_KW = ["립", "립스틱", "틴트", "블러셔", "치크", "아이섀도", "섀도"]
+                        for prev_msg in reversed(chat_history):
+                            if prev_msg.get("role") != "user":
+                                continue
+                            prev_text = (prev_msg.get("content") or "").lower()
+                            for mkw in _ALL_MAKEUP_KW:
+                                if mkw in prev_text:
+                                    fallback_cat = mkw
+                                    break
+                            if fallback_cat:
+                                break
+                    query = f"{c} {fallback_cat}".strip() if fallback_cat else f"{c} 제품"
+                    print(f"[oliveyoung] 퍼스널컬러 컬러 직접 검색: '{query}'", flush=True)
+                    return query
+
+    # LLM 키워드 우선 사용 (브랜드는 단독 검색, 그 외는 피부 맥락 조합)
+    if detected_keywords:
+        brand = detected_keywords.get("brand", "")
+        ingredient = detected_keywords.get("ingredient", "")
+        category = detected_keywords.get("category", "")
+
+        # 브랜드가 있으면 브랜드 중심 검색 (피부타입 불필요)
+        if brand:
+            parts = ["올리브영", brand]
+            if category:
+                parts.append(category)
+            direct_query = " ".join(parts)
+            print(f"[oliveyoung] LLM 키워드 검색 (브랜드): '{direct_query}'", flush=True)
+            return direct_query
+
+        # 브랜드 없이 성분/카테고리만 있으면 피부 맥락을 조합
+        if ingredient or category:
+            parts = []
+            # 피부 맥락: user_text 피부타입 > 프로필 고민(_CONCERN_QUERY 매핑) > 프로필 피부타입
+            text_lower = (user_text or "").lower()
+            text_skin_type = ""
+            for st in ("건성", "지성", "복합성", "민감성", "중성"):
+                if st in text_lower:
+                    text_skin_type = st
+                    break
+
+            if text_skin_type:
+                parts.append(text_skin_type)
+            elif user_profile:
+                concern = user_profile.get("skin_concern") or ""
+                skin_type = user_profile.get("skin_type_label") or ""
+                if concern:
+                    # 기존 로직과 동일하게 _CONCERN_QUERY 매핑 적용
+                    first_concern = concern.split(",")[0].strip()
+                    concern_mapped = _CONCERN_QUERY.get(first_concern, first_concern)
+                    parts.append(concern_mapped)
+                elif skin_type:
+                    parts.append(skin_type)
+            if ingredient:
+                parts.append(ingredient)
+            if category:
+                # 기존 로직과 동일하게 카테고리 매핑 적용 (폼클렌징→폼 클렌저 등)
+                category_mapped = _PRODUCT_TYPE_QUERY.get(category, category)
+                parts.append(category_mapped)
+            direct_query = " ".join(parts)
+            print(f"[oliveyoung] LLM 키워드 검색: '{direct_query}'", flush=True)
+            return direct_query
+    # LLM 키워드 없으면 기존 하드코딩 로직 (폴백)
+
+    # 0. 채팅 히스토리에서 성분/브랜드/카테고리 맥락 추출 (팔로우업 대화 지원)
+    _HISTORY_INGREDIENT_KW = [
+        "히알루론산", "나이아신아마이드", "레티놀", "비타민c", "비타민C",
+        "세라마이드", "판테놀", "살리실산", "글리콜산", "아젤라산",
+        "티트리", "센텔라", "마데카소사이드", "알부틴", "트라넥삼산",
+        "스쿠알란", "콜라겐", "펩타이드", "아스코르빈산",
+        "bha", "aha", "pha", "cica", "시카",
+    ]
+    _HISTORY_BRAND_KW = [
+        "토리든", "닥터지", "라로슈포제", "이니스프리", "아로마티카",
+        "코스알엑스", "스킨1004", "셀퓨전씨", "라운드랩", "넘버즈",
+        "에스트라", "비플레인", "메디힐", "아누아", "달바",
+        "바이오힐보", "CNP", "cnp", "VT", "vt",
+    ]
+    history_ingredient = None
+    history_brand = None
+    history_category = None
+    if chat_history:
+        # 최근 6개 메시지에서 사용자 발화만 확인
+        recent_user_msgs = [
+            (m.get("content") or "").lower()
+            for m in chat_history[-6:]
+            if m.get("role") == "user"
+        ]
+        recent_user_texts = " ".join(recent_user_msgs)
+        history_ingredient = next(
+            (kw for kw in _HISTORY_INGREDIENT_KW if kw.lower() in recent_user_texts), None
+        )
+        history_brand = next(
+            (kw for kw in _HISTORY_BRAND_KW if kw.lower() in recent_user_texts), None
+        )
+        # 히스토리에서 카테고리 추출: 가장 최근 메시지부터 역순으로 탐색
+        # "선크림 추천해줘" → "세럼도 추천해줘" 순서면 "세럼"이 최신
+        for msg_text in reversed(recent_user_msgs):
+            for key, val in _PRODUCT_TYPE_QUERY.items():
+                if key in msg_text:
+                    history_category = val
+                    break
+            if history_category:
+                break
+        if history_ingredient:
+            print(f"[oliveyoung] 대화 맥락에서 성분 감지: '{history_ingredient}'", flush=True)
+        if history_brand:
+            print(f"[oliveyoung] 대화 맥락에서 브랜드 감지: '{history_brand}'", flush=True)
+        if history_category:
+            print(f"[oliveyoung] 대화 맥락에서 카테고리 감지: '{history_category}'", flush=True)
+
+    # 0-1. 현재 입력에서 성분/브랜드 감지
+    text_lower = (user_text or "").lower()
+    current_ingredient = next(
+        (kw for kw in _HISTORY_INGREDIENT_KW if kw.lower() in text_lower), None
+    )
+    current_brand = next(
+        (kw for kw in _HISTORY_BRAND_KW if kw.lower() in text_lower), None
+    )
+
+    # 리스트에 없는 브랜드도 감지: "XX 제품 추천해줘", "XX 추천해줘" 패턴
+    if not current_brand and not current_ingredient:
+        import re as _re
+        _BRAND_PATTERN = _re.compile(
+            r'^([\w가-힣]+)\s*(?:제품|추천|좋은거|뭐가|어떤)', flags=_re.UNICODE
+        )
+        m = _BRAND_PATTERN.match((user_text or "").strip())
+        if m:
+            candidate = m.group(1).strip()
+            # 피부타입/고민 키워드가 아닌 경우에만 브랜드로 인식
+            _NON_BRAND = {"건성", "지성", "복합성", "민감성", "중성", "여드름", "홍조",
+                          "모공", "각질", "주름", "탄력", "수분", "보습", "미백", "트러블"}
+            if candidate and candidate not in _NON_BRAND and len(candidate) >= 2:
+                current_brand = candidate
+                print(f"[oliveyoung] 패턴 기반 브랜드 감지: '{current_brand}'", flush=True)
+
+    # 현재 입력에서 카테고리 감지
+    current_category = None
+    for key, val in _PRODUCT_TYPE_QUERY.items():
+        if key in user_text:
+            current_category = val
+            break
+
+    # 0-2. 성분/브랜드 직접 검색 쿼리 생성
+    # 규칙: 현재 입력에 브랜드가 있으면 브랜드 중심 검색 (히스토리 성분/브랜드 무시)
+    #        현재 입력에 성분만 있으면 성분 + 카테고리
+    #        현재 입력에 둘 다 없으면 히스토리에서 보조
+    if current_brand or current_ingredient:
+        parts = []
+        if current_brand:
+            parts.append(current_brand)
+            # 브랜드 직접 지정 시 현재 입력의 성분만 포함 (히스토리 성분 무시)
+            if current_ingredient:
+                parts.append(current_ingredient)
+        else:
+            # 성분만 있는 경우
+            parts.append(current_ingredient)
+        # 카테고리: 현재 입력 우선, 없으면 히스토리
+        cat = current_category or history_category
+        if cat:
+            parts.append(cat)
+        direct_query = " ".join(parts).strip()
+        print(f"[oliveyoung] 성분/브랜드 직접 검색: '{direct_query}'", flush=True)
+        return direct_query
+
+    # 히스토리에만 성분/브랜드가 있는 경우 (현재 입력에는 아무 키워드도 없음)
+    if history_ingredient or history_brand:
+        parts = []
+        if history_brand:
+            parts.append(history_brand)
+        if history_ingredient:
+            parts.append(history_ingredient)
+        cat = current_category or history_category
+        if cat:
+            parts.append(cat)
+        direct_query = " ".join(parts).strip()
+        print(f"[oliveyoung] 대화 맥락 기반 검색: '{direct_query}'", flush=True)
+        return direct_query
+    # 1. 제품 카테고리 추출 (현재 입력 우선, 없으면 히스토리)
     category_query = product_type_hint
     if not category_query:
         for key, val in _PRODUCT_TYPE_QUERY.items():
             if key in user_text:
                 category_query = val
                 break
+    if not category_query and history_category:
+        category_query = history_category
 
     # 2. 고민 키워드 추출 (질문 + 프로필)
     concern_text = user_text
@@ -339,6 +617,8 @@ def search_products_for_context(
     user_text: str,
     user_profile: dict | None,
     max_products: int = 3,
+    chat_history: list | None = None,
+    detected_keywords: dict | None = None,
 ) -> list[dict]:
     """
     [핵심 함수] 피부 맥락 기반으로 올리브영 제품을 직접 검색합니다.
@@ -358,13 +638,53 @@ def search_products_for_context(
         user_text: 사용자 질문
         user_profile: 로그인 유저 프로필 (skin_type_label, skin_concern 등)
         max_products: 최대 반환 제품 수
+        chat_history: 채팅 히스토리 (이전 대화에서 성분/브랜드 맥락 추출용)
+        detected_keywords: LLM 라우터가 추출한 키워드 {"brand": ..., "ingredient": ..., "category": ...}
 
     Returns:
         [{"name": "...", "display_name": "...", "oliveyoung_url": "...", "why": ""}, ...]
     """
     import random
-    query = _build_oliveyoung_query(user_text, user_profile)
-    print(f"[oliveyoung] 올리브영 직접 검색: '{query}'", flush=True)
+    query = _build_oliveyoung_query(user_text, user_profile, chat_history=chat_history, detected_keywords=detected_keywords)
+    # 퍼스널컬러 기반 검색인지 판별 (메이크업 제품은 스킨케어 필터 스킵)
+    _is_pc_search = False
+    _PC_MARKERS_CHECK = ["추천 립 컬러", "추천 블러셔", "한 줄 무드", "이미지 키워드"]
+    if chat_history:
+        # 퍼스널컬러 답변이 히스토리에 있는지 확인
+        _has_pc_answer = False
+        for msg in reversed(chat_history):
+            if msg.get("role") == "assistant" and any(m in (msg.get("content") or "") for m in _PC_MARKERS_CHECK):
+                _has_pc_answer = True
+                break
+        if _has_pc_answer:
+            # 퍼스널컬러 답변이 있으면 "퍼스널컬러 기반" 또는 "퍼스널컬러 컬러 직접" 로그가 나온 경우
+            # → query가 퍼스널컬러 기반으로 만들어졌으면 메이크업 모드
+            _MAKEUP_CAT_CHECK = ["립", "립스틱", "립틴트", "틴트", "블러셔", "블러쉬", "치크", "아이섀도", "섀도", "헤어", "염색"]
+            text_lower = (user_text or "").lower()
+            if any(mkw in text_lower for mkw in _MAKEUP_CAT_CHECK):
+                _is_pc_search = True
+            else:
+                # 카테고리 없어도 퍼스널컬러 추천 컬러를 직접 언급했으면 메이크업 모드
+                _pc_content = ""
+                for msg in reversed(chat_history):
+                    if msg.get("role") == "assistant" and any(m in (msg.get("content") or "") for m in _PC_MARKERS_CHECK):
+                        _pc_content = msg.get("content") or ""
+                        break
+                if _pc_content:
+                    for line in _pc_content.split("\n"):
+                        for keyword in ["추천 립 컬러", "추천 블러셔", "추천 아이", "추천 컬러"]:
+                            if keyword in line:
+                                colors_in_line = line.split(":")[-1].strip()
+                                for c in colors_in_line.split(","):
+                                    c = c.strip()
+                                    if c and c.lower().replace(" ", "") in text_lower.replace(" ", ""):
+                                        _is_pc_search = True
+                                        break
+                            if _is_pc_search:
+                                break
+                        if _is_pc_search:
+                            break
+    print(f"[oliveyoung] 올리브영 직접 검색: '{query}'" + (" (메이크업 모드)" if _is_pc_search else ""), flush=True)
 
     # TTL 캐시에서 가져오되 max_results=10으로 후보 풀을 크게 확보
     raw = _cached_tavily_search(query, max_results=10)
@@ -372,29 +692,116 @@ def search_products_for_context(
     seen_urls = set()
 
     for url, title, content in raw:
-        if url in seen_urls:
-            continue
         if not _is_product_url(url):
+            continue
+        clean_url = _clean_url(url)
+        if clean_url in seen_urls:
             continue
         display_name = _extract_display_name({"title": title, "url": url, "content": content})
         if not display_name:
             continue
-        # 스킨케어 무관 제품 필터링 (제모크림, 바디로션, 헤어제품 등 제외)
-        if not _is_skincare_product(display_name):
-            print(f"[oliveyoung] ❌ 스킨케어 무관 제외: {display_name}", flush=True)
+        # 제품명이 너무 짧거나 잘린 것으로 판단되면 제외
+        if len(display_name) < 10:
+            print(f"[oliveyoung]  제품명 너무 짧음 제외: {display_name}", flush=True)
             continue
-        # 고민 관련성 필터링 (홍조 쿼리에 리프팅 크림 등 무관 제품 제외)
-        if not _is_relevant_to_concern(display_name, query):
-            print(f"[oliveyoung] ❌ 고민 무관 제외: {display_name}", flush=True)
+        # 제품명이 한글 중간에서 잘린 경우 감지 (ml, g, 매 등 단위로 끝나지 않으면 잘린 것)
+        import re as _re
+        _VALID_ENDINGS = _re.compile(r'(ml|g|매|개|팩|종|정|입|분|세트|기획|\)|\+|택1|단품)$', _re.IGNORECASE)
+        if not _VALID_ENDINGS.search(display_name) and len(display_name) < 30:
+            # 짧은데 단위로 안 끝나면 잘린 가능성 높음
+            last_char = display_name[-1] if display_name else ""
+            # 한글 받침이 없는 글자로 끝나거나 '루', '크' 등 중간 음절로 끝나면 잘림
+            if last_char and '\uac00' <= last_char <= '\ud7a3':
+                # 한글 종성(받침) 체크: (코드 - 0xAC00) % 28 == 0 이면 받침 없음
+                if (ord(last_char) - 0xAC00) % 28 == 0:
+                    print(f"[oliveyoung]  제품명 잘림 감지(받침없음): {display_name}", flush=True)
+                    continue
+        # 스킨케어 무관 제품 필터링 (퍼스널컬러 기반 메이크업 검색 시 스킵)
+        if not _is_pc_search and not _is_skincare_product(display_name):
+            print(f"[oliveyoung]  스킨케어 무관 제외: {display_name}", flush=True)
             continue
-        seen_urls.add(url)
+        # 고민 관련성 필터링 (퍼스널컬러 기반 메이크업 검색 시 스킵)
+        if not _is_pc_search and not _is_relevant_to_concern(display_name, query):
+            print(f"[oliveyoung]  고민 무관 제외: {display_name}", flush=True)
+            continue
+        seen_urls.add(clean_url)
         candidates.append({
             "name": display_name,
             "display_name": display_name,
             "why": "",
-            "oliveyoung_url": _clean_url(url),
+            "oliveyoung_url": clean_url,
             "evidence_source_id": "",
         })
+
+    # 카테고리 필터링: 사용자가 "로션", "세럼" 등 카테고리를 명시했으면
+    # 해당 카테고리 제품만 우선 선별 (결과가 너무 적으면 필터 해제)
+    _CATEGORY_FILTER_KW = {
+        "선크림": ["선크림", "선스크린", "썬크림", "sun", "spf", "자외선"],
+        "수분크림": ["수분크림", "수분 크림"],
+        "아이크림": ["아이크림", "눈크림", "eye cream"],
+        "클렌저": ["클렌저", "클렌징", "폼", "cleanser", "세안"],
+        "크림": ["크림", "cream"],
+        "로션": ["로션", "lotion"],
+        "세럼": ["세럼", "serum"],
+        "토너": ["토너", "토닉", "스킨", "toner"],
+        "에센스": ["에센스", "essence"],
+        "앰플": ["앰플", "ampoule"],
+        "미스트": ["미스트", "mist"],
+        "마스크팩": ["마스크", "팩", "mask"],
+        "패드": ["패드", "pad"],
+        "오일": ["오일", "oil"],
+    }
+    user_text_lower = (user_text or "").lower()
+    requested_category = None
+    for cat_key, cat_kws in _CATEGORY_FILTER_KW.items():
+        if any(kw in user_text_lower for kw in [cat_key] + cat_kws):
+            requested_category = cat_key
+            break
+
+    if requested_category:
+        filter_kws = _CATEGORY_FILTER_KW[requested_category]
+        filtered = [
+            c for c in candidates
+            if any(kw in c["display_name"].lower() for kw in filter_kws)
+        ]
+        if len(filtered) >= 1:
+            print(f"[oliveyoung] 카테고리 필터 적용: '{requested_category}' → {len(filtered)}개/{len(candidates)}개", flush=True)
+            candidates = filtered
+        else:
+            print(f"[oliveyoung] 카테고리 필터 '{requested_category}' 결과 없음 → 필터 해제", flush=True)
+
+    # 후보가 부족하면 카테고리만으로 보충 검색
+    if len(candidates) < max_products and requested_category:
+        filter_kws = _CATEGORY_FILTER_KW.get(requested_category, [])
+        # 카테고리만으로 넓게 검색 (피부타입/고민 제외)
+        broad_query = _PRODUCT_TYPE_QUERY.get(requested_category, requested_category)
+        if broad_query != query:
+            print(f"[oliveyoung] 후보 부족({len(candidates)}개) → 보충 검색: '{broad_query}'", flush=True)
+            raw2 = _cached_tavily_search(broad_query, max_results=10)
+            for url, title, content in raw2:
+                if len(candidates) >= max_products:
+                    break
+                if not _is_product_url(url):
+                    continue
+                clean_url = _clean_url(url)
+                if clean_url in seen_urls:
+                    continue
+                display_name = _extract_display_name({"title": title, "url": url, "content": content})
+                if not display_name or len(display_name) < 10:
+                    continue
+                if not _is_skincare_product(display_name):
+                    continue
+                # 카테고리 필터 적용
+                if filter_kws and not any(kw in display_name.lower() for kw in filter_kws):
+                    continue
+                seen_urls.add(clean_url)
+                candidates.append({
+                    "name": display_name,
+                    "display_name": display_name,
+                    "why": "",
+                    "oliveyoung_url": clean_url,
+                    "evidence_source_id": "",
+                })
 
     # 후보 중 랜덤 샘플링 → 매번 다른 제품 조합
     if len(candidates) > max_products:
@@ -409,22 +816,23 @@ def search_products_for_context(
     return products
 
 
-# ── 핵심 함수 2: 복합 intent용 병렬 검색 ──────────────────────
+# 핵심 함수 2: 복합 intent용 병렬 검색
 
 def search_products_parallel(
     user_text: str,
     user_profile: dict | None,
     max_products: int = 3,
+    chat_history: list | None = None,
 ) -> list[dict]:
     """
     routine_and_product intent용 - search_products_for_context와 동일하나
     병렬 처리를 위해 별도 함수로 분리합니다.
     (pipeline에서 concurrent.futures로 RAG와 동시 실행)
     """
-    return search_products_for_context(user_text, user_profile, max_products)
+    return search_products_for_context(user_text, user_profile, max_products, chat_history=chat_history)
 
 
-# ── 하위호환: 기존 gate_products (제거 예정) ──────────────────
+# 하위호환: 기존 gate_products (제거 예정)
 
 def _name_matches(search_name: str, result_title: str) -> bool:
     """기존 gate_products에서 사용하던 이름 매칭 함수"""
@@ -481,7 +889,7 @@ def gate_products(products: list[dict]) -> list[dict]:
             p["oliveyoung_url"] = result["url"]
             p["display_name"] = result["display_name"]
             passed.append(p)
-            print(f"[oliveyoung] ✅ {result['display_name']} → {result['url']}", flush=True)
+            print(f"[oliveyoung]  {result['display_name']} → {result['url']}", flush=True)
         else:
-            print(f"[oliveyoung] ❌ 미확인: {brand} {name}", flush=True)
+            print(f"[oliveyoung]  미확인: {brand} {name}", flush=True)
     return passed

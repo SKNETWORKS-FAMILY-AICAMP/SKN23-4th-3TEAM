@@ -1,17 +1,13 @@
-import DefaultProfile from "@/assets/profile.png"
+import DefaultProfile from "@/assets/profile.png";
 import { uploadImage } from "@/app/api/uploadApi";
 import { Input } from "@/app/components/ui/input";
 import { Button } from "@/app/components/ui/button";
 import { useState, useEffect, useRef } from "react";
 import { Loading } from "@/app/components/ui/loading";
 import { motion, AnimatePresence } from "motion/react";
-import { User, Link2, Check, ChevronRight, Loader2, Plus, X } from "lucide-react";
-import { fetchCurrentUser, updateCurrentUser, fetchKeywords, fetchSocialLinks, KeywordItem } from "@/app/api/userApi";
-
-const SECTIONS = [
-    { id: "profile", label: "프로필", icon: User },
-    { id: "social", label: "소셜 연동", icon: Link2 },
-];
+import { User, Link2, MessageCircleQuestion, Check, ChevronRight, ChevronLeft, Loader2, Plus, X, UserX } from "lucide-react";
+import { fetchCurrentUser, updateCurrentUser, fetchKeywords, fetchSocialLinks, KeywordItem, checkNickname } from "@/app/api/userApi";
+// import { fetchAllQna, fetchMyQna, createQna, updateQnaAnswer } from "@/app/api/qnaApi";
 
 /** API 응답이 없을 때 사용할 피부 타입 폴백 목록 -> 필요한가..? */
 const FALLBACK_SKIN_TYPES: KeywordItem[] = [
@@ -28,16 +24,44 @@ const GENDER_LABEL: Record<string, string> = {
     male   : "남성",
     female : "여성",
 };
+// 문의 카테고리 
+const CATEGORY_LABEL: Record<number, string> = {
+    1: "서비스 소개",
+    2: "채팅",
+    3: "분석",
+    4: "기타/일반",
+    5: "회원"
+};
+// DB의 QNA 관련 타입 설정
+type InquiryItem = {
+    qna_id: number;
+    user_id: number;
+    manager_id: number | null;
+    category_id: number;
+    question_title: string;
+    question: string;
+    answer: string | null;
+    created_at: string;
+    updated_at: string;
+};
 
 export function SettingsPage() {
     const [activeSection, setActiveSection] = useState("profile");
 
     // 사용자 기본 정보 (read-only, API에서 로드)
-    const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
     const [isLoadingUser, setIsLoadingUser] = useState(true);
     const [fetchError, setFetchError] = useState<string | null>(null);
+
+    // 관리자 여부
+    const [is_admin, setIsAdmin] = useState(false);
+    const [currentUserId, setCurrentUserId] = useState<number | null>(null);
+    const effectiveIsAdmin = is_admin;
+
+    // 페이지네이션
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
 
     // Profile (editable)
     const [nickname, setNickname] = useState("");
@@ -56,6 +80,63 @@ export function SettingsPage() {
     const profileInputRef = useRef<HTMLInputElement>(null);
     const [fieldErrors, setFieldErrors] = useState<{ gender?: string; age?: string; skinType?: string }>({});
 
+    // 상단에 고정되 있던 section을 settingpage안으로 넣음 jsw 260314
+    const sections = [
+        { id: "profile", label: "프로필", icon: User },
+        { id: "social", label: "소셜 연동", icon: Link2 },
+        { id: "qna", label: effectiveIsAdmin ? "문의 목록" : "고객 문의", icon: MessageCircleQuestion },
+        { id: 'withdraw', label: "회원 탈퇴", icon: UserX},
+    ];
+
+    // Social
+    const [connectedProviders, setConnectedProviders] = useState<string[]>([]);
+    const [isLoadingSocials, setIsLoadingSocials] = useState(false);
+    const socialFetchedRef = useRef(false);
+
+    // Security
+    const [currentPw, setCurrentPw] = useState("");
+    const [newPw, setNewPw] = useState("");
+    const [confirmPw, setConfirmPw] = useState("");
+    const pwMatch = confirmPw.length > 0 && newPw === confirmPw;
+
+    // QnA
+    const [openInquiryId, setOpenInquiryId] = useState<number | null>(null);
+    const [showInquiryForm, setShowInquiryForm] = useState(false);
+    const [answerDrafts, setAnswerDrafts] = useState<Record<number, string>>({});
+    const [inquiryCategoryId, setInquiryCategoryId] = useState("");
+    const [inquiryTitle, setInquiryTitle] = useState("");
+    const [inquiryContent, setInquiryContent] = useState("");
+    const [isSubmittingInquiry, setIsSubmittingInquiry] = useState(false);
+    const [inquirySaved, setInquirySaved] = useState(false);
+    const [inquiries, setInquiries] = useState<InquiryItem[]>([]);
+    const [isLoadingInquiries, setIsLoadingInquiries] = useState(false);
+    const [isSubmittingAnswer, setIsSubmittingAnswer] = useState(false);
+
+    const allConcerns = [...DEFAULT_CONCERNS, ...customConcerns];
+    const totalPages = Math.ceil(inquiries.length / itemsPerPage);
+
+    const paginatedInquiries = inquiries.slice(
+        (currentPage - 1) * itemsPerPage,
+        currentPage * itemsPerPage
+    );
+
+    const toggleInquiry = (id: number) => {
+        setOpenInquiryId((prev) => (prev === id ? null : id));
+    };
+    // 회원 탈퇴 상태
+    const [withdrawConfirmText, setWithdrawConfirmText] = useState("");
+    const [isWithdrawing, setIsWithdrawing] = useState(false);
+    const [withdrawError, setWithdrawError] = useState<string | null>(null);
+    
+
+    // 닉네임 중복확인
+    const [originalNickname, setOriginalNickname] = useState("");
+    const [nicknameChecked, setNicknameChecked] = useState(false);
+    const [nicknameAvailable, setNicknameAvailable] = useState<boolean | null>(null);
+    const [nicknameError, setNicknameError] = useState<string | null>(null);
+    const [isCheckingNickname, setIsCheckingNickname] = useState(false);
+    const [nicknameCheckTouched, setNicknameCheckTouched] = useState(false);
+
     // ─── 사용자 정보 + skin_type 키워드 목록 동시 조회 ───
     useEffect(() => {
         setIsLoadingUser(true);
@@ -65,10 +146,15 @@ export function SettingsPage() {
                 // keywords 목록 설정 (빈 배열이면 폴백 유지)
                 if (keywords.length > 0) setSkinTypeKeywords(keywords);
 
-                setName(user.name);
+                setCurrentUserId(user.user_id);
+                setIsAdmin(Number(user.is_admin) === 1);
+
                 setEmail(user.email);
                 setProfileImageUrl(user.profile_image_url ?? null);
-                setNickname(user.nickname);
+                setNickname(user.nickname ?? "");
+                setOriginalNickname(user.nickname ?? "");
+                setNicknameChecked(true);
+                setNicknameAvailable(true);
                 setAge(user.age?.toString() ?? "");
                 setGender(user.gender ? (GENDER_LABEL[user.gender] ?? "") : "");
 
@@ -94,7 +180,7 @@ export function SettingsPage() {
         if (activeSection !== "social" || socialFetchedRef.current) return;
 
         socialFetchedRef.current = true;
-        
+
         setIsLoadingSocials(true);
         fetchSocialLinks()
             .then((data) => setConnectedProviders(data.providers))
@@ -102,19 +188,32 @@ export function SettingsPage() {
             .finally(() => setIsLoadingSocials(false));
     }, [activeSection]);
 
-    // Security
-    const [currentPw, setCurrentPw]           = useState("");
-    const [newPw, setNewPw]                   = useState("");
-    const [confirmPw, setConfirmPw]           = useState("");
+    // QNA관련 Useeffect
+    useEffect(() => {
+        if (activeSection !== "qna") return;
 
-    const pwMatch = confirmPw.length > 0 && newPw === confirmPw;
+        const loadQna = async () => {
+            try {
+                setIsLoadingInquiries(true);
 
-    // Social
-    const [connectedProviders, setConnectedProviders] = useState<string[]>([]);
-    const [isLoadingSocials, setIsLoadingSocials] = useState(false);
-    const socialFetchedRef = useRef(false);
+                // TODO: 실제 API 연결
+                // const data: InquiryItem[] = effectiveIsAdmin
+                //     ? await fetchAllQna()
+                //     : await fetchMyQna();
 
-    const allConcerns = [...DEFAULT_CONCERNS, ...customConcerns];
+                const data: InquiryItem[] = [];
+                setInquiries(data);
+                setCurrentPage(1);
+            } catch (err) {
+                console.error("문의 목록 조회 실패:", err);
+                setInquiries([]);
+            } finally {
+                setIsLoadingInquiries(false);
+            }
+        };
+
+        loadQna();
+    }, [activeSection, effectiveIsAdmin]);
 
     const toggleConcern = (c: string) => {
         setSelectedConcerns((prev) =>
@@ -175,6 +274,15 @@ export function SettingsPage() {
 
             return;
         }
+        if (!nickname.trim()) {
+            setNicknameError("닉네임을 입력해 주세요.");
+            return;
+        }
+
+        if (nickname.trim() !== originalNickname.trim() && (!nicknameChecked || nicknameAvailable !== true)) {
+            setNicknameError("닉네임 중복 확인을 완료해 주세요.");
+            return;
+        }
 
         setFieldErrors({});
         setIsSaving(true);
@@ -192,6 +300,15 @@ export function SettingsPage() {
                 profile_image_url: profileImageUrl,
             });
 
+            // 저장된 닉네임을 현재 기준값으로 갱신하고, 중복 확인 상태를 초기화
+            setOriginalNickname(nickname.trim());
+            setNicknameChecked(true);
+            setNicknameAvailable(true);
+            setNicknameError(null);
+
+            // 저장 후 닉네임 중복확인 안내 문구 숨김
+            setNicknameCheckTouched(false);
+
             // 사이드바 프로필 이미지 갱신 알림
             window.dispatchEvent(new CustomEvent("profileUpdated"));
 
@@ -203,6 +320,146 @@ export function SettingsPage() {
             setIsSaving(false);
         }
     };
+
+    // 문의 등록 관련 함수 260314 jsw
+    const getInquiryStatus = (item: InquiryItem) => {
+        return item.manager_id ? "답변완료" : "미답변";
+    };
+
+    // 페이지 번호 목록 생성
+    const getPageNumbers = () => {
+        const pages: (number | string)[] = [];
+
+        if (totalPages <= 9) {
+            for (let i = 1; i <= totalPages; i++) pages.push(i);
+        } else {
+            if (currentPage <= 5) {
+                pages.push(1, 2, 3, 4, 5, "...", totalPages - 1, totalPages);
+            } else if (currentPage >= totalPages - 4) {
+                pages.push(1, 2, "...", totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
+            } else {
+                pages.push(1, "...", currentPage - 1, currentPage, currentPage + 1, "...", totalPages);
+            }
+        }
+
+        return pages;
+    };
+    const handleInquirySubmit = async () => {
+        if (!inquiryCategoryId || !inquiryTitle.trim() || !inquiryContent.trim() || !currentUserId) return;
+
+        try {
+            setIsSubmittingInquiry(true);
+
+            // TODO: 실제 API 연결
+            // await createQna({
+            //     user_id: currentUserId,
+            //     category_id: Number(inquiryCategoryId),
+            //     question_title: inquiryTitle.trim(),
+            //     question: inquiryContent.trim(),
+            // });
+
+            setInquirySaved(true);
+            setInquiryCategoryId("");
+            setInquiryTitle("");
+            setInquiryContent("");
+            setShowInquiryForm(false);
+            setCurrentPage(1);
+            setTimeout(() => setInquirySaved(false), 3000);
+        } finally {
+            setIsSubmittingInquiry(false);
+        }
+    };
+    const handleSubmitAnswer = async (item: InquiryItem) => {
+        const answerText = answerDrafts[item.qna_id]?.trim();
+        if (!answerText) return;
+
+        try {
+            setIsSubmittingAnswer(true);
+
+            // TODO: 실제 API 연결
+            // await updateQnaAnswer(item.qna_id, { answer: answerText });
+
+            setInquiries((prev) =>
+                prev.map((i) =>
+                    i.qna_id === item.qna_id
+                        ? {
+                              ...i,
+                              answer: answerText,
+                              manager_id: currentUserId ?? 1,
+                          }
+                        : i
+                )
+            );
+
+            setAnswerDrafts((prev) => ({
+                ...prev,
+                [item.qna_id]: "",
+            }));
+        } finally {
+            setIsSubmittingAnswer(false);
+        }
+    };
+
+    const handleWithdraw = async () => {
+        if (withdrawConfirmText !== "회원탈퇴") {
+            setWithdrawError("확인 문구를 정확히 입력해 주세요.");
+            return;
+        }
+
+        setIsWithdrawing(true);
+        setWithdrawError(null);
+
+        try {
+            // await deleteCurrentUser();
+
+            alert("회원 탈퇴가 완료되었습니다.");
+            window.location.href = "/";
+        } catch (err) {
+            setWithdrawError(err instanceof Error ? err.message : "회원 탈퇴에 실패했습니다.");
+        } finally {
+            setIsWithdrawing(false);
+        }
+    };
+
+    // 닉네임 
+    const handleCheckNickname = async () => {
+        const value = nickname.trim();
+        
+        setNicknameCheckTouched(true);
+        
+        if (!value) {
+            setNicknameError("닉네임을 입력해 주세요.");
+            return;
+        }
+
+        if (value === originalNickname.trim()) {
+            setNicknameChecked(true);
+            setNicknameAvailable(true);
+            setNicknameError(null);
+            return;
+        }
+
+        setIsCheckingNickname(true);
+        setNicknameError(null);
+
+        try {
+            const data = await checkNickname(value);
+            setNicknameChecked(true);
+            setNicknameAvailable(data.available);
+
+            if (!data.available) {
+                setNicknameError("이미 사용 중인 닉네임입니다.");
+            }
+        } catch (err) {
+            setNicknameChecked(false);
+            setNicknameAvailable(null);
+            setNicknameError(err instanceof Error ? err.message : "닉네임 확인에 실패했습니다.");
+        } finally {
+            setIsCheckingNickname(false);
+        }
+    };
+
+
 
     return (
         <div className="h-full overflow-y-auto bg-[#F8FBF3]">
@@ -217,7 +474,7 @@ export function SettingsPage() {
                     {/* Side Menu */}
                     <div className="md:w-52 flex-shrink-0">
                         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                            {SECTIONS.map((s, i) => {
+                            {sections.map((s, i) => {
                                 const Icon = s.icon;
                                 const isActive = activeSection === s.id;
                                 const isDisabled = s.id === "security";
@@ -228,7 +485,7 @@ export function SettingsPage() {
                                         onClick={() => !isDisabled && setActiveSection(s.id)}
                                         disabled={isDisabled}
                                         className={`w-full flex items-center gap-3 px-4 py-3.5 text-sm font-medium transition-all duration-200 ${
-                                            i < SECTIONS.length - 1 ? "border-b border-gray-50" : ""
+                                            i < sections.length - 1 ? "border-b border-gray-50" : ""
                                         } ${isDisabled ? "opacity-35 cursor-not-allowed" : "cursor-pointer"} ${
                                             isActive ? "bg-[#E8F5D0] text-[#4A7A1E]" : "text-gray-600 hover:bg-gray-50"
                                         }`}
@@ -283,12 +540,12 @@ export function SettingsPage() {
                                                         사진 변경
                                                     </button>
                                                 </div>
-                                                
+
                                                 {/* Read-only */}
                                                 <div className="flex flex-col gap-2.5 mt-3">
                                                     <div className="grid grid-cols-3 gap-3">
-                                                        <label className="text-sm font-medium text-gray-500 text-right block">이름</label>
-                                                        <p className="col-span-2 text-sm font-medium text-gray-600">{name}</p>
+                                                        <label className="text-sm font-medium text-gray-500 text-right block">닉네임</label>
+                                                        <p className="col-span-2 text-sm font-medium text-gray-600">{nickname}</p>
                                                     </div>
                                                     <div className="grid grid-cols-3 gap-3">
                                                         <label className="text-sm font-medium text-gray-500 text-right block">이메일</label>
@@ -307,13 +564,53 @@ export function SettingsPage() {
                                                 </div>
 
                                                 {/* nickname */}
-                                                <Input
-                                                    label="닉네임"
-                                                    value={nickname}
-                                                    onChange={(e) => setNickname(e.target.value)}
-                                                    maxLength={12}
-                                                    placeholder="닉네임 입력"
-                                                />
+                                                <div>
+                                                    <label className="text-xs font-medium text-gray-500 block mb-1.5">
+                                                        닉네임 <span className="text-red-400">*</span>
+                                                    </label>
+
+                                                    <div className="flex gap-2 items-start">
+                                                        <div className="flex-1">
+                                                            <Input
+                                                                value={nickname}
+                                                                onChange={(e) => {
+                                                                    const value = e.target.value;
+                                                                    setNickname(value);
+                                                                    setNicknameCheckTouched(false);
+
+                                                                    if (value.trim() === originalNickname.trim()) {
+                                                                        setNicknameChecked(true);
+                                                                        setNicknameAvailable(true);
+                                                                        setNicknameError(null);
+                                                                    } else {
+                                                                        setNicknameChecked(false);
+                                                                        setNicknameAvailable(null);
+                                                                        setNicknameError(null);
+                                                                    }
+                                                                }}
+                                                                maxLength={12}
+                                                                placeholder="닉네임 입력"
+                                                            />
+                                                        </div>
+
+                                                        <button
+                                                            type="button"
+                                                            onClick={handleCheckNickname}
+                                                            disabled={!nickname.trim() || isCheckingNickname}
+                                                            className="px-4 h-[46px] rounded-xl text-sm font-medium text-white bg-onyou transition-all hover:brightness-95 disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+                                                        >
+                                                            {isCheckingNickname ? "확인 중..." : "중복 확인"}
+                                                        </button>
+                                                    </div>
+
+                                                    {nicknameError && (
+                                                        <p className="mt-1 text-sm text-red-500">{nicknameError}</p>
+                                                    )}
+
+                                                    {nicknameCheckTouched && nicknameChecked && nicknameAvailable === true && !nicknameError && (
+                                                        <p className="mt-1 text-sm text-onyou">사용 가능한 닉네임입니다.</p>
+                                                    )}
+                                                </div>
 
                                                 {/* Gender + Age */}
                                                 <div className="grid grid-cols-2 gap-4">
@@ -371,8 +668,8 @@ export function SettingsPage() {
                                                                         skinType === label
                                                                             ? "text-white border-transparent bg-onyou"
                                                                             : fieldErrors.skinType
-                                                                                ? "border-red-200 text-gray-600 hover:border-red-400"
-                                                                                : "border-gray-200 text-gray-600 hover:border-onyou"
+                                                                            ? "border-red-200 text-gray-600 hover:border-red-400"
+                                                                            : "border-gray-200 text-gray-600 hover:border-onyou"
                                                                     }`}
                                                                 >
                                                                     {label}
@@ -457,16 +754,14 @@ export function SettingsPage() {
                                                                 >
                                                                     취소
                                                                 </button>
+                                                                
                                                             </motion.div>
                                                         )}
                                                     </AnimatePresence>
                                                 </div>
                                             </div>
-                                        </div>
-
-                                        {/* Save Button - fixed bottom */}
-                                        <div className="fixed bottom-0 left-0 right-0 lg:left-[260px] bg-white border-t border-gray-100 px-4 py-4 z-20">
-                                            <div className="max-w-4xl mx-auto space-y-2">
+                                             <div className="mt-10">
+                                            <div className="space-y-2">
                                                 {saveError && (
                                                     <p className="text-xs text-red-500 text-center">{saveError}</p>
                                                 )}
@@ -477,8 +772,9 @@ export function SettingsPage() {
                                                     loadingText="저장 중..."
                                                     className="rounded-2xl"
                                                 >
-                                                    {saved ? <><Check className="w-4 h-4" />저장되었습니다!</> : "변경사항 저장"}
+                                                    {saved ? (<> <Check className="w-4 h-4" /> 저장되었습니다!</>) : ( "변경사항 저장")}
                                                 </Button>
+                                                </div>
                                             </div>
                                         </div>
                                     </motion.div>
@@ -556,11 +852,11 @@ export function SettingsPage() {
                                                         ),
                                                         bg: "#F3F4F6",
                                                     },
-                                                    // {
-                                                    //   id: "kakao", name: "카카오",
-                                                    //   icon: <svg className="w-5 h-5" viewBox="0 0 24 24" fill="#3C1E1E"><path d="M12 3C7.03 3 3 6.32 3 10.4c0 2.62 1.74 4.92 4.35 6.23l-.9 3.37 3.91-2.57C11.07 17.49 11.53 17.5 12 17.5c4.97 0 9-3.32 9-7.4S16.97 3 12 3z"/></svg>,
-                                                    //   bg: "#FEE500",
-                                                    // },
+                                                    {
+                                                      id: "kakao", name: "카카오",
+                                                      icon: <svg className="w-5 h-5" viewBox="0 0 24 24" fill="#3C1E1E"><path d="M12 3C7.03 3 3 6.32 3 10.4c0 2.62 1.74 4.92 4.35 6.23l-.9 3.37 3.91-2.57C11.07 17.49 11.53 17.5 12 17.5c4.97 0 9-3.32 9-7.4S16.97 3 12 3z"/></svg>,
+                                                      bg: "#FEE500",
+                                                    },
                                                     {
                                                         id: "naver", name: "네이버",
                                                         icon: <span className="text-white font-black text-base">N</span>,
@@ -591,6 +887,377 @@ export function SettingsPage() {
                                         </div>
                                     </motion.div>
                                 )}
+
+                            {/* ── QnA ── */}
+                                {activeSection === "qna" && (
+                                    <motion.div
+                                        key="qna"
+                                        initial={{ opacity: 0, x: 10 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        exit={{ opacity: 0, x: -10 }}
+                                        className="space-y-5"
+                                    >
+                                    {/* 문의 목록 */}
+                                        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+                                            <div className="px-5 py-4 border-b border-gray-50 flex items-start justify-between gap-3">
+                                                <div>
+                                                    <h3 className="font-semibold text-gray-800 text-sm">문의 목록</h3>
+                                                    <p className="text-xs text-gray-400 mt-0.5">
+                                                        제목을 클릭하면 문의 내용을 확인할 수 있습니다
+                                                    </p>
+                                                </div>
+
+                                                {!effectiveIsAdmin && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setShowInquiryForm(true)}
+                                                        className="px-4 h-9 text-sm rounded-lg whitespace-nowrap bg-onyou text-white hover:opacity-90 transition"
+                                                    >
+                                                        문의하기
+                                                    </button>
+                                                )}
+                                            </div>
+
+                                            {isLoadingInquiries ? (
+                                                <div className="flex items-center justify-center py-12">
+                                                    <Loader2 className="w-5 h-5 animate-spin text-onyou" />
+                                                </div>
+                                            ) : inquiries.length === 0 ? (
+                                                <div className="py-12 text-center text-sm text-gray-400">
+                                                    등록된 문의가 없습니다.
+                                                </div>
+                                            ) : (
+                                                <div className="p-4 space-y-3">
+                                                    {paginatedInquiries.map((item, index) => {
+                                                        const isOpen = openInquiryId === item.qna_id;
+                                                        const statusText = getInquiryStatus(item);
+
+                                                        return (
+                                                            <div key={item.qna_id} className="rounded-2xl border border-gray-100 bg-white shadow-sm overflow-hidden">
+                                                                {/* 목록 row */}
+                                                                <button
+                                                                    onClick={() => toggleInquiry(item.qna_id)}
+                                                                    className="w-full px-4 py-4 hover:bg-[#FAFCF7] transition-colors"
+                                                                >
+                                                                    <div className="flex items-center gap-3 text-left">
+                                                                        <span className="w-8 text-sm text-gray-400 flex-shrink-0">
+                                                                            {(currentPage - 1) * itemsPerPage + index + 1}
+                                                                        </span>
+
+                                                                        <div className="flex-1 min-w-0">
+                                                                            <div className="flex items-center gap-2 mb-1">
+                                                                                <span className="truncate text-sm font-semibold text-gray-800">
+                                                                                    {item.question_title.length > 40
+                                                                                        ? `${item.question_title.slice(0, 40)}...`
+                                                                                        : item.question_title}
+                                                                                </span>
+
+                                                                                <span
+                                                                                    className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-medium flex-shrink-0 ${
+                                                                                        item.manager_id
+                                                                                            ? "bg-green-50 text-green-600"
+                                                                                            : "bg-yellow-50 text-yellow-600"
+                                                                                    }`}
+                                                                                >
+                                                                                    {statusText}
+                                                                                </span>
+                                                                            </div>
+
+                                                                            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-400">
+                                                                                <span>{CATEGORY_LABEL[item.category_id] ?? "기타"}</span>
+                                                                                <span>{item.created_at}</span>
+                                                                            </div>
+                                                                        </div>
+
+                                                                        <ChevronRight
+                                                                            className={`w-4 h-4 text-gray-400 transition-transform flex-shrink-0 ${
+                                                                                isOpen ? "rotate-90" : ""
+                                                                            }`}
+                                                                        />
+                                                                    </div>
+                                                                </button>
+
+                                                            {/* 아코디언 상세 */}
+                                                                <AnimatePresence initial={false}>
+                                                                    {isOpen && (
+                                                                        <motion.div
+                                                                            initial={{ height: 0, opacity: 0 }}
+                                                                            animate={{ height: "auto", opacity: 1 }}
+                                                                            exit={{ height: 0, opacity: 0 }}
+                                                                            transition={{ duration: 0.2 }}
+                                                                            className="overflow-hidden bg-[#FAFCF7]"
+                                                                        >
+                                                                            <div className="px-5 pb-5">
+                                                                                <div className="grid gap-4 pt-1">
+                                                                                {/* 문의 내용 카드 */}
+                                                                                    <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+                                                                                        <div className="flex items-center justify-between mb-2">
+                                                                                        <p className="text-xs font-semibold text-gray-500">문의 내용</p>
+                                                                                            <span className="text-[11px] text-gray-400">
+                                                                                                {item.created_at}
+                                                                                            </span>
+                                                                                        </div>
+                                                                                        <div className="text-sm leading-6 text-gray-700 whitespace-pre-wrap">
+                                                                                            {item.question || "문의 내용이 없습니다."}
+                                                                                        </div>
+                                                                                    </div>
+
+                                                                                {/* 답변 카드 */}
+                                                                                    <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+                                                                                        <div className="flex items-center justify-between mb-2">
+                                                                                        <p className="text-xs font-semibold text-gray-500">답변</p>
+                                                                                            <span
+                                                                                                className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-medium ${
+                                                                                                    item.manager_id
+                                                                                                        ? "bg-green-50 text-green-600"
+                                                                                                        : "bg-gray-100 text-gray-500"
+                                                                                                }`}
+                                                                                            >
+                                                                                                {item.manager_id ? "답변완료" : "답변대기"}
+                                                                                            </span>
+                                                                                        </div>
+
+                                                                                        {item.answer ? (
+                                                                                            <div className="rounded-xl border border-green-100 bg-green-50 px-4 py-3 text-sm leading-6 text-gray-700 whitespace-pre-wrap">
+                                                                                                {item.answer}
+                                                                                            </div>
+                                                                                        ) : (
+                                                                                            <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-500">
+                                                                                                아직 답변이 등록되지 않았습니다.
+                                                                                            </div>
+                                                                                        )}
+                                                                                    </div>
+
+                                                                                {/* 관리자 답변 작성 */}
+                                                                                    {effectiveIsAdmin && !item.manager_id && (
+                                                                                        <div className="rounded-2xl border border-onyou/20 bg-white p-4 shadow-sm">
+                                                                                        <p className="text-xs font-semibold text-gray-500 mb-3">관리자 답변 작성</p>
+
+                                                                                            <textarea
+                                                                                                value={answerDrafts[item.qna_id] ?? ""}
+                                                                                                onChange={(e) =>
+                                                                                                    setAnswerDrafts((prev) => ({
+                                                                                                        ...prev,
+                                                                                                        [item.qna_id]: e.target.value,
+                                                                                                    }))
+                                                                                                }
+                                                                                                rows={5}
+                                                                                                placeholder="문의에 대한 답변을 입력하세요"
+                                                                                                className="w-full px-4 py-3 border border-gray-200 rounded-2xl text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:border-onyou resize-none"
+                                                                                            />
+
+                                                                                            <div className="mt-3 flex justify-end">
+                                                                                                <Button
+                                                                                                    onClick={() => handleSubmitAnswer(item)}
+                                                                                                    disabled={!((answerDrafts[item.qna_id] ?? "").trim())}
+                                                                                                    isLoading={isSubmittingAnswer}
+                                                                                                    loadingText="등록 중..."
+                                                                                                    className="rounded-xl"
+                                                                                                >
+                                                                                                    답변 등록
+                                                                                                </Button>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    )}
+                                                                                </div>
+                                                                            </div>
+                                                                        </motion.div>
+                                                                    )}
+                                                                </AnimatePresence>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            )}
+                                        </div>
+
+                                   {/* 페이지네이션 */}
+                                        {totalPages > 1 && (
+                                            <div className="flex items-center justify-center gap-1 mt-6">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setCurrentPage((prev) => prev - 1)}
+                                                    disabled={currentPage === 1}
+                                                    className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-[#6BA32E] hover:bg-[#E8F5D0] disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                                                >
+                                                    <ChevronLeft className="w-4 h-4" />
+                                                </button>
+
+                                                {getPageNumbers().map((page, idx) =>
+                                                    page === "..." ? (
+                                                        <span
+                                                            key={`ellipsis-${idx}`}
+                                                            className="w-8 h-8 flex items-center justify-center text-xs text-gray-400"
+                                                        >
+                                                            ···
+                                                        </span>
+                                                    ) : (
+                                                        <button
+                                                            key={page}
+                                                            type="button"
+                                                            onClick={() => setCurrentPage(Number(page))}
+                                                            className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs font-medium transition-all ${
+                                                                currentPage === page
+                                                                    ? "bg-[#85C13D] text-white"
+                                                                    : "text-gray-500 hover:text-[#6BA32E] hover:bg-[#E8F5D0]"
+                                                            }`}
+                                                        >
+                                                            {page}
+                                                        </button>
+                                                    )
+                                                )}
+
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setCurrentPage((prev) => prev + 1)}
+                                                    disabled={currentPage === totalPages}
+                                                    className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-[#6BA32E] hover:bg-[#E8F5D0] disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                                                >
+                                                    <ChevronRight className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        )}
+
+                                    {/* 일반 사용자 문의 작성 */}
+                                        {!effectiveIsAdmin && showInquiryForm && (
+                                            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+                                                <div className="w-full max-w-2xl rounded-2xl bg-white shadow-xl border border-gray-100 overflow-hidden">
+                                                {/* 모달 헤더 */}
+                                                    <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+                                                        <div>
+                                                            <h3 className="font-semibold text-gray-800 text-base">문의 작성</h3>
+                                                            <p className="text-xs text-gray-400 mt-1">
+                                                                궁금한 내용을 남겨주시면 확인 후 답변드릴게요
+                                                            </p>
+                                                        </div>
+
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setShowInquiryForm(false)}
+                                                            className="w-9 h-9 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition"
+                                                        >
+                                                            ✕
+                                                        </button>
+                                                    </div>
+
+                                                {/* 모달 본문 */}
+                                                    <div className="p-5 space-y-4">
+                                                        <select
+                                                            value={inquiryCategoryId}
+                                                            onChange={(e) => setInquiryCategoryId(e.target.value)}
+                                                            className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-onyou"
+                                                        >
+                                                            <option value="">문의 분류 선택</option>
+                                                            <option value="1">서비스 소개</option>
+                                                            <option value="2">채팅</option>
+                                                            <option value="3">분석</option>
+                                                            <option value="4">기타/일반</option>
+                                                            <option value="5">회원</option>
+                                                        </select>
+
+                                                        <Input
+                                                            label="문의 제목"
+                                                            value={inquiryTitle}
+                                                            onChange={(e) => setInquiryTitle(e.target.value)}
+                                                            placeholder="문의 제목을 입력하세요"
+                                                        />
+
+                                                        <textarea
+                                                            value={inquiryContent}
+                                                            onChange={(e) => setInquiryContent(e.target.value)}
+                                                            rows={7}
+                                                            placeholder="문의 내용을 입력하세요"
+                                                            className="w-full px-4 py-3 border border-gray-200 rounded-2xl text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:border-onyou resize-none"
+                                                        />
+
+                                                        {inquirySaved && (
+                                                            <p className="text-sm text-green-600">문의가 등록되었습니다.</p>
+                                                        )}
+                                                    </div>
+
+                                                {/* 모달 하단 버튼 */}
+                                                    <div className="flex justify-end gap-2 px-5 py-4 border-t border-gray-100 bg-gray-50">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setShowInquiryForm(false)}
+                                                            className="px-4 h-10 rounded-xl bg-gray-100 text-gray-600 border border-gray-300 hover:bg-gray-200 hover:text-gray-700 transition"
+                                                        >
+                                                            취소
+                                                        </button>
+
+                                                        <button
+                                                            type="button"
+                                                            onClick={handleInquirySubmit}
+                                                            disabled={
+                                                                !inquiryCategoryId ||
+                                                                !inquiryTitle.trim() ||
+                                                                !inquiryContent.trim() ||
+                                                                isSubmittingInquiry
+                                                            }
+                                                            className="px-4 h-10 rounded-xl bg-onyou text-white hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                                                        >
+                                                            {isSubmittingInquiry ? "등록 중..." : "문의 등록"}
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </motion.div>
+                                )}
+                                {activeSection === "withdraw" && (
+                                <motion.div
+                                    key="withdraw"
+                                    initial={{ opacity: 0, x: 10 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: -10 }}
+                                >
+                                    <div className="bg-white rounded-2xl p-5 border border-red-100 shadow-sm">
+                                        <h3 className="font-semibold text-red-600 mb-2 text-sm">회원 탈퇴</h3>
+                                        <p className="text-sm text-gray-600 leading-6">
+                                            회원 탈퇴를 진행하면 계정 정보와 이용 내역이 삭제될 수 있으며,
+                                            이 작업은 되돌릴 수 없습니다.
+                                        </p>
+
+                                        <div className="mt-5 rounded-xl bg-red-50 border border-red-100 p-4">
+                                            <p className="text-sm font-medium text-red-600 mb-2">탈퇴 전 확인해 주세요</p>
+                                            <ul className="text-sm text-gray-700 space-y-1 list-disc pl-5">
+                                                <li>탈퇴 후에는 계정을 복구할 수 없습니다.</li>
+                                                <li>작성한 문의 내역 또는 일부 데이터가 삭제될 수 있습니다.</li>
+                                                <li>소셜 로그인 계정 연동도 함께 해제될 수 있습니다.</li>
+                                            </ul>
+                                        </div>
+
+                                        <div className="mt-5">
+                                            <label className="text-xs font-medium text-gray-500 block mb-1.5">
+                                                확인을 위해 <span className="text-red-500 font-semibold">회원탈퇴</span>를 입력해 주세요
+                                            </label>
+                                            <input
+                                                value={withdrawConfirmText}
+                                                onChange={(e) => {
+                                                    setWithdrawConfirmText(e.target.value);
+                                                    setWithdrawError(null);
+                                                }}
+                                                placeholder="회원탈퇴"
+                                                className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:border-red-300 transition-all"
+                                            />
+                                            {withdrawError && (
+                                                <p className="text-xs text-red-500 mt-1">{withdrawError}</p>
+                                            )}
+                                        </div>
+
+                                        <div className="mt-5 flex justify-end">
+                                            <button
+                                                type="button"
+                                                onClick={handleWithdraw}
+                                                disabled={withdrawConfirmText !== "회원탈퇴" || isWithdrawing}
+                                                className="px-4 h-10 rounded-xl bg-red-500 text-white hover:bg-red-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                {isWithdrawing ? "탈퇴 처리 중..." : "회원 탈퇴"}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            )}
                             </AnimatePresence>
                         )}
                     </div>

@@ -24,7 +24,6 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
 
 export interface SignupBody {
     email             : string;
-    name              : string;
     nickname          : string;
     password          : string;
     terms_agreed      : boolean;
@@ -132,6 +131,7 @@ export async function login(email: string, password: string): Promise<void> {
  */
 export function logout(): void {
     localStorage.removeItem("access_token");
+    localStorage.removeItem("user_id");
 }
 
 /**

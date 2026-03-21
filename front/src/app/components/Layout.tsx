@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Menu } from "lucide-react";
 import { Sidebar } from "./Sidebar";
-import { Outlet } from "react-router";
+import { Outlet, Link } from "react-router";
 
 export function Layout() {
     const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -10,9 +10,7 @@ export function Layout() {
         <div className="flex h-screen bg-[#F8FBF3] overflow-hidden">
             <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
-            {/* Main Content */}
             <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-                {/* Mobile Header */}
                 <header className="lg:hidden flex items-center justify-between px-4 py-3 bg-white border-b border-gray-100 flex-shrink-0">
                     <button
                         onClick={() => setSidebarOpen(true)}
@@ -24,10 +22,29 @@ export function Layout() {
                     <div className="w-9" />
                 </header>
 
-                {/* Page Content */}
-                <main className="flex-1 overflow-hidden">
-                    <Outlet />
-                </main>
+                <div className="flex-1 flex flex-col min-h-0">
+                    <main className="flex-1 overflow-auto">
+                        <Outlet />
+                    </main>
+
+                    <footer className="bg-white border-t border-gray-200 px-4 py-1 text-xxs text-gray-500">
+                        <div className="flex flex-wrap items-center justify-center gap-2">
+                            <Link to="/terms" className="hover:text-gray-700">
+                                이용약관
+                            </Link>
+                            <span>|</span>
+                            <Link to="/privacy" className="hover:text-gray-700">
+                                개인정보 처리방침
+                            </Link>
+                            <span>|</span>
+                            <Link to="/faq" className="hover:text-gray-700">
+                                FAQ
+                            </Link>
+                            <span>|</span>
+                            <span>© 2026 ONYOU. All rights reserved.</span>
+                        </div>
+                    </footer>
+                </div>
             </div>
         </div>
     );

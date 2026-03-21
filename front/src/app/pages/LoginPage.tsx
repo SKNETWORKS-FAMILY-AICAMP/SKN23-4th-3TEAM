@@ -6,7 +6,7 @@ import { Input } from "@/app/components/ui/input";
 import { Button } from "@/app/components/ui/button";
 import { login, startSocialLogin } from "@/app/api/authApi";
 import LogoIdle from "@/assets/animations/logo_idle_1.webm";
-
+import { fetchCurrentUser } from "@/app/api/userApi";
 export function LoginPage() {
     const navigate = useNavigate();
     const [email, setEmail]                 = useState("");
@@ -35,7 +35,10 @@ export function LoginPage() {
         try {
             await login(email, password);
 
-            navigate("/chat", { replace: true });
+            const me = await fetchCurrentUser();
+            localStorage.setItem("user_id", String(me.user_id));
+
+            navigate("/chat");
         } catch (err) {
             setError(err instanceof Error ? err.message : "로그인에 실패했습니다.");
         } finally {
@@ -134,7 +137,7 @@ export function LoginPage() {
                         </button>
 
                         {/* 카카오 로그인 */}
-                        {/* <button
+                        <button
                             type="button"
                             onClick={() => startSocialLogin("kakao")}
                             aria-label="카카오로 로그인"
@@ -148,7 +151,7 @@ export function LoginPage() {
                                     fillOpacity="0.85"
                                 />
                             </svg>
-                        </button> */}
+                        </button>
 
                         {/* 네이버 로그인 */}
                         <button

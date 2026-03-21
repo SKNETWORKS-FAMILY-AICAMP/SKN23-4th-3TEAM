@@ -1,11 +1,80 @@
-import json
-
 from typing import Optional
 from datetime import datetime
 
 from db.db_manager import execute_one, execute_write, execute_query
 from db.models import ChatRoom, ChatMessage
 from db.schemas import ChatRoomCreate, MessageCreate
+
+# ─────────────────────────────────────────────
+# 이미지 헬퍼 (images + entity_images)
+# ─────────────────────────────────────────────
+
+def _save_image_and_map(image_url: str, entity_type: str, entity_id: int) -> None:
+    """
+    이미지 URL을 images 테이블에 저장하고 entity_images에 매핑.
+    - 동일 URL이 이미 images 테이블에 존재하면 재사용 (중복 저장 방지)
+    - entity_images에는 entity_type별로 별도 행 추가
+    """
+    existing = execute_one(
+        "SELECT image_id FROM images WHERE image_url = %s LIMIT 1",
+        (image_url,)
+    )
+    image_id = existing["image_id"] if existing else execute_write(
+        "INSERT INTO images (image_url) VALUES (%s)",
+        (image_url,)
+    )
+
+    execute_write(
+        "INSERT INTO entity_images (image_id, entity_type, entity_id) VALUES (%s, %s, %s)",
+        (image_id, entity_type, entity_id)
+    )
+
+
+def _get_image_urls(entity_type: str, entity_id: int) -> list[str]:
+    """
+    entity_type + entity_id 로 연결된 이미지 URL 목록 조회.
+    """
+    rows = execute_query(
+        """
+        SELECT i.image_url
+        FROM images i
+        JOIN entity_images ei ON i.image_id = ei.image_id
+        WHERE ei.entity_type = %s AND ei.entity_id = %s
+        ORDER BY ei.entity_image_id
+        """,
+        (entity_type, entity_id)
+    )
+
+    return [row["image_url"] for row in rows]
+
+
+def _get_image_urls_batch(entity_type: str, entity_ids: list[int]) -> dict[int, list[str]]:
+    """
+    여러 entity_id에 대한 이미지 URL을 한 번의 쿼리로 일괄 조회.
+    반환: { entity_id: [url, ...], ... }
+    """
+    if not entity_ids:
+        return {}
+
+    placeholders = ",".join(["%s"] * len(entity_ids))
+    rows = execute_query(
+        f"""
+        SELECT ei.entity_id, i.image_url
+        FROM images i
+        JOIN entity_images ei ON i.image_id = ei.image_id
+        WHERE ei.entity_type = %s AND ei.entity_id IN ({placeholders})
+        ORDER BY ei.entity_image_id
+        """,
+        (entity_type, *entity_ids)
+    )
+
+    result: dict[int, list[str]] = {}
+    
+    for row in rows:
+        eid = row["entity_id"]
+        result.setdefault(eid, []).append(row["image_url"])
+
+    return result
 
 """
 chat_service.py
@@ -132,7 +201,7 @@ def save_message(data: MessageCreate) -> ChatMessage:
     메시지 저장.
     - role: user / assistant / system
     - model_type: simple / detailed
-    - image_url은 list를 JSON 문자열로 변환 후 저장
+    - image_urls가 있으면 images + entity_images 테이블에 저장
 
     사용 예시:
         # 텍스트 메시지
@@ -157,16 +226,17 @@ def save_message(data: MessageCreate) -> ChatMessage:
     if not room:
         raise ValueError(f"존재하지 않는 채팅방입니다. (chat_room_id: {data.chat_room_id})")
 
-    # image_url list → JSON 문자열 변환
-    image_url_json = json.dumps(data.image_url, ensure_ascii=False) if data.image_url else None
-
     message_id = execute_write(
         """
-        INSERT INTO chat_messages (chat_room_id, role, content, image_url, model_type)
-        VALUES (%s, %s, %s, %s, %s)
+        INSERT INTO chat_messages (chat_room_id, role, content, model_type)
+        VALUES (%s, %s, %s, %s)
         """,
-        (data.chat_room_id, data.role, data.content, image_url_json, data.model_type)
+        (data.chat_room_id, data.role, data.content, data.model_type)
     )
+
+    # 이미지 URL → images + entity_images 저장
+    for url in (data.image_url or []):
+        _save_image_and_map(url, "message", message_id)
 
     return get_message_by_id(message_id)
 
@@ -183,7 +253,13 @@ def get_message_by_id(message_id: int) -> Optional[ChatMessage]:
         (message_id,)
     )
 
-    return ChatMessage.from_dict(row) if row else None
+    if not row:
+        return None
+
+    msg = ChatMessage.from_dict(row)
+    msg.image_urls = _get_image_urls("message", message_id)
+
+    return msg
 
 
 def get_messages_by_room(chat_room_id: int) -> list[ChatMessage]:
@@ -206,7 +282,16 @@ def get_messages_by_room(chat_room_id: int) -> list[ChatMessage]:
         (chat_room_id,)
     )
 
-    return [ChatMessage.from_dict(row) for row in rows]
+    messages = [ChatMessage.from_dict(row) for row in rows]
+
+    # 이미지 URL 일괄 조회 (N+1 방지)
+    message_ids = [m.message_id for m in messages]
+    images_map  = _get_image_urls_batch("message", message_ids)
+
+    for m in messages:
+        m.image_urls = images_map.get(m.message_id, [])
+
+    return messages
 
 
 def get_latest_message_by_room(chat_room_id: int) -> Optional[ChatMessage]:
@@ -227,7 +312,13 @@ def get_latest_message_by_room(chat_room_id: int) -> Optional[ChatMessage]:
         (chat_room_id,)
     )
 
-    return ChatMessage.from_dict(row) if row else None
+    if not row:
+        return None
+
+    msg = ChatMessage.from_dict(row)
+    msg.image_urls = _get_image_urls("message", msg.message_id)
+
+    return msg
 
 
 def get_messages_by_role(chat_room_id: int, role: str) -> list[ChatMessage]:
@@ -248,4 +339,12 @@ def get_messages_by_role(chat_room_id: int, role: str) -> list[ChatMessage]:
         (chat_room_id, role)
     )
 
-    return [ChatMessage.from_dict(row) for row in rows]
+    messages = [ChatMessage.from_dict(row) for row in rows]
+
+    message_ids = [m.message_id for m in messages]
+    images_map  = _get_image_urls_batch("message", message_ids)
+
+    for m in messages:
+        m.image_urls = images_map.get(m.message_id, [])
+
+    return messages
