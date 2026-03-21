@@ -265,4 +265,18 @@ def generate_report(
     resp = client.chat.completions.create(**create_kwargs)
 
     text = resp.choices[0].message.content
-    return _safe_json_loads(text)
+    result = _safe_json_loads(text)
+
+    # 퍼스널컬러 답변에 프론트 렌더링용 메타데이터 주입
+    if intent == "personal_color" and vision_result and vision_result.get("type_result"):
+        tr = vision_result["type_result"]
+        result["personal_color_meta"] = {
+            "type_name": tr.get("name", ""),
+            "keywords": tr.get("keywords", ""),
+            "catchphrase": tr.get("catchphrase", ""),
+            "color_hex": tr.get("color_hex", []),
+            "illustration": tr.get("illustration", ""),
+            "scores": tr.get("scores", {}),
+        }
+
+    return result
