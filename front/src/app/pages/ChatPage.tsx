@@ -18,7 +18,7 @@ import { createChatRoom, fetchMessages, sendMessage, sendGuestMessage, type Chat
 import { checkTodayDetailedAnalysis } from "@/app/api/analysisApi";
 
 // 퍼스널컬러 일러스트 매핑
-// 파일명만 바꾸면 승연님이 만든 일러스트로 교체 가능
+// 파일명만 바꾸면 팀원이 만든 일러스트로 교체 가능
 const PC_ILLUSTRATIONS: Record<string, string> = {
     "복숭아 크림 웜":      "/assets/personal-color/pc_spring_light.png",
     "레몬 캔디 웜":        "/assets/personal-color/pc_spring_bright.png",
@@ -54,34 +54,83 @@ const PC_CATCHPHRASES: Record<string, string> = {
     "로즈 티 포그 뉴트럴":  "잔잔한 감성으로 세련된 무드를 완성하는 당신만의 컬러",
 };
 
-// 퍼스널컬러 추천 컬러 HEX 매핑
-const PC_COLOR_HEX: Record<string, string[]> = {
-    "복숭아 크림 웜":      ["#FFDAB9", "#F7B39B", "#FBC4AB", "#F5E6A3", "#F5E6CC"],
-    "레몬 캔디 웜":        ["#FFF44F", "#FF6F61", "#8DB600", "#FF7F32", "#40E0D0"],
-    "새벽 소다 쿨":        ["#87CEEB", "#FFB6C1", "#B4A7D6", "#B0C4DE", "#F4C2C2"],
-    "안개 로즈 쿨":        ["#D4A5A5", "#967BB6", "#C9ADA7", "#A4B8C4", "#B8A99A"],
-    "밀크티 올리브 웜":    ["#808000", "#C19A6B", "#6F4E37", "#E8967A", "#A0785A"],
-    "메이플 시나몬 웜":    ["#8B4513", "#CB4154", "#556B2F", "#D2691E", "#3E2723"],
-    "체리 글라스 쿨":      ["#DC143C", "#FF00FF", "#4169E1", "#FFFFFF", "#000000"],
-    "벨벳 자두 쿨":        ["#8E4585", "#722F37", "#000080", "#36454F", "#3D0C11"],
-    "살구 버블 웜":        ["#F7A38E", "#FFB5A7", "#FFA552", "#F5E6A3", "#98D8A8"],
-    "안개 이슬 쿨":        ["#B4A7C7", "#F4C2C2", "#A4C8E1", "#D4B5A0", "#C3A6C9"],
-    "메이플 포그 웜":      ["#8B4513", "#A0785A", "#897B6D", "#C8826E", "#6B6F4A"],
-    "별빛 베리 쿨":        ["#722F37", "#C154C1", "#1A1A2E", "#8E4585", "#F0F0F0"],
-    "코튼 피치 뉴트럴":    ["#FFDAB9", "#FFB6C1", "#C8A2C8", "#F5E6CC", "#B0C4DE"],
-    "로즈 티 포그 뉴트럴":  ["#C9ADA7", "#C4A69D", "#B8988A", "#A89B8C", "#8B7D6B"],
+// 퍼스널컬러 컬러 이름 → HEX 매핑 (GPT 답변에서 추출한 컬러 이름과 매칭)
+const COLOR_NAME_TO_HEX: Record<string, string> = {
+    // 웜톤 계열
+    "피치": "#FFDAB9", "크림코랄": "#F7B39B", "살구": "#FBC4AB", "버터옐로우": "#F5E6A3",
+    "라이트 베이지": "#F5E6CC", "살구코랄": "#F7A38E", "피치버블": "#FFB5A7",
+    "라이트 오렌지": "#FFA552", "크림옐로우": "#F5E6A3", "멜론": "#98D8A8",
+    "레몬옐로우": "#FFF44F", "브라이트 코랄": "#FF6F61", "애플그린": "#8DB600",
+    "클리어 오렌지": "#FF7F32", "밝은 터콰이즈": "#40E0D0",
+    "올리브": "#808000", "카멜": "#C19A6B", "모카": "#6F4E37", "누디코랄": "#E8967A",
+    "소프트 브라운": "#A0785A", "테라코타": "#CC7751",
+    "메이플브라운": "#8B4513", "브릭": "#CB4154", "다크카키": "#556B2F",
+    "시나몬": "#D2691E", "초콜릿": "#3E2723", "딥카멜": "#A0785A",
+    "토프": "#897B6D", "브릭베이지": "#C8826E", "스모키올리브": "#6B6F4A",
+    "머스타드": "#E1AD01", "다크버건디": "#800020",
+    // 쿨톤 계열
+    "소다블루": "#87CEEB", "밀키핑크": "#FFB6C1", "라벤더": "#B4A7D6",
+    "파우더블루": "#B0C4DE", "아이시로즈": "#F4C2C2",
+    "더스티핑크": "#D4A5A5", "모브": "#967BB6", "로즈베이지": "#C9ADA7",
+    "그레이블루": "#A4B8C4", "쿨토프": "#B8A99A",
+    "라벤더그레이": "#B4A7C7", "소프트 블루": "#A4C8E1", "쿨핑크베이지": "#D4B5A0",
+    "연모브": "#C3A6C9", "민트그린": "#98D8A8", "페일라벤더": "#D6CADD",
+    "스카이블루": "#87CEEB", "페일 민트": "#B2DFDB",
+    "체리레드": "#DC143C", "푸시아": "#FF00FF", "로열블루": "#4169E1",
+    "퓨어화이트": "#FFFFFF", "블랙": "#000000",
+    "자두": "#8E4585", "와인": "#722F37", "딥네이비": "#000080",
+    "차콜": "#36454F", "블랙체리": "#3D0C11",
+    "베리와인": "#722F37", "딥푸시아": "#C154C1", "블루블랙": "#1A1A2E",
+    "플럼": "#8E4585", "크리스탈 화이트": "#F0F0F0",
+    // 뉴트럴 계열
+    "밀키피치": "#FFDAB9", "코튼핑크": "#FFB6C1", "소프트 라일락": "#C8A2C8",
+    "크림베이지": "#F5E6CC",
+    "밀크티로즈": "#C4A69D", "토프핑크": "#B8988A", "그레이지": "#A89B8C",
+    "더스티모카": "#8B7D6B",
+    // 공통
+    "쿨 핑크": "#DDA0DD", "소프트 로즈": "#E8B4B8", "베이지 핑크": "#E8C4B8",
+    "코랄 핑크": "#F88379", "라이트 베리": "#C9A0DC",
+    "라벤더 핑크": "#D8BFD8", "소프트 코랄": "#F08080", "쿨 베이지": "#C8B8A2",
+    "라벤더 그레이": "#B4A7C7", "소프트 그레이": "#C0C0C0", "쿨 브라운": "#8B7D6B",
+    "브릭레드": "#CB4154", "딥코랄": "#E07060", "브릭 레드": "#CB4154",
+    "머스터드 브라운": "#B8860B", "로즈 브라운": "#A07060", "브릭 오렌지": "#CC5500",
+    "스모키 올리브": "#6B6F4A", "딥 브라운": "#4E3B2A", "토프 그레이": "#897B6D",
+    "라이트 그레이": "#D3D3D3", "크림 화이트": "#FFFDD0", "소프트 화이트": "#F5F5F5",
+    "페일 블루": "#B0C4DE", "파우더 블루": "#B0C4DE",
+    "올리브 브라운": "#6B5B3A", "카라멜": "#C19A6B", "다크 초콜릿": "#3E2723",
 };
+
+// 텍스트에서 컬러 이름을 파싱하고 HEX로 변환하는 함수
+function parseColorNames(text: string): { name: string; hex: string }[] {
+    // "🎨 추천 컬러 : 라벤더그레이, 아이시로즈, 소프트 블루" 형태에서 컬러 추출
+    const colonIdx = text.indexOf(":");
+    if (colonIdx === -1) return [];
+    const colorPart = text.substring(colonIdx + 1).trim();
+    const names = colorPart.split(",").map(s => s.trim()).filter(Boolean);
+
+    return names.map(name => ({
+        name,
+        hex: COLOR_NAME_TO_HEX[name] || COLOR_NAME_TO_HEX[name.replace(/ /g, "")] || "",
+    })).filter(c => c.hex);
+}
+
+// React children에서 텍스트만 추출하는 헬퍼
+function extractText(node: any): string {
+    if (typeof node === "string") return node;
+    if (Array.isArray(node)) return node.map(extractText).join("");
+    if (node?.props?.children) return extractText(node.props.children);
+    return "";
+}
 
 // 퍼스널컬러 답변 감지 함수
 function parsePersonalColor(content: string): { typeName: string; colorHexList: string[] } | null {
-    // 🎨 **감성이름** 패턴으로 타입명 추출
-    const nameMatch = content.match(/🎨\s*\*\*(.+?)\*\*/);
+    // 🎨 **감성이름** 또는 🎨 감성이름 패턴으로 타입명 추출
+    const nameMatch = content.match(/🎨\s*\*?\*?(.+?)\*?\*?\s*\n/);
     if (!nameMatch) return null;
-    const typeName = nameMatch[1].trim();
+    const typeName = nameMatch[1].replace(/\*/g, "").trim();
     if (!PC_CATCHPHRASES[typeName]) return null;
 
-    const colorHexList = PC_COLOR_HEX[typeName] || [];
-    return { typeName, colorHexList };
+    return { typeName, colorHexList: [] };
 }
 
 type AnalysisType = "default" | "simple" | "detailed" | "ingredient" | "personal";
@@ -369,6 +418,27 @@ export function ChatPage() {
     const [showDuplicateWishToast, setShowDuplicateWishToast] = useState(false);
     const wishToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const duplicateWishToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    // MBTI 결과 페이지에서 넘어온 메시지 자동 전송
+    const mbtiMessageHandled = useRef(false);
+    useEffect(() => {
+        if (state?.mbtiMessage && !mbtiMessageHandled.current && !isSending) {
+            mbtiMessageHandled.current = true;
+            // input에 설정 후 다음 tick에서 자동 전송
+            setInput(state.mbtiMessage);
+        }
+    }, [state]);
+
+    // input이 mbtiMessage로 설정되면 자동 전송
+    useEffect(() => {
+        if (state?.mbtiMessage && input === state.mbtiMessage && mbtiMessageHandled.current && !isSending) {
+            const timer = setTimeout(() => {
+                const sendBtn = document.querySelector("[data-send-btn]") as HTMLButtonElement;
+                if (sendBtn && !sendBtn.disabled) sendBtn.click();
+            }, 300);
+            return () => clearTimeout(timer);
+        }
+    }, [input, state, isSending]);
     const cachedUserIdRef = useRef<number | null>(null);
     const [userProfileUrl, setUserProfileUrl] = useState<string | null>(null);
 
@@ -847,9 +917,11 @@ export function ChatPage() {
                                     {msg.role === "bot" && (
                                         <Bot className='-mt-[16px]' />
                                     )}
-                                    <div className={`max-w-[75%] flex flex-col gap-1 ${msg.role === "user" ? "items-end" : "items-start"}`}>
+                                    <div className={`flex flex-col gap-1 ${msg.role === "user" ? "items-end" : "items-start"} ${
+                                        msg.role === "bot" && parsePersonalColor(msg.content) ? "w-[55%]" : "max-w-[75%]"
+                                    }`}>
                                         <div
-                                            className={`rounded-2xl text-sm leading-relaxed overflow-hidden ${
+                                            className={`rounded-2xl text-sm leading-relaxed overflow-hidden w-full ${
                                                 msg.role === "user"
                                                     ? "text-white rounded-tr-md shadow-sm bg-onyou"
                                                     : "text-gray-800 bg-white border border-gray-100 shadow-sm rounded-tl-md"
@@ -893,41 +965,57 @@ export function ChatPage() {
                                                     <>
                                                         {/* 퍼스널컬러 카드 (퍼스널컬러 답변일 때만) */}
                                                         {pcInfo && (
-                                                            <div className="flex flex-col items-center bg-gradient-to-b from-gray-50 to-white px-4 pt-5 pb-3 gap-3">
-                                                                {/* 일러스트 */}
-                                                                {PC_ILLUSTRATIONS[pcInfo.typeName] && (
-                                                                    <img
-                                                                        src={PC_ILLUSTRATIONS[pcInfo.typeName]}
-                                                                        alt={pcInfo.typeName}
-                                                                        className="w-32 h-32 object-contain rounded-full"
-                                                                    />
-                                                                )}
-                                                                {/* 감성 멘트 */}
-                                                                <p className="text-sm text-gray-500 italic text-center leading-relaxed">
-                                                                    "{PC_CATCHPHRASES[pcInfo.typeName]}"
-                                                                </p>
-                                                                {/* 추천 컬러칩 */}
-                                                                {pcInfo.colorHexList.length > 0 && (
-                                                                    <div className="flex flex-col items-center gap-1.5 mt-1">
-                                                                        <p className="text-xs text-gray-400 font-medium">추천 컬러 팔레트</p>
-                                                                        <div className="flex gap-2">
-                                                                            {pcInfo.colorHexList.map((hex, i) => (
-                                                                                <div
-                                                                                    key={i}
-                                                                                    className="w-10 h-10 rounded-lg shadow-sm border border-gray-200"
-                                                                                    style={{ backgroundColor: hex }}
-                                                                                    title={hex}
-                                                                                />
-                                                                            ))}
-                                                                        </div>
+                                                            <div className="bg-gradient-to-br from-gray-50 via-white to-gray-50 px-5 pt-6 pb-4">
+                                                                {/* 일러스트 + 감성 멘트 */}
+                                                                <div className="flex items-center gap-4">
+                                                                    {PC_ILLUSTRATIONS[pcInfo.typeName] && (
+                                                                        <img
+                                                                            src={PC_ILLUSTRATIONS[pcInfo.typeName]}
+                                                                            alt={pcInfo.typeName}
+                                                                            className="w-20 h-20 object-cover rounded-full border-2 border-white shadow-md flex-shrink-0"
+                                                                        />
+                                                                    )}
+                                                                    <div className="flex flex-col gap-1">
+                                                                        <p className="text-xs text-gray-400 font-medium tracking-wide">나의 퍼스널컬러</p>
+                                                                        <p className="text-sm text-gray-600 italic leading-relaxed">
+                                                                            "{PC_CATCHPHRASES[pcInfo.typeName]}"
+                                                                        </p>
                                                                     </div>
-                                                                )}
+                                                                </div>
                                                             </div>
                                                         )}
                                                         <div className="px-4 py-3">
                                                             <ReactMarkdown
                                                                 components={{
-                                                                    p:      ({ children }) => <p className="mb-2 last:mb-0 leading-relaxed">{children}</p>,
+                                                                    p: ({ children }) => {
+                                                                        if (pcInfo) {
+                                                                            const text = extractText(children);
+                                                                            // "🎨 추천 컬러 : ..." 줄 감지
+                                                                            if (text.includes("추천 컬러") && text.includes("🎨") && !text.includes("피해야") && !text.includes("뉴트럴")) {
+                                                                                const colors = parseColorNames(text);
+                                                                                if (colors.length > 0) {
+                                                                                    return (
+                                                                                        <>
+                                                                                            <div className="flex flex-wrap gap-1.5 mb-1.5">
+                                                                                                {colors.map((c, i) => (
+                                                                                                    <div key={i} className="flex flex-col items-center gap-0.5 w-12">
+                                                                                                        <div
+                                                                                                            className="w-8 h-8 rounded-md shadow-sm border border-gray-200"
+                                                                                                            style={{ backgroundColor: c.hex }}
+                                                                                                            title={c.name}
+                                                                                                        />
+                                                                                                        <span className="text-[8px] text-gray-400 leading-tight text-center truncate w-full">{c.name}</span>
+                                                                                                    </div>
+                                                                                                ))}
+                                                                                            </div>
+                                                                                            <p className="mb-2 last:mb-0 leading-relaxed">{children}</p>
+                                                                                        </>
+                                                                                    );
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                        return <p className="mb-2 last:mb-0 leading-relaxed">{children}</p>;
+                                                                    },
                                                                     strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
                                                                     em:     ({ children }) => <em className="italic">{children}</em>,
                                                                     ul:     ({ children }) => <ul className="list-disc list-outside mb-2 space-y-1 pl-5">{children}</ul>,
@@ -1119,6 +1207,7 @@ export function ChatPage() {
                     {/* 전송 버튼 */}
                     <div className="flex items-center gap-2 flex-shrink-0">
                         <motion.button
+                            data-send-btn
                             onClick={handleSend}
                             disabled={!canSend}
                             whileTap={{ scale: 0.9 }}
