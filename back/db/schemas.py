@@ -291,8 +291,9 @@ class QnaCreate(BaseModel):
     문의 등록 시 프론트에서 받는 데이터 (사용자 전용)
     - user_id는 JWT에서 추출하므로 body에 포함하지 않음
     """
-    category : Optional[str] = None  # 문의 분류 (예: 서비스 이용, 결제, 기타)
-    question : str                   # 문의 내용
+    category       : Optional[str] = None
+    question_title : Optional[str] = None
+    question       : str
 
 class QnaAnswerUpdate(BaseModel):
     """
@@ -300,18 +301,25 @@ class QnaAnswerUpdate(BaseModel):
     """
     answer : str  # 답변 내용
 
+class QnaUpdate(BaseModel):
+    category        : Optional[str] = None
+    question_title  : Optional[str] = None
+    question        : str
+
 class QnaResponse(BaseModel):
     """
     QnA 조회 응답
     - 사용자/관리자 공통 사용
     """
-    qna_id     : int
-    user_id    : int
-    manager_id : Optional[int] = None  # 답변 전이면 null
-    category   : Optional[str] = None
-    question   : str
-    answer     : Optional[str] = None  # 답변 전이면 null
-    created_at : datetime
-    updated_at : datetime
+    qna_id         : int
+    user_id        : int
+    manager_id     : Optional[int] = None
+    category       : Optional[str] = None
+    question_title : Optional[str] = None
+    question       : str
+    answer         : Optional[str] = None
+    nickname       : Optional[str] = None
+    created_at     : datetime
+    updated_at     : datetime
 
     model_config = {"from_attributes": True}

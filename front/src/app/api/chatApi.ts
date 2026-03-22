@@ -185,3 +185,101 @@ export async function sendGuestMessage(
 
     return res.json() as Promise<GuestMessageResponse>;
 }
+
+export type ChatStreamEvent =
+  | { type: "loading"; message: string }
+  | { type: "done"; content: string }
+  | { type: "error"; message: string };
+
+async function readStream(
+  res: Response,
+  onEvent: (event: ChatStreamEvent) => void,
+): Promise<void> {
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error((data as { detail?: string }).detail ?? `서버 오류 (${res.status})`);
+  }
+
+  if (!res.body) {
+    throw new Error("스트리밍 응답이 없습니다.");
+  }
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder("utf-8");
+  let buffer = "";
+
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+
+    const lines = buffer.split("\n");
+    buffer = lines.pop() ?? "";
+
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed) continue;
+
+      const jsonText = trimmed.startsWith("data:")
+        ? trimmed.slice(5).trim()
+        : trimmed;
+
+      try {
+        const parsed = JSON.parse(jsonText) as ChatStreamEvent;
+        onEvent(parsed);
+      } catch {
+        // 파싱 불가 라인은 무시
+      }
+    }
+  }
+
+  if (buffer.trim()) {
+    const jsonText = buffer.trim().startsWith("data:")
+      ? buffer.trim().slice(5).trim()
+      : buffer.trim();
+
+    try {
+      onEvent(JSON.parse(jsonText) as ChatStreamEvent);
+    } catch {
+      // ignore
+    }
+  }
+}
+
+export async function sendGuestMessageStream(
+  content: string,
+  chatHistory: { role: string; content: string }[] = [],
+  onEvent: (event: ChatStreamEvent) => void,
+): Promise<void> {
+  const res = await fetch(`${API_BASE}/chats/guest/message/stream`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ content, chat_history: chatHistory }),
+  });
+
+  await readStream(res, onEvent);
+}
+
+export async function sendMemberMessageStream(
+  chatRoomId: number,
+  body: { content: string; model_type?: string; image_url?: string[] },
+  onEvent: (event: ChatStreamEvent) => void,
+): Promise<void> {
+  const res = await fetch(`${API_BASE}/chats/${chatRoomId}/messages/stream`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${getToken()}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      chat_room_id: chatRoomId,
+      role: "user",
+      ...(body.model_type && { model_type: body.model_type }),
+      content: body.content,
+      image_url: body.image_url ?? null,
+    }),
+  });
+
+  await readStream(res, onEvent);
+}

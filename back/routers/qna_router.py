@@ -1,6 +1,6 @@
 from services import qna_service
 from services import user_service
-from db.schemas import QnaCreate, QnaAnswerUpdate, QnaResponse
+from db.schemas import QnaCreate, QnaUpdate, QnaAnswerUpdate, QnaResponse
 from .deps import get_current_user_id
 from fastapi import APIRouter, HTTPException, Depends
 
@@ -27,14 +27,16 @@ router = APIRouter(prefix="/qna", tags=["QnA"])
 
 def _to_response(qna) -> QnaResponse:
     return QnaResponse(
-        qna_id     = qna.qna_id,
-        user_id    = qna.user_id,
-        manager_id = qna.manager_id,
-        category   = qna.category,
-        question   = qna.question,
-        answer     = qna.answer,
-        created_at = qna.created_at,
-        updated_at = qna.updated_at,
+        qna_id         = qna.qna_id,
+        user_id        = qna.user_id,
+        manager_id     = qna.manager_id,
+        category       = qna.category,
+        question_title = qna.question_title,
+        question       = qna.question,
+        answer         = qna.answer,
+        nickname       = qna.nickname,
+        created_at     = qna.created_at,
+        updated_at     = qna.updated_at,
     )
 
 # ─────────────────────────────────────────────
@@ -161,3 +163,33 @@ def delete_qna(
 
     if not success:
         raise HTTPException(status_code=404, detail="문의를 찾을 수 없습니다.")
+
+# ─────────────────────────────────────────────
+# 문의 수정 (사용자 본인)
+# ─────────────────────────────────────────────
+
+@router.patch("/{qna_id}/question", response_model=QnaResponse)
+def update_my_qna(
+    qna_id: int,
+    body: QnaUpdate,
+    user_id: int = Depends(get_current_user_id),
+):
+    user = user_service.get_user_by_id(user_id)
+
+    if not user:
+        raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")
+
+    try:
+        qna = qna_service.update_qna(
+            qna_id=qna_id,
+            user_id=user_id,
+            is_admin=user.is_admin,
+            data=body,
+        )
+    except ValueError as e:
+        message = str(e)
+        if "본인 문의만" in message:
+            raise HTTPException(status_code=403, detail=message)
+        raise HTTPException(status_code=400, detail=message)
+
+    return _to_response(qna)

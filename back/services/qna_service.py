@@ -1,6 +1,6 @@
 from typing import Optional
 from db.models import Qna
-from db.schemas import QnaCreate, QnaAnswerUpdate
+from db.schemas import QnaCreate, QnaUpdate, QnaAnswerUpdate
 from db.db_manager import execute_query, execute_one, execute_write
 
 """
@@ -31,12 +31,43 @@ def get_qna_list(user_id: int, is_admin: bool) -> list[Qna]:
     """
     if is_admin:
         rows = execute_query(
-            "SELECT * FROM qna ORDER BY created_at DESC",
+            """
+            SELECT
+                q.qna_id,
+                q.user_id,
+                q.manager_id,
+                q.category,
+                q.question_title,
+                q.question,
+                q.answer,
+                q.created_at,
+                q.updated_at,
+                u.nickname AS nickname
+            FROM qna q
+            JOIN users u ON q.user_id = u.user_id
+            ORDER BY q.created_at DESC
+            """,
             ()
         )
     else:
         rows = execute_query(
-            "SELECT * FROM qna WHERE user_id = %s ORDER BY created_at DESC",
+            """
+            SELECT
+                q.qna_id,
+                q.user_id,
+                q.manager_id,
+                q.category,
+                q.question_title,
+                q.question,
+                q.answer,
+                q.created_at,
+                q.updated_at,
+                u.nickname
+            FROM qna q
+            JOIN users u ON q.user_id = u.user_id
+            WHERE q.user_id = %s
+            ORDER BY q.created_at DESC
+            """,
             (user_id,)
         )
 
@@ -56,7 +87,22 @@ def get_qna_by_id(qna_id: int) -> Optional[Qna]:
         qna = get_qna_by_id(3)
     """
     row = execute_one(
-        "SELECT * FROM qna WHERE qna_id = %s",
+        """
+        SELECT
+            q.qna_id,
+            q.user_id,
+            q.manager_id,
+            q.category,
+            q.question_title,
+            q.question,
+            q.answer,
+            q.created_at,
+            q.updated_at,
+            u.nickname
+        FROM qna q
+        JOIN users u ON q.user_id = u.user_id
+        WHERE q.qna_id = %s
+        """,
         (qna_id,)
     )
 
@@ -74,19 +120,15 @@ def create_qna(user_id: int, data: QnaCreate) -> Qna:
     """
     새 문의 등록.
     - 사용자 본인의 user_id로 등록
-    - category, question 저장
-
-    사용 예시:
-        qna = create_qna(user_id=1, data=QnaCreate(category="서비스", question="문의합니다"))
+    - category, question_title, question 저장
     """
     qna_id = execute_write(
         """
-        INSERT INTO qna (user_id, category, question)
-        VALUES (%s, %s, %s)
+        INSERT INTO qna (user_id, category, question_title, question)
+        VALUES (%s, %s, %s, %s)
         """,
-        (user_id, data.category, data.question)
+        (user_id, data.category, data.question_title, data.question)
     )
-
     qna = get_qna_by_id(qna_id)
 
     if not qna:
@@ -94,6 +136,38 @@ def create_qna(user_id: int, data: QnaCreate) -> Qna:
 
     return qna
 
+def update_qna(qna_id: int, user_id: int, is_admin: bool, data: QnaUpdate) -> Qna:
+    qna = get_qna_by_id(qna_id)
+
+    if not qna:
+        raise ValueError("해당 문의를 찾을 수 없습니다.")
+
+    if not is_admin and qna.user_id != user_id:
+        raise ValueError("본인 문의만 수정할 수 있습니다.")
+
+    if qna.answer:
+        raise ValueError("답변이 등록된 문의는 수정할 수 없습니다.")
+
+    affected = execute_write(
+        """
+        UPDATE qna
+        SET category = %s,
+            question_title = %s,
+            question = %s
+        WHERE qna_id = %s
+        """,
+        (data.category, data.question_title, data.question, qna_id)
+    )
+
+    if not affected:
+        raise RuntimeError("문의 수정에 실패했습니다.")
+
+    updated = get_qna_by_id(qna_id)
+
+    if not updated:
+        raise RuntimeError("문의 수정 후 조회에 실패했습니다.")
+
+    return updated
 
 # ─────────────────────────────────────────────
 # 4. 답변 등록 / 수정 (관리자)

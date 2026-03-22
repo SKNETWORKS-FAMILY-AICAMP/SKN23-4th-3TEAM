@@ -9,12 +9,13 @@ import { uploadImage } from "@/app/api/uploadApi";
 import { useState, useRef, useEffect } from "react";
 import { fetchCurrentUser } from "@/app/api/userApi";
 import { Loading } from "@/app/components/ui/loading";
-import { addToWishlist, fetchWishlist } from "@/app/api/wishlistApi";
+import { addToWishlist, fetchWishlist, removeFromWishlist } from "@/app/api/wishlistApi";
 import { motion, AnimatePresence } from "motion/react";
 import ChatLoading from "@/assets/animations/logo_pop_1.webm";
 import LogoTextWebm from "@/assets/animations/logo_text.webm";
 import { X, ZoomIn, ImagePlus, ChevronDown, Lock, ExternalLink, Heart, Loader2 } from "lucide-react";
-import { createChatRoom, fetchMessages, sendMessage, sendGuestMessage, type ChatMessage } from "@/app/api/chatApi";
+import { createChatRoom, fetchMessages,sendMemberMessageStream,sendGuestMessageStream, type ChatMessage } from "@/app/api/chatApi";
+import { TipGuideModal } from "@/app/components/onboarding/TipGuideModal";
 import { checkTodayDetailedAnalysis } from "@/app/api/analysisApi";
 
 // 퍼스널컬러 일러스트 매핑
@@ -375,6 +376,8 @@ export function ChatPage() {
     const [expandedImage, setExpandedImage] = useState<string | null>(null);
     const [isSending, setIsSending] = useState(false);
     const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+    const [personaMessage, setPersonaMessage] = useState("");
+    const [streamError, setStreamError] = useState<string | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const skipFetchRef = useRef(false); // 새 채팅방 생성 시 불필요한 fetchMessages 방지
@@ -387,7 +390,7 @@ export function ChatPage() {
     const [analysisDropdownOpen, setAnalysisDropdownOpen] = useState(false);
     const [showAnalysisToast, setShowAnalysisToast] = useState(false);
     const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
+    const [showTipModal, setShowTipModal] = useState(false);
     const triggerAnalysisToast = () => {
         if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
         setShowAnalysisToast(true);
@@ -413,6 +416,7 @@ export function ChatPage() {
 
     // 위시리스트 state
     const [wishedUrls, setWishedUrls] = useState<Set<string>>(new Set());
+    const [wishIdByUrl, setWishIdByUrl] = useState<Record<string, number>>({});
     const [wishingUrls, setWishingUrls] = useState<Set<string>>(new Set());
     const [showWishlistToast, setShowWishlistToast] = useState(false);
     const [showDuplicateWishToast, setShowDuplicateWishToast] = useState(false);
@@ -467,49 +471,6 @@ export function ChatPage() {
         duplicateWishToastTimerRef.current = setTimeout(() => setShowDuplicateWishToast(false), 3000);
     };
 
-    const handleAddToWishlist = async (
-        link: { name: string; url: string },
-        msgId: number,
-    ) => {
-        if (!isLoggedIn) { triggerWishlistToast(); return; }
-        if (wishingUrls.has(link.url)) return;
-        if (wishedUrls.has(link.url)) { triggerDuplicateWishToast(); return; }
-
-        setWishingUrls((prev) => new Set(prev).add(link.url));
-
-        try {
-            if (cachedUserIdRef.current === null) {
-                const user = await fetchCurrentUser();
-                cachedUserIdRef.current = user.user_id;
-                setUserProfileUrl(user.profile_image_url ?? null);
-            }
-
-            const goodsNo = new URL(link.url).searchParams.get("goodsNo") ?? link.name.slice(0, 50);
-
-            await addToWishlist({
-                user_id      : cachedUserIdRef.current,
-                product_name : link.name,
-                product_url  : link.url,
-                message_id   : msgId,
-            });
-
-            setWishedUrls((prev) => new Set(prev).add(link.url));
-        } catch (err: unknown) {
-            if ((err as { statusCode?: number }).statusCode === 400) {
-                setWishedUrls((prev) => new Set(prev).add(link.url));
-                triggerDuplicateWishToast();
-            } else {
-                console.error("위시리스트 추가 실패:", err);
-            }
-        } finally {
-            setWishingUrls((prev) => {
-                const next = new Set(prev);
-                next.delete(link.url);
-
-                return next;
-            });
-        }
-    };
 
     // 기존 채팅 전용 state
     const [isDragging, setIsDragging] = useState(false);
@@ -599,7 +560,7 @@ export function ChatPage() {
 
     // 새로 고침시 db에 저장된 product_ur 기준으로 채팅방에서 하트 유지
     useEffect(() => {
-        if (!isLoggedIn) return;
+    if (!isLoggedIn) return;
 
         fetchWishlist()
             .then((items) => {
@@ -607,13 +568,105 @@ export function ChatPage() {
                     .map((item) => item.product_url)
                     .filter((url): url is string => !!url);
 
+                const idMap: Record<string, number> = {};
+                items.forEach((item) => {
+                    if (item.product_url) {
+                        idMap[item.product_url] = item.wish_id;
+                    }
+                });
+
                 setWishedUrls(new Set(urls));
+                setWishIdByUrl(idMap);
             })
             .catch((err) => {
                 console.error("위시리스트 조회 실패:", err);
             });
     }, [isLoggedIn]);
 
+    useEffect(() => {
+        const userId = localStorage.getItem("user_id");
+        const shouldShow = localStorage.getItem("should_show_tip_modal");
+
+        if (!userId) return;
+
+        const seenKey = `has_seen_tip_modal_${userId}`;
+        const hasSeen = localStorage.getItem(seenKey) === "true";
+
+        if (shouldShow === "true" && !hasSeen) {
+            setShowTipModal(true);
+        }
+    }, []);
+    const handleToggleWishlist = async (
+        link: { name: string; url: string },
+        msgId: number,
+    ) => {
+        if (!isLoggedIn) {
+            triggerWishlistToast();
+            return;
+        }
+
+        if (wishingUrls.has(link.url)) return;
+
+        setWishingUrls((prev) => new Set(prev).add(link.url));
+
+        try {
+            if (wishedUrls.has(link.url)) {
+                const wishId = wishIdByUrl[link.url];
+
+                if (!wishId) {
+                    console.error("삭제할 wish_id를 찾지 못했습니다.");
+                    return;
+                }
+
+                await removeFromWishlist(wishId);
+
+                setWishedUrls((prev) => {
+                    const next = new Set(prev);
+                    next.delete(link.url);
+                    return next;
+                });
+
+                setWishIdByUrl((prev) => {
+                    const next = { ...prev };
+                    delete next[link.url];
+                    return next;
+                });
+
+                return;
+            }
+
+            if (cachedUserIdRef.current === null) {
+                const user = await fetchCurrentUser();
+                cachedUserIdRef.current = user.user_id;
+                setUserProfileUrl(user.profile_image_url ?? null);
+            }
+
+            const added = await addToWishlist({
+                user_id: cachedUserIdRef.current,
+                product_name: link.name,
+                product_url: link.url,
+                message_id: null,
+            });
+
+            setWishedUrls((prev) => new Set(prev).add(link.url));
+            setWishIdByUrl((prev) => ({
+                ...prev,
+                [link.url]: added.wish_id,
+            }));
+        } catch (err: unknown) {
+            if ((err as { statusCode?: number }).statusCode === 400) {
+                triggerDuplicateWishToast();
+            } else {
+                console.error("위시리스트 토글 실패:", err);
+            }
+        } finally {
+            setWishingUrls((prev) => {
+                const next = new Set(prev);
+                next.delete(link.url);
+                return next;
+            });
+        }
+    };
     // ── Handlers (새 채팅 - 이미지 업로드 슬롯) ──────────────────────────
     const handleUpload = (slotId: string, file: File) => {
         const url = URL.createObjectURL(file);
@@ -675,7 +728,7 @@ export function ChatPage() {
         //         return;
         //     }
         // }
-
+        setPersonaMessage("");
         const trimmedInput      = input.trim();
         const previews          = uploadSlots.filter((s) => s.preview).map((s) => s.preview!);
         const slotFiles         = uploadSlots.filter((s) => s.file).map((s) => s.file!);
@@ -712,21 +765,42 @@ export function ChatPage() {
                     role: m.role === "bot" ? "assistant" : "user",
                     content: m.content,
                 }));
-                const result = await sendGuestMessage(trimmedInput, chatHistory);
-                const aiMsg: Message = {
-                    id     : Date.now() + 1,
-                    role   : "bot",
-                    content: result.content,
-                    time   : new Date().toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" }),
-                };
 
-                setMessages((prev) => [...prev, aiMsg]);
+                await sendGuestMessageStream(trimmedInput, chatHistory, (event) => {
+                    if (event.type === "loading") {
+                        setPersonaMessage(event.message);
+                        return;
+                    }
+
+                    if (event.type === "done") {
+                        const aiMsg: Message = {
+                            id: Date.now() + 1,
+                            role: "bot",
+                            content: event.content,
+                            time: new Date().toLocaleTimeString("ko-KR", {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                            }),
+                        };
+
+                        setMessages((prev) => [...prev, aiMsg]);
+                        setPersonaMessage("");
+                        return;
+                    }
+
+                    if (event.type === "error") {
+                        setPersonaMessage("");
+                        setStreamError(event.message);
+                    }
+                });
             } else {
                 // 1. 이미지 파일들을 S3에 업로드하여 실제 URL 획득
                 let s3Urls: string[] = [];
 
                 if (slotFiles.length > 0) {
-                    s3Urls = await Promise.all(slotFiles.map((file) => uploadImage(file, currentAnalysisType)));
+                    s3Urls = await Promise.all(
+                        slotFiles.map((file) => uploadImage(file, currentAnalysisType))
+                    );
                 }
 
                 // 2. 채팅방이 없으면 먼저 생성
@@ -736,32 +810,45 @@ export function ChatPage() {
                 if (roomId === null) {
                     const room = await createChatRoom();
                     roomId = room.chat_room_id;
-                    skipFetchRef.current = true; // fetchMessages useEffect 건너뜀
+                    skipFetchRef.current = true;
                     setChatRoomId(roomId);
                 }
 
-                // 3. 메시지 전송 (S3 URL 포함)
-                const result = await sendMessage(roomId, {
-                    content   : userMsg.content,
-                    model_type: currentAnalysisType !== "default" ? currentAnalysisType : undefined,
-                    image_url : s3Urls.length > 0 ? s3Urls : undefined,
-                });
+                // 3. 메시지 전송
+                await sendMemberMessageStream(
+                    roomId,
+                    {
+                        content: userMsg.content,
+                        model_type: currentAnalysisType !== "default" ? currentAnalysisType : undefined,
+                        image_url: s3Urls.length > 0 ? s3Urls : undefined,
+                    },
+                    async (event) => {
+                        if (event.type === "loading") {
+                            setPersonaMessage(event.message);
+                            return;
+                        }
+
+                        if (event.type === "done") {
+                            setPersonaMessage("");
+
+                            try {
+                                const msgs = await fetchMessages(roomId!);
+                                setMessages(msgs.map(apiMsgToMessage));
+                            } catch (err) {
+                                console.error("스트리밍 후 메시지 재조회 실패:", err);
+                            }
+                            return;
+                        }
+
+                        if (event.type === "error") {
+                            setPersonaMessage("");
+                            setStreamError(event.message);
+                        }
+                    }
+                );
 
                 if (isNewRoom) {
-                    // 새 채팅방: 낙관적 유저 메시지를 API 결과로 교체 (user + bot 모두 포함)
-                    setMessages((prev) => {
-                        const withoutOptimistic = prev.filter((m) => m.id !== userMsg.id);
-
-                        return [...withoutOptimistic, ...result.map(apiMsgToMessage)];
-                    });
-
-                    // 메시지 전송 완료 후 사이드바 갱신 (이 시점에 백엔드가 제목을 설정함)
                     window.dispatchEvent(new CustomEvent("chatRoomCreated"));
-                } else {
-                    // 기존 채팅방: 봇 메시지만 추가
-                    const aiMsg = result.find((m) => m.role === "assistant");
-
-                    if (aiMsg) setMessages((prev) => [...prev, apiMsgToMessage(aiMsg)]);
                 }
             }
         } catch (err) {
@@ -859,6 +946,16 @@ export function ChatPage() {
         }
     };
 
+    const handleCloseTipModal = () => {
+        const userId = localStorage.getItem("user_id");
+
+        if (userId) {
+            localStorage.setItem(`has_seen_tip_modal_${userId}`, "true");
+        }
+
+        localStorage.removeItem("should_show_tip_modal");
+        setShowTipModal(false);
+    };
 
     // ── Render ────────────────────────────────────────────────────────────
     return (
@@ -1041,7 +1138,7 @@ export function ChatPage() {
                                                                         return (
                                                                             <div key={i} className="flex items-center gap-1.5">
                                                                                 <button
-                                                                                    onClick={() => handleAddToWishlist(link, msg.id)}
+                                                                                    onClick={() => handleToggleWishlist(link, msg.id)}
                                                                                     disabled={isWishing}
                                                                                     title={isWished ? "위시리스트에 추가됨" : "위시리스트에 추가"}
                                                                                     className={`flex-shrink-0 w-8.5 h-8.5 rounded-full flex items-center justify-center border transition-all cursor-pointer disabled:cursor-default ${isWished ? "bg-[#E8F5D0] border-onyou" : "bg-[#F9FAFB] border-[#E5E7EB]"}`}
@@ -1087,10 +1184,17 @@ export function ChatPage() {
                         </AnimatePresence>
 
                         {isSending && (
-                            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="py-4">
-                                <video src={ChatLoading} autoPlay loop muted playsInline className="w-25 h-auto" />
+                            <motion.div
+                                initial={{ opacity: 0, y: 8 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="py-4 flex items-center gap-3"
+                            >
+                                <video src={ChatLoading} autoPlay loop muted playsInline className="w-20 h-auto" />
+                                <p className="text-sm text-gray-500">
+                                {personaMessage || "답변을 준비 중이에요..."}
+                                </p>
                             </motion.div>
-                        )}
+                            )}
                         <div ref={messagesEndRef} />
                     </div>
                 )}
@@ -1315,6 +1419,9 @@ export function ChatPage() {
                             onClick={(e) => e.stopPropagation()}
                         />
                     </motion.div>
+                )}
+                {showTipModal && (
+                    <TipGuideModal onClose={handleCloseTipModal} />
                 )}
             </AnimatePresence>
             {/* // llm 파트 마무리 전까지 봉인 jsw 0318 정밀분석(프론트) */}
