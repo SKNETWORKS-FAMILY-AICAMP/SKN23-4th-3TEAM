@@ -217,3 +217,5 @@ skin_ai/checkpoint/
 
 !README.md
 
+!front/src/shared/lib/
+!front/src/shared/lib/**
