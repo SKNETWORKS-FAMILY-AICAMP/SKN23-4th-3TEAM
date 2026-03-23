@@ -62,6 +62,7 @@ export interface SkinMbtiResultDetail {
 }
 
 export interface SkinMbtiResultData {
+    result_id?:number;
     mbti_code: string;
     result: SkinMbtiResultDetail;
     score: SkinMbtiScore;
@@ -115,4 +116,39 @@ export async function fetchSavedSkinMbti(): Promise<SkinMbtiResultData | null> {
     }
 
     return data.data;
+}
+
+export interface SkinMbtiShareResponse {
+    success: boolean;
+    data: {
+        result_id: number;
+        share_token: string;
+        share_url: string;
+    };
+    error: string | null;
+}
+
+/**
+ * MBTI 공유 링크 생성
+ *
+ * POST /skin-mbti/share/{result_id}
+ */
+export async function createSkinMbtiShareLink(resultId: number): Promise<SkinMbtiShareResponse> {
+    const res = await fetch(`${API_BASE}/skin-mbti/share/${resultId}`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${getToken()}` },
+    });
+
+    return handleResponse<SkinMbtiShareResponse>(res);
+}
+
+/**
+ * 공유된 MBTI 결과 조회
+ *
+ * GET /skin-mbti/shared/{share_token}
+ */
+export async function fetchSharedSkinMbtiResult(token: string) {
+    const res = await fetch(`${API_BASE}/skin-mbti/shared/${token}`);
+
+    return handleResponse(res);
 }

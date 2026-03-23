@@ -1,9 +1,38 @@
-import { useLocation, useNavigate } from "react-router";
-import { motion } from "motion/react";
-import { ArrowLeft, RotateCcw, Sparkles, Target, HeartHandshake, Sun, Moon, Lightbulb, AlertTriangle, MessageCircle, } from "lucide-react";
-import { shareSkinAnalysisToKakao } from "@/shared/lib/kakao";
-import { createSkinMbtiShareLink } from "@/app/api/skinMbtiApi";
-import type { SkinMbtiResultData } from "@/app/api/skinMbtiApi";
+import { useEffect, useState } from "react";
+import { useParams } from "react-router";
+import {
+    Sparkles,
+    Target,
+    HeartHandshake,
+    Sun,
+    Moon,
+    Lightbulb,
+    AlertTriangle,
+    MessageCircle,
+} from "lucide-react";
+import { Loading } from "@/app/components/ui/loading";
+import {
+    fetchSharedSkinMbtiResult,
+    type SkinMbtiResultData,
+} from "@/app/api/skinMbtiApi";
+
+/**
+ * SharedSkinMbtiPage
+ * ─────────────────────────────────────────────────────────────
+ * 공유 토큰으로 공개된 피부 MBTI 결과를 조회하는 페이지.
+ *
+ * 경로:
+ *   /shared/skin-mbti/:token
+ * ─────────────────────────────────────────────────────────────
+ */
+
+type SharedMbtiResponse =
+    | SkinMbtiResultData
+    | {
+          success?: boolean;
+          data?: SkinMbtiResultData;
+          result?: SkinMbtiResultData;
+      };
 
 const skinMbtiImages = import.meta.glob("@/assets/skin_mbti/*", {
     eager: true,
@@ -29,6 +58,24 @@ function resolveSkinMbtiImage(imageAsset?: string) {
     );
 
     return matchedEntry?.[1] ?? null;
+}
+
+function normalizeSharedMbti(raw: SharedMbtiResponse): SkinMbtiResultData | null {
+    if (!raw) return null;
+
+    if ("mbti_code" in raw && "result" in raw && "score" in raw) {
+        return raw;
+    }
+
+    if ("data" in raw && raw.data) {
+        return raw.data;
+    }
+
+    if ("result" in raw && raw.result) {
+        return raw.result;
+    }
+
+    return null;
 }
 
 function InfoCard({
@@ -58,10 +105,76 @@ function InfoCard({
     );
 }
 
-export function SkinMbtiResultPage() {
-    const navigate = useNavigate();
-    const location = useLocation();
-    const resultData = location.state as SkinMbtiResultData | undefined;
+function hexToRgb(hex: string) {
+    const normalized = hex.replace("#", "");
+    const bigint = parseInt(normalized, 16);
+
+    return {
+        r: (bigint >> 16) & 255,
+        g: (bigint >> 8) & 255,
+        b: bigint & 255,
+    };
+}
+
+function mixColor(hex: string, target = "#FFFFFF", ratio = 0.85) {
+    const base = hexToRgb(hex);
+    const mix = hexToRgb(target);
+
+    const r = Math.round(base.r * (1 - ratio) + mix.r * ratio);
+    const g = Math.round(base.g * (1 - ratio) + mix.g * ratio);
+    const b = Math.round(base.b * (1 - ratio) + mix.b * ratio);
+
+    return `rgb(${r}, ${g}, ${b})`;
+}
+
+export function SharedSkinMbtiPage() {
+    const { token } = useParams();
+    const [resultData, setResultData] = useState<SkinMbtiResultData | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
+
+    useEffect(() => {
+        async function loadSharedMbti() {
+            if (!token) {
+                setError("공유 토큰이 없습니다.");
+                setLoading(false);
+                return;
+            }
+
+            try {
+                const raw = await fetchSharedSkinMbtiResult(token);
+                const normalized = normalizeSharedMbti(raw as SharedMbtiResponse);
+
+                if (!normalized) {
+                    throw new Error("공유된 MBTI 결과 형식이 올바르지 않습니다.");
+                }
+
+                setResultData(normalized);
+            } catch (e) {
+                console.error("[SharedSkinMbtiPage] load error =", e);
+                setError("공유된 MBTI 결과를 불러올 수 없습니다.");
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        loadSharedMbti();
+    }, [token]);
+
+    if (loading) return <Loading />;
+
+    if (error) {
+        return (
+            <div className="min-h-screen bg-[#F8F7F2] px-6 py-8">
+                <div className="max-w-6xl mx-auto">
+                    <div className="bg-white rounded-3xl border border-[#ECE7DC] shadow-sm p-10 text-center">
+                        <h1 className="text-2xl font-bold text-gray-900 mb-3">공유 결과를 불러오지 못했어요</h1>
+                        <p className="text-gray-500">{error}</p>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     if (!resultData) {
         return (
@@ -69,14 +182,7 @@ export function SkinMbtiResultPage() {
                 <div className="max-w-6xl mx-auto">
                     <div className="bg-white rounded-3xl border border-[#ECE7DC] shadow-sm p-10 text-center">
                         <h1 className="text-2xl font-bold text-gray-900 mb-3">결과 정보가 없어요</h1>
-                        <p className="text-gray-500 mb-6">테스트를 먼저 진행한 뒤 결과를 확인해주세요.</p>
-                        <button
-                            type="button"
-                            onClick={() => navigate("/skin-mbti")}
-                            className="px-5 py-3 rounded-2xl bg-onyou text-white font-semibold cursor-pointer"
-                        >
-                            테스트 하러 가기
-                        </button>
+                        <p className="text-gray-500">공유된 MBTI 결과를 확인할 수 없습니다.</p>
                     </div>
                 </div>
             </div>
@@ -91,62 +197,14 @@ export function SkinMbtiResultPage() {
     const pageBgColor = mixColor(bgColor, "#FFFFFF", 0.88);
     const cardBgColor = mixColor(bgColor, "#FFFFFF", 0.94);
     const softPanelColor = mixColor(bgColor, "#FFFFFF", 0.78);
-    const handleKakaoShare = async () => {
-        const resultId = resultData.result_id;
 
-            if (!resultId) {
-                alert("공유할 MBTI 결과 ID가 없습니다.");
-                return;
-            }
-
-            try {
-                const share = await createSkinMbtiShareLink(resultId);
-
-                console.log("[mbti share_url] =", share.data.share_url);
-
-                shareSkinAnalysisToKakao({
-                    resultUrl   : share.data.share_url,
-                    imageUrl    : imageSrc ?? "https://via.placeholder.com/300x200.png?text=Skin+MBTI",
-                    title       : "내 피부 MBTI 결과",
-                    description : `${result.title} · ${result.subtitle}`,
-                });
-            } catch (error) {
-                console.error("[SkinMbtiResultPage] share error =", error);
-                alert("MBTI 공유 링크 생성에 실패했습니다.");
-            }
-        };
     return (
         <div className="min-h-screen" style={{ backgroundColor: pageBgColor }}>
             <div className="max-w-6xl mx-auto px-6 py-8">
-                <motion.section
-                    initial={{ opacity: 0, y: 18 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3 }}
+                <section
                     className="relative rounded-[36px] border border-[#ECE7DC] shadow-sm overflow-hidden"
                     style={{ backgroundColor: bgColor }}
                 >
-                <div className="absolute top-6 right-6 z-10 flex items-center gap-2">
-                    <button
-                        type="button"
-                        onClick={handleKakaoShare}
-                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-[#FEE500] text-[#191919] text-sm font-semibold shadow-sm hover:opacity-90 cursor-pointer"
-                    >
-                        카카오톡 공유
-                    </button>
-
-                    <button
-                        type="button"
-                        onClick={() =>
-                            navigate("/skin-mbti", {
-                                state: { forceRetest: true },
-                            })
-                        }
-                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl border border-gray-200 bg-white/95 text-sm font-semibold text-gray-700 hover:bg-white cursor-pointer shadow-sm"
-                    >
-                        <RotateCcw className="w-4 h-4" />
-                        다시 검사하기
-                    </button>
-                </div>
                     <div className="grid grid-cols-1 lg:grid-cols-[420px_minmax(0,1fr)] gap-0">
                         <div className="p-8 lg:p-10 flex flex-col items-center justify-center border-b lg:border-b-0 lg:border-r border-white/30">
                             <div className="w-full max-w-[290px] aspect-square rounded-[32px] bg-white/45 flex items-center justify-center overflow-hidden">
@@ -170,7 +228,7 @@ export function SkinMbtiResultPage() {
                             </div>
                         </div>
 
-                        <div className="p-8 pt-20 lg:p-10 lg:pt-10 flex flex-col justify-center">
+                        <div className="p-8 lg:p-10 flex flex-col justify-center">
                             <p className="text-sm font-bold mb-3" style={{ color: accentColor }}>
                                 {mbti_code}
                             </p>
@@ -212,21 +270,18 @@ export function SkinMbtiResultPage() {
                             </div>
                         </div>
                     </div>
-                </motion.section>
+                </section>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mt-6">
                     <InfoCard icon={<HeartHandshake className="w-4 h-4" />} title="이런 습관이 많아요" bgColor={cardBgColor}>
                         <p>{result.habits}</p>
                     </InfoCard>
 
-                    <InfoCard icon={<MessageCircle className="w-4 h-4" />} title="추천 챗봇 대화" bgColor={cardBgColor}>
-                        <p
-                            onClick={() => navigate("/chat", { state: { mbtiMessage: `내 피부 MBTI에 맞는 ${result.chatbot_suggestion} 알려줘` } })}
-                            className="cursor-pointer text-[#4A7A1E] font-semibold hover:text-[#3A6A0E] hover:underline transition-colors"
-                        >
+                    {/* <InfoCard icon={<MessageCircle className="w-4 h-4" />} title="추천 챗봇 대화" bgColor={cardBgColor}>
+                        <p className="text-[#4A7A1E] font-semibold">
                             💬 {result.chatbot_suggestion}
                         </p>
-                    </InfoCard>
+                    </InfoCard> */}
 
                     <InfoCard icon={<Sun className="w-4 h-4" />} title="아침 루틴" bgColor={cardBgColor}>
                         <ul className="space-y-2">
@@ -275,25 +330,4 @@ export function SkinMbtiResultPage() {
             </div>
         </div>
     );
-}
-function hexToRgb(hex: string) {
-    const normalized = hex.replace("#", "");
-    const bigint = parseInt(normalized, 16);
-
-    return {
-        r: (bigint >> 16) & 255,
-        g: (bigint >> 8) & 255,
-        b: bigint & 255,
-    };
-}
-
-function mixColor(hex: string, target = "#FFFFFF", ratio = 0.85) {
-    const base = hexToRgb(hex);
-    const mix = hexToRgb(target);
-
-    const r = Math.round(base.r * (1 - ratio) + mix.r * ratio);
-    const g = Math.round(base.g * (1 - ratio) + mix.g * ratio);
-    const b = Math.round(base.b * (1 - ratio) + mix.b * ratio);
-
-    return `rgb(${r}, ${g}, ${b})`;
 }

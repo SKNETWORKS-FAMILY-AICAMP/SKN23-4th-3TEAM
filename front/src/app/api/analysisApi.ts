@@ -4,11 +4,13 @@
  * back/routers/analysis_router.py 의 /analysis 엔드포인트와 통신.
  *
  * 사용하는 엔드포인트:
- *   GET  /analysis/model/detailed   → fetchDetailAnalysis()
- *   GET  /keywords/factorials       → fetchFactorials()
- *   GET  /analysis/check/today      → checkTodayDetailedAnalysis()
- *   GET  /analysis/dates            → fetchDetailedAnalysisDates()
- *   GET  /analysis/by-date          → fetchAnalysisByDate()
+ *   GET  /analysis/model/detailed        → fetchDetailAnalysis()
+ *   GET  /keywords/factorials            → fetchFactorials()
+ *   GET  /analysis/check/today           → checkTodayDetailedAnalysis()
+ *   GET  /analysis/dates                 → fetchDetailedAnalysisDates()
+ *   GET  /analysis/by-date               → fetchAnalysisByDate()
+ *   POST /analysis/share/{analysis_id}   → createAnalysisShareLink()
+ *   GET  /analysis/shared/{share_token}  → fetchSharedAnalysisResult()
  * ─────────────────────────────────────────────────────────────
  */
 
@@ -167,4 +169,42 @@ export async function fetchAnalysisByDate(dates: string[]): Promise<AnalysisByDa
     });
 
     return handleResponse<AnalysisByDateItem[]>(res);
+}
+/**
+ * 피부 분석 공유 url 조회
+ *
+ * GET /analysis/by-date?dates=2026-03-05
+ * GET /analysis/by-date?dates=2026-03-05&dates=2026-03-02
+ */
+export interface AnalysisShareResponse {
+    message: string;
+    data: {
+        analysis_id: number;
+        share_token: string;
+        share_url: string;
+    };
+}
+/**
+ * 피부 분석 공유 링크 생성
+ *
+ * POST /analysis/share/{analysis_id}
+ */
+export async function createAnalysisShareLink(analysisId: number): Promise<AnalysisShareResponse> {
+    const res = await fetch(`${API_BASE}/analysis/share/${analysisId}`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${getToken()}` },
+    });
+
+    return handleResponse<AnalysisShareResponse>(res);
+}
+
+/**
+ * 공유된 피부 분석 결과 조회
+ *
+ * GET /analysis/shared/{share_token}
+ */
+export async function fetchSharedAnalysisResult(token: string): Promise<AnalysisResult> {
+    const res = await fetch(`${API_BASE}/analysis/shared/${token}`);
+
+    return handleResponse<AnalysisResult>(res);
 }

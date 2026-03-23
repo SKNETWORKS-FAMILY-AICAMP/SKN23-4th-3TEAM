@@ -1,10 +1,11 @@
 # back/routers/skin_mbti_router.py
-
-from fastapi import APIRouter, HTTPException
+import os
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel, field_validator
 from typing import List
+from .deps import get_current_user_id
 
-from services.skin_mbti_service import calculate_mbti, get_saved_mbti_result
+from services.skin_mbti_service import calculate_mbti, get_saved_mbti_result, create_skin_mbti_share_link, get_shared_skin_mbti_result
 
 
 router = APIRouter(
@@ -12,6 +13,7 @@ router = APIRouter(
     tags=["Skin MBTI"],
 )
 
+FRONT_BASE_URL = os.getenv("FRONT_BASE_URL", "http://localhost:5173")
 
 # ────────────────────────────────────────────
 # Request 스키마
@@ -98,3 +100,55 @@ def read_skin_mbti(user_id: int):
     except Exception as e:
         print("[skin_mbti] GET error =", repr(e))
         raise HTTPException(status_code=500, detail=str(e))
+
+# ────────────────────────────────────────────
+# MBTI 공유 링크 생성
+# ────────────────────────────────────────────
+@router.post("/share/{result_id}")
+def share_skin_mbti(
+    result_id: int,
+    user_id: int = Depends(get_current_user_id),
+):
+    try:
+        result = create_skin_mbti_share_link(
+            result_id=result_id,
+            user_id=user_id,
+            front_base_url=FRONT_BASE_URL,
+        )
+
+        if not result:
+            raise HTTPException(status_code=404, detail="MBTI 결과를 찾을 수 없습니다.")
+
+        return {
+            "success": True,
+            "data": result,
+            "error": None,
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        print("[skin_mbti] SHARE error =", repr(e))
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ────────────────────────────────────────────
+# 공유된 MBTI 결과 읽기
+# ────────────────────────────────────────────
+@router.get("/shared/{share_token}")
+def read_shared_skin_mbti(share_token: str):
+    try:
+        result = get_shared_skin_mbti_result(share_token)
+
+        if not result:
+            raise HTTPException(status_code=404, detail="공유된 MBTI 결과를 찾을 수 없습니다.")
+
+        return {
+            "success": True,
+            "data": result,
+            "error": None,
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        print("[skin_mbti] SHARED GET error =", repr(e))
+        raise HTTPException(status_code=500, detail=str(e))   
