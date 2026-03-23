@@ -9,14 +9,15 @@ import { uploadImage } from "@/app/api/uploadApi";
 import { useState, useRef, useEffect } from "react";
 import { fetchCurrentUser } from "@/app/api/userApi";
 import { Loading } from "@/app/components/ui/loading";
-import { addToWishlist, fetchWishlist, removeFromWishlist } from "@/app/api/wishlistApi";
 import { motion, AnimatePresence } from "motion/react";
 import ChatLoading from "@/assets/animations/logo_pop_1.webm";
 import LogoTextWebm from "@/assets/animations/logo_text.webm";
+import { checkTodayDetailedAnalysis } from "@/app/api/analysisApi";
+import { TipGuideModal } from "@/app/components/onboarding/TipGuideModal";
+import { WebcamCaptureModal } from "@/app/components/common/WebcamCaptureModal";
+import { addToWishlist, fetchWishlist, removeFromWishlist } from "@/app/api/wishlistApi";
 import { X, ZoomIn, ImagePlus, ChevronDown, Lock, ExternalLink, Heart, Loader2 } from "lucide-react";
 import { createChatRoom, fetchMessages,sendMemberMessageStream,sendGuestMessageStream, type ChatMessage } from "@/app/api/chatApi";
-import { TipGuideModal } from "@/app/components/onboarding/TipGuideModal";
-import { checkTodayDetailedAnalysis } from "@/app/api/analysisApi";
 
 // 퍼스널컬러 일러스트 매핑
 // 파일명만 바꾸면 팀원이 만든 일러스트로 교체 가능
@@ -311,22 +312,27 @@ function EmptyChatState() {
 }
 
 // ─── UploadSlotCard ──────────────────────────
-function UploadSlotCard({ slot, onUpload, onRemove }: {
+function UploadSlotCard({ slot, onUpload, onRemove, onOpenWebcam }: {
     slot: UploadSlot;
     onUpload: (id: string, file: File) => void;
     onRemove: (id: string) => void;
+    onOpenWebcam: (id: string) => void;
 }) {
     const inputRef = useRef<HTMLInputElement>(null);
 
     return (
         <div className="flex flex-col items-center gap-1.5 relative">
-            <div className="relative w-full" onClick={() => !slot.preview && inputRef.current?.click()}>
+            <div className="relative w-full">
                 {slot.preview ? (
                     <div className="relative w-full aspect-square rounded-lg overflow-hidden border-2 border-onyou cursor-pointer group">
                         <img src={slot.preview} alt={slot.label} className="w-full h-full object-cover" />
                         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
                             <button
-                                onClick={(e) => { e.stopPropagation(); onRemove(slot.id); }}
+                                type="button"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onRemove(slot.id);
+                                }}
                                 className="opacity-0 group-hover:opacity-100 w-7 h-7 bg-white rounded-full flex items-center justify-center shadow-md transition-all cursor-pointer"
                             >
                                 <X className="w-3.5 h-3.5 text-gray-600" />
@@ -335,13 +341,37 @@ function UploadSlotCard({ slot, onUpload, onRemove }: {
                     </div>
                 ) : (
                     <div
-                        className="w-full aspect-square rounded-xl border-2 border-dashed flex flex-col gap-0.5 items-center justify-center cursor-pointer transition-all hover:bg-[#F4FAE8]"
+                        className="w-full aspect-square rounded-xl border-2 border-dashed flex flex-col items-center justify-center transition-all"
                         style={{ borderColor: "#C5E89A" }}
                     >
-                        <ImagePlus className="w-6 h-6 mb-1 text-onyou" />
-                        <span className="text-xs font-medium text-onyou">업로드</span>
+                        <ImagePlus className="w-6 h-6 mb-2 text-onyou" />
+
+                        <div className="w-full px-3 flex flex-col gap-2">
+                            <button
+                                type="button"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    inputRef.current?.click();
+                                }}
+                                className="w-full rounded-xl border border-[#A7D46F] bg-white py-2 text-xs font-semibold text-onyou hover:bg-[#F4FAE8] cursor-pointer"
+                            >
+                                업로드
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onOpenWebcam(slot.id);
+                                }}
+                                className="w-full rounded-xl border border-[#A7D46F] bg-white py-2 text-xs font-semibold text-onyou hover:bg-[#F4FAE8] cursor-pointer"
+                            >
+                                웹캠
+                            </button>
+                        </div>
                     </div>
                 )}
+
                 <input
                     ref={inputRef}
                     type="file"
@@ -349,14 +379,14 @@ function UploadSlotCard({ slot, onUpload, onRemove }: {
                     className="hidden"
                     onChange={(e) => {
                         const file = e.target.files?.[0];
-                        if (file) onUpload(slot.id, file);
+                        if (!file) return;
+                        onUpload(slot.id, file);
+                        e.currentTarget.value = "";
                     }}
                 />
             </div>
 
-            <div className="flex items-center gap-1">
-                <span className="text-xs font-medium text-gray-600">{slot.label}</span>
-            </div>
+            <span className="text-xs text-gray-600 text-center">{slot.label}</span>
         </div>
     );
 }
@@ -381,7 +411,9 @@ export function ChatPage() {
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const skipFetchRef = useRef(false); // 새 채팅방 생성 시 불필요한 fetchMessages 방지
-
+    const [isWebcamOpen, setIsWebcamOpen] = useState(false);
+    const [activeWebcamSlotId, setActiveWebcamSlotId] = useState<string | null>(null);
+    
     const isLoggedIn = !!localStorage.getItem("access_token");
 
     // 새 채팅 전용 state
@@ -670,9 +702,9 @@ export function ChatPage() {
     };
     // ── Handlers (새 채팅 - 이미지 업로드 슬롯) ──────────────────────────
     const handleUpload = (slotId: string, file: File) => {
-        const url = URL.createObjectURL(file);
+    const url = URL.createObjectURL(file);
 
-        setUploadSlots((prev) =>
+    setUploadSlots((prev) =>
             prev.map((s) => s.id === slotId ? { ...s, preview: url, file } : s)
         );
     };
@@ -684,6 +716,25 @@ export function ChatPage() {
     };
 
     const canSend = (input.trim().length > 0 || uploadSlots.some((s) => s.preview)) && !isSending;
+    const handleOpenWebcam = (slotId: string) => {
+        setActiveWebcamSlotId(slotId);
+        setIsWebcamOpen(true);
+    };
+
+    const handleCaptureFromWebcam = (file: File) => {
+        if (!activeWebcamSlotId) return;
+
+        handleUpload(activeWebcamSlotId, file);
+        setIsWebcamOpen(false);
+        setActiveWebcamSlotId(null);
+    };
+
+    const handleCloseWebcam = () => {
+        setIsWebcamOpen(false);
+        setActiveWebcamSlotId(null);
+    };
+
+    
     
     // llm 파트 마무리 전까지 봉인 jsw 0318 정밀분석(프론트)
     // const handleSelectAnalysisType = async (type: AnalysisType) => {
@@ -1230,7 +1281,7 @@ export function ChatPage() {
                                 <div className="w-px self-stretch bg-gray-100 mx-4" />
                                 <div className={`basis-1/2 grid place-content-center gap-3 ${uploadSlots.length === 1 ? "grid-cols-1 max-w-[150px]" : uploadSlots.length === 3 ? "grid-cols-3 max-w-[450px]" : "grid-cols-2"}`}>
                                     {uploadSlots.map((slot) => (
-                                        <UploadSlotCard key={slot.id} slot={slot} onUpload={handleUpload} onRemove={handleRemove} />
+                                        <UploadSlotCard key={slot.id} slot={slot} onUpload={handleUpload} onRemove={handleRemove} onOpenWebcam={handleOpenWebcam} />
                                     ))}
                                 </div>
                             </div>
@@ -1424,6 +1475,11 @@ export function ChatPage() {
                 {showTipModal && (
                     <TipGuideModal onClose={handleCloseTipModal} />
                 )}
+                <WebcamCaptureModal
+                    open={isWebcamOpen}
+                    onClose={handleCloseWebcam}
+                    onCapture={handleCaptureFromWebcam}
+                />
             </AnimatePresence>
             {/* // llm 파트 마무리 전까지 봉인 jsw 0318 정밀분석(프론트) */}
             {/* <AnimatePresence>
