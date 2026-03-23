@@ -1,7 +1,8 @@
 # back/services/skin_mbti_service.py
-
+import secrets
 import json
 from typing import List, Dict
+from datetime import datetime
 
 from db.db_manager import execute_write, execute_one
 
@@ -265,7 +266,7 @@ MBTI_RESULT_MAP = {
 # ────────────────────────────────────────────
 def get_saved_mbti_result(user_id: int):
     sql = """
-        SELECT result_json
+        SELECT result_id, result_json
         FROM user_test_results
         WHERE user_id = %s
           AND test_type = %s
@@ -281,17 +282,22 @@ def get_saved_mbti_result(user_id: int):
     if raw is None:
         return None
 
-    if isinstance(raw, dict):
-        return raw
+    result_data = raw
 
-    if isinstance(raw, str):
+    if isinstance(raw, dict):
+        result_data = raw
+
+    elif isinstance(raw, str):
         try:
-            return json.loads(raw)
+            result_data = json.loads(raw)
         except Exception as e:
             print("[skin_mbti] json.loads failed:", e)
             raise RuntimeError(f"result_json 파싱 실패: {raw}") from e
 
-    return raw
+    if isinstance(result_data, dict):
+        result_data["result_id"] = row["result_id"]
+
+    return result_data
 
 # 축별 문항 인덱스 (0-based: Q1=0, Q2=1, ...)
 SL_INDICES = [0, 3, 6, 9]   # Q1, Q4, Q7, Q10
@@ -376,4 +382,127 @@ def calculate_mbti(answers: List[str], user_id: int) -> Dict:
         json.dumps(result_json, ensure_ascii=False),
     ))
 
+    saved_row = execute_one(
+        """
+        SELECT result_id
+        FROM user_test_results
+        WHERE user_id = %s
+          AND test_type = %s
+        LIMIT 1
+        """,
+        (user_id, "skin_mbti")
+    )
+
+    if saved_row:
+        result_json["result_id"] = saved_row["result_id"]
+
     return result_json
+
+
+# ────────────────────────────────────────────
+# 공유 링크 헬퍼
+# ────────────────────────────────────────────
+
+def _generate_share_token(length: int = 40) -> str:
+    """
+    공유용 랜덤 토큰 생성.
+    """
+    return secrets.token_urlsafe(length)[:length]
+
+
+# ────────────────────────────────────────────
+# MBTI 공유 링크 생성
+# ────────────────────────────────────────────
+
+def create_skin_mbti_share_link(result_id: int, user_id: int, front_base_url: str):
+    row = execute_one(
+        """
+        SELECT result_id, user_id, share_token
+        FROM user_test_results
+        WHERE result_id = %s
+          AND user_id = %s
+          AND test_type = 'skin_mbti'
+        LIMIT 1
+        """,
+        (result_id, user_id)
+    )
+
+    if not row:
+        return None
+
+    share_token = row["share_token"]
+
+    if not share_token:
+        share_token = _generate_share_token(40)
+
+        execute_write(
+            """
+            UPDATE user_test_results
+            SET share_token = %s,
+                is_public   = 1,
+                shared_at   = %s
+            WHERE result_id = %s
+              AND test_type = 'skin_mbti'
+            """,
+            (share_token, datetime.now(), result_id)
+        )
+    else:
+        execute_write(
+            """
+            UPDATE user_test_results
+            SET is_public = 1,
+                shared_at = %s
+            WHERE result_id = %s
+              AND test_type = 'skin_mbti'
+            """,
+            (datetime.now(), result_id)
+        )
+
+    return {
+        "result_id": result_id,
+        "share_token": share_token,
+        "share_url": f"{front_base_url}/shared/skin-mbti/{share_token}",
+    }
+
+
+# ────────────────────────────────────────────
+# 공유된 MBTI 결과 조회
+# ────────────────────────────────────────────
+
+def get_shared_skin_mbti_result(share_token: str):
+    row = execute_one(
+        """
+        SELECT result_id, result_json
+        FROM user_test_results
+        WHERE share_token = %s
+          AND is_public = 1
+          AND test_type = 'skin_mbti'
+        LIMIT 1
+        """,
+        (share_token,)
+    )
+
+    if not row:
+        return None
+
+    raw = row.get("result_json")
+
+    if raw is None:
+        return None
+
+    result_data = raw
+
+    if isinstance(raw, dict):
+        result_data = raw
+
+    elif isinstance(raw, str):
+        try:
+            result_data = json.loads(raw)
+        except Exception as e:
+            print("[skin_mbti] shared json.loads failed:", e)
+            raise RuntimeError(f"shared result_json 파싱 실패: {raw}") from e
+
+    if isinstance(result_data, dict):
+        result_data["result_id"] = row["result_id"]
+
+    return result_data

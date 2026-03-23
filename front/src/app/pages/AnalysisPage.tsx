@@ -3,9 +3,10 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { Icon } from "../components/ui/icon";
 import { Button } from "@/app/components/ui/button";
 import { Loading } from "@/app/components/ui/loading";
+import { shareSkinAnalysisToKakao } from "@/shared/lib/kakao";
 import { Calendar, ScanFace, TrendingUp, TrendingDown, Minus, ChevronDown } from "lucide-react";
 import { RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer, Legend } from "recharts";
-import { fetchDetailAnalysis, fetchFactorials, fetchDetailedAnalysisDates, fetchAnalysisByDate, type AnalysisResult, type KeywordResponse} from "@/app/api/analysisApi";
+import { fetchDetailAnalysis, fetchFactorials, fetchDetailedAnalysisDates, fetchAnalysisByDate, createAnalysisShareLink, type AnalysisResult, type KeywordResponse} from "@/app/api/analysisApi";
 
 const factorialImages = import.meta.glob<string>(
     '../../assets/factorial/*.svg',
@@ -386,16 +387,52 @@ export function AnalysisPage() {
 
     const scoreDelta = compareCurrentOverallScore - prevOverallScore;
 
+    // 카카오톡 공유
+    const handleKakaoShare = async () => {
+    if (!currentAnalysis) {
+        alert("공유할 분석 결과가 없습니다.");
+        return;
+    }
+
+    try {
+        const share = await createAnalysisShareLink(currentAnalysis.analysis_id);
+
+        console.log("[share.data] =", share.data);
+        console.log("[share_url before kakao] =", share.data.share_url);
+        alert(share.data.share_url);
+
+        shareSkinAnalysisToKakao({
+            resultUrl   : share.data.share_url,
+            imageUrl    : analysisImage || "https://via.placeholder.com/300x200.png?text=Skin+Analysis",
+            title       : "내 피부 분석 결과",
+            description : `${skinType ? `${skinType} 피부 타입` : "AI 피부 분석"} 결과를 확인해보세요.`,
+        });
+    } catch (error) {
+        console.error("[AnalysisPage] share error =", error);
+        alert("공유 링크 생성에 실패했습니다.");
+    }
+};
+
     return (
         <div className="h-full overflow-y-auto bg-[#F8FBF3]">
             <div className="max-w-5xl mx-auto px-4 py-6">
 
                 {/* ── 헤더 ─────────────────────────────────────────────── */}
-                <div className="flex items-center justify-between mb-6">
+               <div className="flex items-center justify-between mb-6">
                     <div>
                         <h1 className="text-gray-900 font-bold">피부 분석 결과</h1>
                         <p className="text-sm text-gray-500 mt-0.5">AI가 분석한 나의 피부 상태</p>
                     </div>
+
+                    {activeTab === "current" && currentAnalysis && (
+                        <button
+                            type="button"
+                            onClick={handleKakaoShare}
+                            className="px-4 py-2 rounded-xl bg-[#FEE500] text-[#191919] text-sm font-semibold shadow-sm hover:opacity-90 transition"
+                        >
+                            카카오톡 공유
+                        </button>
+                    )}
                 </div>
 
                 {/* ── 탭 ──────────────────────────────────────────────── */}

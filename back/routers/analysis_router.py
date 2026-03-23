@@ -1,3 +1,4 @@
+import os
 from typing import List
 from datetime import date
 from .deps import get_current_user_id
@@ -15,12 +16,15 @@ analysis_router.py
     GET    /analysis/check/today           오늘 정밀 분석 여부 확인
     GET    /analysis/dates                 정밀 분석 날짜 목록 조회
     GET    /analysis/by-date               날짜별 정밀 분석 결과 조회 (1~2개 날짜)
+    POST   /analysis/share/{analysis_id}   피부 분석 공유 링크 생성
+    GET    /analysis/shared/{share_token}  공유된 피부 분석 결과 조회
     GET    /analysis/{analysis_id}         분석 결과 단건 조회
     DELETE /analysis/{analysis_id}         분석 결과 삭제 (soft delete)
 ─────────────────────────────────────────────────────────────
 """
 
 router = APIRouter(prefix="/analysis", tags=["Analysis"])
+FRONT_BASE_URL = os.getenv("FRONT_BASE_URL", "http://localhost:5173")
 
 # ─────────────────────────────────────────────
 # 내부 헬퍼
@@ -218,3 +222,58 @@ def delete_analysis(
         raise HTTPException(status_code=403, detail="접근 권한이 없습니다.")
 
     analysis_service.delete_analysis(analysis_id)
+# ─────────────────────────────────────────────
+# 피부 분석 결과 공유
+# ─────────────────────────────────────────────
+
+@router.post("/share/{analysis_id}")
+def share_analysis(
+    analysis_id : int,
+    user_id     : int = Depends(get_current_user_id),
+):
+    """
+    피부 분석 결과 공유 링크 생성.
+
+    프론트 요청 예시:
+        POST /analysis/share/10
+    응답:
+        {
+            "message": "공유 링크 생성 완료",
+            "data": {
+                "analysis_id": 10,
+                "share_token": "...",
+                "share_url": "http://localhost:5173/shared/analysis/..."
+            }
+        }
+    """
+    result = analysis_service.create_analysis_share_link(
+        analysis_id   = analysis_id,
+        user_id       = user_id,
+        front_base_url= FRONT_BASE_URL,
+    )
+
+    if not result:
+        raise HTTPException(status_code=404, detail="분석 결과를 찾을 수 없습니다.")
+
+    return {
+        "message": "공유 링크 생성 완료",
+        "data"   : result,
+    }
+
+
+@router.get("/shared/{share_token}", response_model=AnalysisResponse)
+def get_shared_analysis(share_token: str):
+    """
+    공유된 피부 분석 결과 조회.
+
+    프론트 요청 예시:
+        GET /analysis/shared/abc123token
+    응답:
+        { "analysis_id": 10, "user_id": 1, "model_type": "detailed", ... }
+    """
+    result = analysis_service.get_shared_analysis_result(share_token)
+
+    if not result:
+        raise HTTPException(status_code=404, detail="공유된 분석 결과를 찾을 수 없습니다.")
+
+    return _analysis_to_response(result)
