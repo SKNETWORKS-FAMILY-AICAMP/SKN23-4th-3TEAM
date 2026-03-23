@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
-import { Heart, ExternalLink, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
 import { motion } from "motion/react";
+import { useEffect, useMemo, useState } from "react";
+import { Loading } from "@/app/components/ui/loading";
+import { Heart, ExternalLink, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
 import { fetchWishlist, removeFromWishlist, WishlistItem } from "@/app/api/wishlistApi";
 
 const PAGE_SIZE = 5;
@@ -86,7 +87,9 @@ export function WishlistPage() {
       setRemovingId(null);
     }
   };
-
+  if (loading) {
+    return <Loading />;
+  }
   return (
     <div className="h-full overflow-y-auto bg-[#F8FBF3]">
       <div className="max-w-4xl mx-auto px-4 py-6">
@@ -105,9 +108,7 @@ export function WishlistPage() {
         </div>
 
         {loading ? (
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center text-gray-500">
-            위시리스트를 불러오는 중입니다...
-          </div>
+          <Loading />
         ) : sortedWishlist.length === 0 ? (
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center">
             <Heart className="w-10 h-10 mx-auto text-gray-300 mb-3" />

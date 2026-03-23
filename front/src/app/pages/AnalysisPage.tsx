@@ -331,6 +331,21 @@ export function AnalysisPage() {
         return { ...m, value: extractNum(raw, 0), desc: extractStr(raw, "") };
     });
 
+    // ── 비교 분석용 "현재(최신)" 데이터 ─────────────────────────────
+    const compareCurrent = latestAnalysis;
+    const compareCurrentAd = compareCurrent?.analysis_data ?? {};
+    const compareCurrentApiM = (compareCurrentAd.metrics ?? {}) as Record<string, unknown>;
+
+    const compareCurrentOverallScore = extractNum(
+        compareCurrent?.skin_score,
+        extractNum(compareCurrentAd.overall_score, 0)
+    );
+
+    const compareCurrentSkinMetrics = SKIN_METRICS.map((m) => {
+        const raw = compareCurrentApiM[m.key];
+
+        return { ...m, value: extractNum(raw, 0), desc: extractStr(raw, "") };
+    });
     // ── 레이더 차트 데이터 ─────────────────────────────────────────
     const getVal = (list: typeof skinMetrics, key: string) =>
         list.find((m) => m.key === key)?.value ?? 0;
@@ -344,11 +359,11 @@ export function AnalysisPage() {
     ];
 
     const compareRadarData = [
-        { subject: "수분",     A: getVal(skinMetrics, "moisture"),     B: getVal(prevSkinMetrics, "moisture")     },
-        { subject: "탄력",     A: getVal(skinMetrics, "elasticity"),   B: getVal(prevSkinMetrics, "elasticity")   },
-        { subject: "주름",     A: getVal(skinMetrics, "wrinkle"),      B: getVal(prevSkinMetrics, "wrinkle")      },
-        { subject: "모공",     A: getVal(skinMetrics, "pore"),         B: getVal(prevSkinMetrics, "pore")         },
-        { subject: "색소침착", A: getVal(skinMetrics, "pigmentation"), B: getVal(prevSkinMetrics, "pigmentation") },
+        { subject: "수분",     A: getVal(compareCurrentSkinMetrics, "moisture"),     B: getVal(prevSkinMetrics, "moisture")     },
+        { subject: "탄력",     A: getVal(compareCurrentSkinMetrics, "elasticity"),   B: getVal(prevSkinMetrics, "elasticity")   },
+        { subject: "주름",     A: getVal(compareCurrentSkinMetrics, "wrinkle"),      B: getVal(prevSkinMetrics, "wrinkle")      },
+        { subject: "모공",     A: getVal(compareCurrentSkinMetrics, "pore"),         B: getVal(prevSkinMetrics, "pore")         },
+        { subject: "색소침착", A: getVal(compareCurrentSkinMetrics, "pigmentation"), B: getVal(prevSkinMetrics, "pigmentation") },
     ];
 
     // ── 로딩 / 빈 상태 ────────────────────────────────────────────
@@ -369,7 +384,7 @@ export function AnalysisPage() {
         );
     }
 
-    const scoreDelta = overallScore - prevOverallScore;
+    const scoreDelta = compareCurrentOverallScore - prevOverallScore;
 
     return (
         <div className="h-full overflow-y-auto bg-[#F8FBF3]">
@@ -614,7 +629,7 @@ export function AnalysisPage() {
                                     {/* 현재 점수 */}
                                 <div className="flex-1 text-center py-5 rounded-2xl bg-[#F0FAE4]">
                                     <p className="text-xs text-gray-400 mb-2">{latestAnalysis ? fmtDate(latestAnalysis.created_at) : ""}</p>
-                                    <p className="text-5xl font-bold text-onyou">{extractNum(latestAnalysis?.skin_score, 0)}</p>
+                                    <p className="text-5xl font-bold text-onyou">{compareCurrentOverallScore}</p>
                                     <p className="text-xs text-gray-400 mt-2 font-medium">현재</p>
                                 </div>
 
@@ -630,7 +645,7 @@ export function AnalysisPage() {
                             >
                                 <h3 className="font-semibold text-gray-800 mb-4">지표별 변화</h3>
                                 <div className="space-y-3">
-                                    {skinMetrics.map((metric, idx) => {
+                                    {compareCurrentSkinMetrics.map((metric, idx) => {
                                         const prevVal = prevSkinMetrics.find((m) => m.key === metric.key)?.value ?? 0;
                                         const delta   = metric.value - prevVal;
                                         return (

@@ -1,13 +1,9 @@
-import { useMemo, useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router";
 import { motion } from "motion/react";
+import { useMemo, useState, useEffect } from "react";
+import { Loading } from "@/app/components/ui/loading";
+import { useNavigate, useLocation } from "react-router";
 import { ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
-import {
-    submitSkinMbti,
-    fetchSavedSkinMbti,
-    type SkinMbtiOption,
-    type SkinMbtiResultData,
-} from "@/app/api/skinMbtiApi";
+import { submitSkinMbti, fetchSavedSkinMbti, type SkinMbtiOption,type SkinMbtiResultData,} from "@/app/api/skinMbtiApi";
 
 interface SkinMbtiQuestion {
     id: number;
@@ -229,15 +225,7 @@ export function SkinMbtiPage() {
     };
 
     if (isCheckingSavedResult) {
-        return (
-            <div className="h-full overflow-y-auto bg-[#F8FBF3]">
-                <div className="max-w-3xl mx-auto px-4 py-10">
-                    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center text-sm text-gray-500">
-                        결과를 확인하는 중입니다...
-                    </div>
-                </div>
-            </div>
-        );
+        return <Loading />;
     }
 
     return (
