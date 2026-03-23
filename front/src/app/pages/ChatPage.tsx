@@ -312,11 +312,12 @@ function EmptyChatState() {
 }
 
 // ─── UploadSlotCard ──────────────────────────
-function UploadSlotCard({ slot, onUpload, onRemove, onOpenWebcam }: {
+function UploadSlotCard({ slot, onUpload, onRemove, onOpenWebcam, showWebcam, }: {
     slot: UploadSlot;
     onUpload: (id: string, file: File) => void;
     onRemove: (id: string) => void;
     onOpenWebcam: (id: string) => void;
+    showWebcam: boolean;
 }) {
     const inputRef = useRef<HTMLInputElement>(null);
 
@@ -358,16 +359,18 @@ function UploadSlotCard({ slot, onUpload, onRemove, onOpenWebcam }: {
                                 업로드
                             </button>
 
-                            <button
-                                type="button"
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    onOpenWebcam(slot.id);
-                                }}
-                                className="w-full rounded-xl border border-[#A7D46F] bg-white py-2 text-xs font-semibold text-onyou hover:bg-[#F4FAE8] cursor-pointer"
-                            >
-                                웹캠
-                            </button>
+                            {showWebcam && (
+                                <button
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onOpenWebcam(slot.id);
+                                    }}
+                                    className="w-full rounded-xl border border-[#A7D46F] bg-white py-2 text-xs font-semibold text-onyou hover:bg-[#F4FAE8] cursor-pointer"
+                                >
+                                    웹캠
+                                </button>
+                            )}
                         </div>
                     </div>
                 )}
@@ -1281,7 +1284,7 @@ export function ChatPage() {
                                 <div className="w-px self-stretch bg-gray-100 mx-4" />
                                 <div className={`basis-1/2 grid place-content-center gap-3 ${uploadSlots.length === 1 ? "grid-cols-1 max-w-[150px]" : uploadSlots.length === 3 ? "grid-cols-3 max-w-[450px]" : "grid-cols-2"}`}>
                                     {uploadSlots.map((slot) => (
-                                        <UploadSlotCard key={slot.id} slot={slot} onUpload={handleUpload} onRemove={handleRemove} onOpenWebcam={handleOpenWebcam} />
+                                        <UploadSlotCard key={slot.id} slot={slot} onUpload={handleUpload} onRemove={handleRemove} onOpenWebcam={handleOpenWebcam} showWebcam={analysisType === "personal"} />
                                     ))}
                                 </div>
                             </div>
