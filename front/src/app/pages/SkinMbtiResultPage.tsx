@@ -198,7 +198,7 @@ export function SkinMbtiResultPage() {
 
                     <InfoCard icon={<MessageCircle className="w-4 h-4" />} title="추천 챗봇 대화" bgColor={cardBgColor}>
                         <p
-                            onClick={() => navigate("/chat", { state: { mbtiMessage: `내 피부 MBTI ${mbti_code}(${result.title})에 맞는 ${result.chatbot_suggestion} 알려줘` } })}
+                            onClick={() => navigate("/chat", { state: { mbtiMessage: `내 피부 MBTI에 맞는 ${result.chatbot_suggestion} 알려줘` } })}
                             className="cursor-pointer text-[#4A7A1E] font-semibold hover:text-[#3A6A0E] hover:underline transition-colors"
                         >
                             💬 {result.chatbot_suggestion}

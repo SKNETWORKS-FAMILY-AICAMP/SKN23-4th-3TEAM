@@ -249,6 +249,26 @@ def generate_report(
                 f"\n피부타입이나 피지, 모공 등의 단어는 사용하지 않는다."
             )
 
+    # 피부 MBTI 맥락: 사용자 메시지에 "피부 MBTI"가 포함되고, 프로필에 MBTI 데이터가 있을 때
+    if "피부 MBTI" in user_text and user_profile and user_profile.get("skin_mbti"):
+        mbti = user_profile["skin_mbti"]
+        mbti_context = (
+            f"\n\n[피부 MBTI 맥락]"
+            f"\n사용자의 피부 MBTI: {mbti.get('code', '')} ({mbti.get('title', '')})"
+            f"\n타입 설명: {mbti.get('description', '')}"
+            f"\n스킨케어 습관: {mbti.get('habits', '')}"
+            f"\n추천 아침 루틴: {', '.join(mbti.get('morning_routine', []))}"
+            f"\n추천 저녁 루틴: {', '.join(mbti.get('night_routine', []))}"
+            f"\n케어팁: {', '.join(mbti.get('care_tips', []))}"
+            f"\n피해야 할 습관: {', '.join(mbti.get('avoid_habits', []))}"
+            f"\n\n[MBTI 답변 규칙]"
+            f"\n1. 반드시 답변 서두에 '{mbti.get('code', '')}({mbti.get('title', '')}) 타입에 맞는 ...'으로 시작하세요."
+            f"\n2. 위 MBTI 추천 루틴, 케어팁, 피해야 할 습관을 답변의 핵심 근거로 사용하세요."
+            f"\n3. 일반적인 피부타입(지성/건성) 설명보다 MBTI 성향 기반 설명을 우선하세요."
+            f"\n4. 사용자의 피부타입/고민도 참고하되, MBTI 맞춤 루틴이 답변의 중심이 되어야 합니다."
+        )
+        payload["task_instruction"] += mbti_context
+
     # 퍼스널컬러는 답변이 길어서 max_tokens 제한으로 생성 시간 단축
     create_kwargs = {
         "model": OPENAI_MODEL,
