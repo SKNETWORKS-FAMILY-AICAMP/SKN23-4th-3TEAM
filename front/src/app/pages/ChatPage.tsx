@@ -430,6 +430,7 @@ export function ChatPage() {
             mbtiMessageHandled.current = true;
             // input에 설정 후 다음 tick에서 자동 전송
             setInput(state.mbtiMessage);
+            window.history.replaceState({}, "");  // 새로고침 시 재전송 방지
         }
     }, [state]);
 
