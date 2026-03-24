@@ -5,7 +5,7 @@ import { Button } from "@/app/components/ui/button";
 import { useState, useEffect, useRef } from "react";
 import { Loading } from "@/app/components/ui/loading";
 import { motion, AnimatePresence } from "motion/react";
-import { User, Link2, MessageCircleQuestion, Check, ChevronRight, ChevronLeft, Loader2, Plus, X, UserX } from "lucide-react";
+import { User, Link2, MessageCircleQuestion, Check, ChevronRight, ChevronLeft, ChevronDown, Loader2, Plus, X, UserX } from "lucide-react";
 import { fetchCurrentUser, updateCurrentUser, fetchKeywords, fetchSocialLinks, KeywordItem, checkNickname, deleteCurrentUser,} from "@/app/api/userApi";
 import { fetchQnaList, createQna, updateQnaAnswer, deleteQna, QnaItem, updateQna,} from "@/app/api/qnaApi";
 // import { fetchAllQna, fetchMyQna, createQna, updateQnaAnswer } from "@/app/api/qnaApi";
@@ -1206,18 +1206,22 @@ export function SettingsPage() {
 
                                                 {/* 모달 본문 */}
                                                     <div className="p-5 space-y-4">
-                                                        <select
-                                                            value={inquiryCategory}
-                                                            onChange={(e) => setInquiryCategory(e.target.value)}
-                                                            className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-onyou"
-                                                        >
-                                                            <option value="">문의 분류 선택</option>
-                                                            <option value="서비스 이용">서비스 이용</option>
-                                                            <option value="채팅">채팅</option>
-                                                            <option value="분석">분석</option>
-                                                            <option value="기타/일반">기타/일반</option>
-                                                            <option value="회원">회원</option>
-                                                        </select>
+                                                        <div className="relative">
+                                                            <select
+                                                                value={inquiryCategory}
+                                                                onChange={(e) => setInquiryCategory(e.target.value)}
+                                                                className="w-full appearance-none rounded-xl border border-gray-200 bg-white px-4 py-3 pr-12 text-sm text-gray-800 focus:outline-none focus:border-onyou cursor-pointer"
+                                                            >
+                                                                <option value="">문의 분류 선택</option>
+                                                                <option value="서비스 이용">서비스 이용</option>
+                                                                <option value="채팅">채팅</option>
+                                                                <option value="분석">분석</option>
+                                                                <option value="기타/일반">기타/일반</option>
+                                                                <option value="회원">회원</option>
+                                                            </select>
+
+                                                            <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
+                                                        </div>
                                                         <Input
                                                             label="문의 제목"
                                                             value={inquiryTitle}
