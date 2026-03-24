@@ -438,7 +438,7 @@ export function AnalysisPage() {
                 {/* ── 탭 ──────────────────────────────────────────────── */}
                 <div className="flex items-center justify-between gap-4 mb-6">
                     <div className="inline-flex gap-1 rounded-2xl border border-gray-200 bg-white p-1 shadow-sm">
-                        {[{ id: "current", label: "현재 분석" }, { id: "compare", label: "비교 분석" }].map((tab) => (
+                        {[{ id: "current", label: "종합 분석" }, { id: "compare", label: "비교 분석" }].map((tab) => (
                             <button
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id as "current" | "compare")}

@@ -10,9 +10,9 @@ import { useState, useRef, useEffect } from "react";
 import { fetchCurrentUser } from "@/app/api/userApi";
 import { Loading } from "@/app/components/ui/loading";
 import { motion, AnimatePresence } from "motion/react";
+import { checkAnalysisLimit } from "@/app/api/analysisApi";
 import ChatLoading from "@/assets/animations/logo_pop_1.webm";
 import LogoTextWebm from "@/assets/animations/logo_text.webm";
-// import { checkTodayDetailedAnalysis } from "@/app/api/analysisApi";
 import { TipGuideModal } from "@/app/components/onboarding/TipGuideModal";
 import { SkinTriviaModal } from "@/app/components/common/SkinTriviaModal";
 import { WebcamCaptureModal } from "@/app/components/common/WebcamCaptureModal";
@@ -453,7 +453,7 @@ function UploadSlotCard({ slot, onUpload, onRemove, onOpenWebcam, showWebcam, }:
                 <input
                     ref={inputRef}
                     type="file"
-                    accept="image/*"
+                    accept=".jpg,.jpeg,.png,.webp"
                     className="hidden"
                     onChange={(e) => {
                         const file = e.target.files?.[0];
@@ -499,6 +499,7 @@ export function ChatPage() {
     // 새 채팅 전용 state
     const [analysisType, setAnalysisType] = useState<AnalysisType>("default");
     const [uploadSlots, setUploadSlots] = useState<UploadSlot[]>([]);
+    const [uploadError, setUploadError] = useState<string | null>(null);
     const [analysisDropdownOpen, setAnalysisDropdownOpen] = useState(false);
     const [showAnalysisToast, setShowAnalysisToast] = useState(false);
     const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -508,23 +509,9 @@ export function ChatPage() {
         setShowAnalysisToast(true);
         toastTimerRef.current = setTimeout(() => setShowAnalysisToast(false), 3000);
     };
-
-
-    // llm 파트 마무리 전까지 봉인 jsw 0318 정밀분석(프론트)
-    // const [showDetailedLimitToast, setShowDetailedLimitToast] = useState(false);
-    // const detailedLimitToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-    // const triggerDetailedLimitToast = () => {
-    //     if (detailedLimitToastTimerRef.current) {
-    //         clearTimeout(detailedLimitToastTimerRef.current);
-    //     }
-
-    //     setShowDetailedLimitToast(true);
-
-    //     detailedLimitToastTimerRef.current = setTimeout(() => {
-    //         setShowDetailedLimitToast(false);
-    //     }, 3000);
-    // };
+    const [showLimitModal, setShowLimitModal] = useState(false);
+    const [limitModalMessage, setLimitModalMessage] = useState("");    
+    const openLimitModal = (message: string) => {setLimitModalMessage(message);setShowLimitModal(true);};
 
     // 위시리스트 state
     const [wishedUrls, setWishedUrls] = useState<Set<string>>(new Set());
@@ -780,12 +767,46 @@ export function ChatPage() {
             });
         }
     };
+    
+    // 이미지 형식 및 크기 체크
+    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+    const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
+
+    const validateImageFile = (file: File): string | null => {
+        if (!ALLOWED_TYPES.includes(file.type)) {
+            return "JPG, JPEG, PNG, WEBP 형식의 이미지만 업로드할 수 있어요.";
+        }
+
+        if (file.size > MAX_FILE_SIZE) {
+            return "파일 크기는 10MB 이하만 업로드할 수 있어요.";
+        }
+
+        return null;
+    };
+    const showUploadError = (message: string) => {
+        setUploadError(message);
+
+        setTimeout(() => {
+            setUploadError(null);
+        }, 2500);
+    };
     // ── Handlers (새 채팅 - 이미지 업로드 슬롯) ──────────────────────────
     const handleUpload = (slotId: string, file: File) => {
-    const url = URL.createObjectURL(file);
+        const error = validateImageFile(file);
 
-    setUploadSlots((prev) =>
-            prev.map((s) => s.id === slotId ? { ...s, preview: url, file } : s)
+        if (error) {
+            showUploadError(error);
+            return;
+        }
+
+        const url = URL.createObjectURL(file);
+
+        setUploadSlots((prev) =>
+            prev.map((slot) =>
+                slot.id === slotId
+                    ? { ...slot, file, preview: url }
+                    : slot
+            )
         );
     };
 
@@ -814,52 +835,73 @@ export function ChatPage() {
         setActiveWebcamSlotId(null);
     };
 
+    const LIMITED_ANALYSIS_TYPES = ["simple", "detailed", "ingredient", "personal"] as const;
+
+    const handleSelectAnalysisType = async (type: AnalysisType) => {
+        if (type === "default") {
+            setAnalysisType(type);
+            setAnalysisDropdownOpen(false);
+            return;
+        }
+
+        if (!isLoggedIn) {
+            triggerAnalysisToast();
+            setAnalysisDropdownOpen(false);
+            return;
+        }
+
+        if (!LIMITED_ANALYSIS_TYPES.includes(type as typeof LIMITED_ANALYSIS_TYPES[number])) {
+            setAnalysisType(type);
+            setAnalysisDropdownOpen(false);
+            return;
+        }
+
+        try {
+            const result = await checkAnalysisLimit(
+                type as "simple" | "detailed" | "ingredient" | "personal"
+            );
+
+            if (!result.available) {
+                setAnalysisDropdownOpen(false);
+                openLimitModal(result.message || "오늘 사용 가능한 횟수를 초과했습니다.");
+                return;
+            }
+
+            setAnalysisType(type);
+            setAnalysisDropdownOpen(false);
+        } catch (err) {
+            console.error("분석 가능 여부 확인 실패:", err);
+            setAnalysisDropdownOpen(false);
+            openLimitModal("분석 가능 여부를 확인하지 못했습니다.");
+        }
+    };
     
     
-    // llm 파트 마무리 전까지 봉인 jsw 0318 정밀분석(프론트)
-    // const handleSelectAnalysisType = async (type: AnalysisType) => {
-    //     if (type !== "detailed") {
-    //         setAnalysisType(type);
-    //         setAnalysisDropdownOpen(false);
-    //         return;
-    //     }
-
-    //     try {
-    //         const result = await checkTodayDetailedAnalysis();
-
-    //         if (!result.available) {
-    //             setAnalysisDropdownOpen(false);
-    //             triggerDetailedLimitToast();
-    //             return;
-    //         }
-
-    //         setAnalysisType("detailed");
-    //         setAnalysisDropdownOpen(false);
-    //     } catch (err) {
-    //         console.error("정밀 분석 가능 여부 확인 실패:", err);
-    //         alert("정밀 분석 가능 여부를 확인하지 못했습니다.");
-    //         setAnalysisDropdownOpen(false);
-    //     }
-    // };
     // ── 메시지 전송 ───────────────────────────────────────────────────────
     const handleSend = async () => {
         if (!canSend) return;
 
-        // llm 파트 마무리 전까지 봉인 jsw 0318 정밀분석(프론트)
-        // if (isLoggedIn && analysisType === "detailed") {
-        //     try {
-        //         const result = await checkTodayDetailedAnalysis();
+        if (
+    isLoggedIn &&
+        analysisType !== "default" &&
+        ["simple", "detailed", "ingredient", "personal"].includes(analysisType) &&
+        uploadSlots.some((s) => s.preview)
+    ) {
+        try {
+            const result = await checkAnalysisLimit(
+                analysisType as "simple" | "detailed" | "ingredient" | "personal"
+            );
 
-        //         if (!result.available) {
-        //             triggerDetailedLimitToast();
-        //             return;
-        //         }
-        //     } catch (err) {
-        //         console.error("정밀 분석 가능 여부 확인 실패:", err);
-        //         alert("정밀 분석 가능 여부를 확인하지 못했습니다.");
-        //         return;
-        //     }
-        // }
+            if (!result.available) {
+                openLimitModal(result.message || "오늘 사용 가능한 횟수를 초과했습니다.");
+                return;
+            }
+        } catch (err) {
+            console.error("분석 가능 여부 확인 실패:", err);
+            openLimitModal("분석 가능 여부를 확인하지 못했습니다.");
+            return;
+        }
+    }
         setPersonaMessage("");
         const trimmedInput      = input.trim();
         const previews          = uploadSlots.filter((s) => s.preview).map((s) => s.preview!);
@@ -993,8 +1035,17 @@ export function ChatPage() {
                     window.dispatchEvent(new CustomEvent("chatRoomCreated"));
                 }
             }
-        } catch (err) {
+                } catch (err) {
             console.error("메시지 전송 실패:", err);
+
+            const errorMessage =
+                err instanceof Error
+                    ? err.message
+                    : "메시지 전송 중 오류가 발생했습니다.";
+
+            setStreamError(errorMessage);
+            setPersonaMessage("");
+            setIsTriviaOpen(false);
         } finally {
             setIsSending(false);
         }
@@ -1026,48 +1077,46 @@ export function ChatPage() {
         e.preventDefault();
 
         dragCounterRef.current = 0;
-
         setIsDragging(false);
 
-        const file = e.dataTransfer.files[0];
+        const file = e.dataTransfer.files?.[0];
+        if (!file) return;
 
-        if (!file || !file.type.startsWith("image/")) return;
-
-        // 업로드 슬롯이 열려있으면 첫 번째 빈 슬롯에 채움
-        if (uploadSlots.length > 0) {
-            const emptySlot = uploadSlots.find((s) => !s.preview);
-
-            if (emptySlot) handleUpload(emptySlot.id, file);
-
+        const error = validateImageFile(file);
+        if (error) {
+            showUploadError(error);
             return;
         }
 
-        handleImageUpload(file);
+        const emptySlot = uploadSlots.find((slot) => !slot.preview);
+        if (emptySlot) {
+            handleUpload(emptySlot.id, file);
+        }
     };
 
-    const handleImageUpload = (file: File) => {
-        const url = URL.createObjectURL(file);
-        const userMsg: Message = {
-            id     : Date.now(),
-            role   : "user",
-            content: "피부 이미지를 분석해 주세요",
-            image  : url,
-            time   : new Date().toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" }),
-        };
+    // const handleImageUpload = (file: File) => {
+    //     const url = URL.createObjectURL(file);
+    //     const userMsg: Message = {
+    //         id     : Date.now(),
+    //         role   : "user",
+    //         content: "피부 이미지를 분석해 주세요",
+    //         image  : url,
+    //         time   : new Date().toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" }),
+    //     };
 
-        setMessages((prev) => [...prev, userMsg]);
-        setIsSending(true);
-        setTimeout(() => {
-            const botMsg: Message = {
-                id     : Date.now() + 1,
-                role   : "bot",
-                content: "이미지를 분석하고 있어요... ✨\n\n분석이 완료되면 피부 상태와 맞춤 제품을 추천해 드릴게요!",
-                time   : new Date().toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" }),
-            };
-            setMessages((prev) => [...prev, botMsg]);
-            setIsSending(false);
-        }, 2000);
-    };
+    //     setMessages((prev) => [...prev, userMsg]);
+    //     setIsSending(true);
+    //     setTimeout(() => {
+    //         const botMsg: Message = {
+    //             id     : Date.now() + 1,
+    //             role   : "bot",
+    //             content: "이미지를 분석하고 있어요... ✨\n\n분석이 완료되면 피부 상태와 맞춤 제품을 추천해 드릴게요!",
+    //             time   : new Date().toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" }),
+    //         };
+    //         setMessages((prev) => [...prev, botMsg]);
+    //         setIsSending(false);
+    //     }, 2000);
+    // };
 
     // ── 공통 Handlers ─────────────────────────────────────────────────────
     const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -1436,9 +1485,9 @@ export function ChatPage() {
                                             {ANALYSIS_OPTIONS.map((opt) => (
                                                 <button
                                                     key={opt.value}
-                                                    onClick={() => { setAnalysisType(opt.value as AnalysisType); setAnalysisDropdownOpen(false); }}
-                                                    // onClick={() => handleSelectAnalysisType(opt.value as AnalysisType)} llm 파트 마무리 전까지 봉인 jsw 0318 정밀분석(프론트)
-                                                    className={`w-full text-left px-4 py-2.5 text-xs font-medium transition-colors cursor-pointer ${
+                                                    // onClick={() => { setAnalysisType(opt.value as AnalysisType); setAnalysisDropdownOpen(false); }}
+                                                        onClick={() => handleSelectAnalysisType(opt.value as AnalysisType)}
+                                                        className={`w-full text-left px-4 py-2.5 text-xs font-medium transition-colors cursor-pointer ${
                                                         analysisType === opt.value ? "bg-[#E8F5D0] text-[#4A7A1E]" : "text-gray-700 hover:bg-gray-50"
                                                     }`}
                                                 >
@@ -1480,6 +1529,46 @@ export function ChatPage() {
             </div>
 
             {/* 분석 기능 로그인 안내 토스트 */}
+            <AnimatePresence>
+                {showLimitModal && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 px-4"
+                        onClick={() => setShowLimitModal(false)}
+                    >
+                        <motion.div
+                            initial={{ opacity: 0, y: 20, scale: 0.96 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: 20, scale: 0.96 }}
+                            transition={{ duration: 0.2 }}
+                            className="w-full max-w-sm rounded-3xl bg-white shadow-2xl px-6 py-6"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="flex items-center justify-center w-12 h-12 mx-auto rounded-full bg-[#FFF4E5] mb-4">
+                                <Lock className="w-5 h-5 text-[#F59E0B]" />
+                            </div>
+
+                            <h3 className="text-base font-semibold text-center text-gray-900 mb-2">
+                                사용 횟수 초과
+                            </h3>
+
+                            <p className="text-sm text-gray-500 text-center leading-relaxed mb-5">
+                                {limitModalMessage}
+                            </p>
+
+                            <button
+                                type="button"
+                                onClick={() => setShowLimitModal(false)}
+                                className="w-full h-11 rounded-2xl bg-onyou text-white text-sm font-medium cursor-pointer"
+                            >
+                                확인
+                            </button>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
             <AnimatePresence>
                 {showAnalysisToast && (
                     <motion.div
@@ -1588,24 +1677,11 @@ export function ChatPage() {
                     onClose={() => setIsTriviaOpen(false)}
                 />
             </AnimatePresence>
-            {/* // llm 파트 마무리 전까지 봉인 jsw 0318 정밀분석(프론트) */}
-            {/* <AnimatePresence>
-            {showDetailedLimitToast && (
-                <motion.div
-                    initial={{ opacity: 0, y: 16 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 16 }}
-                    transition={{ duration: 0.2 }}
-                    className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-4 py-3 rounded-2xl shadow-lg text-sm text-white bg-[#1F2937]"
-                    style={{ minWidth: "260px", maxWidth: "340px" }}
-                >
-                    <Lock className="w-4 h-4 flex-shrink-0 text-onyou" />
-                    <span className="flex-1 text-xs leading-relaxed">
-                        정밀 분석은 <strong>하루에 1번만</strong> 가능합니다.
-                    </span>
-                </motion.div>
-            )}
-        </AnimatePresence> */}
+        {uploadError && (
+            <div className="fixed bottom-24 left-1/2 z-[9999] -translate-x-1/2 rounded-xl bg-red-500 px-4 py-3 text-sm font-medium text-white shadow-lg">
+                {uploadError}
+            </div>
+        )}
         </div>
     );
 }

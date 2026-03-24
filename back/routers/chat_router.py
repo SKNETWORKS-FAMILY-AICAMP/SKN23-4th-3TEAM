@@ -264,6 +264,33 @@ def guest_message(body: GuestMessageRequest):
 # 메시지
 # ─────────────────────────────────────────────
 
+@router.get("/analysis/check-limit/{model_type}")
+def check_analysis_limit(
+    model_type: str,
+    user_id: int = Depends(get_current_user_id),
+):
+    available, message = chat_service.check_today_image_analysis_limit(user_id, model_type)
+    limit_count = chat_service.get_daily_image_limit(model_type)
+
+    if limit_count is None:
+        return {
+            "available": True,
+            "message": "",
+            "limit_count": None,
+            "used_count": 0,
+            "remaining_count": None,
+        }
+
+    used_count = chat_service.count_today_image_analysis_usage(user_id, model_type)
+
+    return {
+        "available": available,
+        "message": message,
+        "limit_count": limit_count,
+        "used_count": used_count,
+        "remaining_count": max(0, limit_count - used_count),
+    }
+
 @router.post("/{chat_room_id}/messages", response_model=list[MessageResponse], status_code=201)
 def send_message(
     chat_room_id : int,
@@ -300,7 +327,13 @@ def send_message(
     if room.user_id != user_id:
         raise HTTPException(status_code=403, detail="접근 권한이 없습니다.")
 
-    # 2. 사용자 메시지 DB 저장
+    # 2. 이미지 분석 일일 제한 체크
+    if body.model_type in ("simple", "detailed", "ingredient", "personal") and body.image_url:
+        available, message = chat_service.check_today_image_analysis_limit(user_id, body.model_type)
+        if not available:
+            raise HTTPException(status_code=400, detail=message)
+
+    # 3. 사용자 메시지 DB 저장
     try:
         user_msg = chat_service.save_message(body)
     except ValueError as e:
@@ -464,7 +497,14 @@ async def send_message_stream(
     if room.user_id != user_id:
         raise HTTPException(status_code=403, detail="접근 권한이 없습니다.")
 
-    # 2. 사용자 메시지 DB 저장
+    # 2. 이미지 분석 일일 제한 체크
+    if body.model_type in ("simple", "detailed", "ingredient", "personal") and body.image_url:
+        available, message = chat_service.check_today_image_analysis_limit(user_id, body.model_type)
+
+        if not available:
+            raise HTTPException(status_code=400, detail=message)
+    
+    # 3. 사용자 메시지 DB 저장
     try:
         user_msg = chat_service.save_message(body)
     except ValueError as e:

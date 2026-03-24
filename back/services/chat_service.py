@@ -6,6 +6,79 @@ from db.models import ChatRoom, ChatMessage
 from db.schemas import ChatRoomCreate, MessageCreate
 
 # ─────────────────────────────────────────────
+# 일일 이미지 분석 제한
+# ─────────────────────────────────────────────
+def get_daily_image_limit(model_type: str) -> int | None:
+    """
+    모델 타입별 일일 사용 제한 수 반환.
+    - simple / detailed   : 하루 1회
+    - ingredient / personal: 하루 2회
+    - 그 외                : 제한 없음(None)
+    """
+    limit_map = {
+        "simple": 1,
+        "detailed": 1,
+        "ingredient": 2,
+        "personal": 2,
+    }
+    return limit_map.get(model_type)
+
+
+def get_model_type_label(model_type: str) -> str:
+    """
+    사용자 표시용 모델 타입명 반환.
+    """
+    label_map = {
+        "simple": "빠른 분석",
+        "detailed": "정밀 분석",
+        "ingredient": "전성분 분석",
+        "personal": "퍼스널컬러 분석",
+    }
+    return label_map.get(model_type, "이미지 분석")
+
+
+def count_today_image_analysis_usage(user_id: int, model_type: str) -> int:
+    """
+    오늘 해당 사용자가 특정 이미지 분석을 몇 번 사용했는지 조회.
+    기준:
+    - skin_analysis_results 에 실제 결과가 저장된 건만 카운트
+    - 삭제된 결과는 제외
+    """
+    row = execute_one(
+        """
+        SELECT COUNT(*) AS used_count
+        FROM skin_analysis_results
+        WHERE user_id = %s
+          AND model_type = %s
+          AND deleted_at IS NULL
+          AND DATE(created_at) = CURDATE()
+        """,
+        (user_id, model_type)
+    )
+
+    return int(row["used_count"]) if row and row["used_count"] is not None else 0
+
+def check_today_image_analysis_limit(user_id: int, model_type: str) -> tuple[bool, str]:
+    """
+    일일 이미지 분석 제한 체크.
+    반환:
+    - (True, "")              : 사용 가능
+    - (False, "에러메시지")   : 제한 초과
+    """
+    limit_count = get_daily_image_limit(model_type)
+
+    if limit_count is None:
+        return True, ""
+
+    used_count = count_today_image_analysis_usage(user_id, model_type)
+
+    if used_count >= limit_count:
+        label = get_model_type_label(model_type)
+        return False, f"{label}은 하루에 {limit_count}번만 가능합니다."
+
+    return True, ""
+
+# ─────────────────────────────────────────────
 # 이미지 헬퍼 (images + entity_images)
 # ─────────────────────────────────────────────
 

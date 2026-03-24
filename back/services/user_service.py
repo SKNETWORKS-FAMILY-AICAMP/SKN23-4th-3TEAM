@@ -229,37 +229,60 @@ def update_user(user_id: int, data: UserUpdate) -> User:
     사용자 프로필 수정.
     - 변경할 필드만 골라서 UPDATE (None인 필드는 건너뜀)
     - 닉네임 변경 시 중복 확인 포함
+    - nickname이 빈 문자열이면 랜덤 닉네임 자동 생성
     - profile_image_url은 users 테이블이 아닌 images + entity_images에 저장
-
-    사용 예시:
-        updated = update_user(1, UserUpdate(nickname="새닉네임", age=25))
-        updated = update_user(1, UserUpdate(profile_image_url="https://s3.../profile.jpg"))
     """
     raw = data.model_dump()
 
-    # profile_image_url은 users 테이블 컬럼이 아니므로 분리해서 처리
+    # profile_image_url은 users 테이블 컬럼이 아니라 별도 처리
     profile_image_url = raw.pop("profile_image_url", None)
 
-    fields = {k: v for k, v in raw.items() if v is not None}
+    # 현재 사용자 조회
+    current_user = get_user_by_id(user_id)
+    if not current_user:
+        raise ValueError("사용자를 찾을 수 없습니다.")
 
-    if not fields and profile_image_url is None:
-        raise ValueError("수정할 내용이 없습니다.")
+    # nickname 처리
+    if "nickname" in raw and raw["nickname"] is not None:
+        nickname = str(raw["nickname"]).strip()
+
+        # 비워서 저장하면 랜덤 닉네임 자동 생성
+        if not nickname:
+            raw["nickname"] = generate_random_nickname()
+        else:
+            # 기존 닉네임과 다를 때만 중복 체크
+            if nickname != (current_user.nickname or "").strip() and is_nickname_taken(nickname):
+                raise ValueError("이미 사용 중인 닉네임입니다.")
+            raw["nickname"] = nickname
+
+    # None 값은 제외
+    fields = {k: v for k, v in raw.items() if v is not None}
 
     # users 테이블 업데이트
     if fields:
-        set_clause = ", ".join([f"{key} = %s" for key in fields])
-        values = tuple(fields.values()) + (user_id,)
+        set_clause = ", ".join([f"{key} = %s" for key in fields.keys()])
+        values = list(fields.values()) + [user_id]
 
         execute_write(
-            f"UPDATE users SET {set_clause} WHERE user_id = %s AND deleted_at IS NULL",
-            values
+            f"""
+            UPDATE users
+            SET {set_clause}
+            WHERE user_id = %s AND deleted_at IS NULL
+            """,
+            tuple(values)
         )
 
-    # 프로필 이미지 저장 (images + entity_images)
-    if profile_image_url:
-        _upsert_profile_image(user_id, profile_image_url)
+    # 프로필 이미지 별도 처리
+    if profile_image_url is not None:
+        cleaned_url = str(profile_image_url).strip()
+        if cleaned_url:
+            _upsert_profile_image(user_id, cleaned_url.split("?")[0])
 
-    return get_user_by_id(user_id)
+    updated_user = get_user_by_id(user_id)
+    if not updated_user:
+        raise RuntimeError("프로필 수정 후 사용자 조회에 실패했습니다.")
+
+    return updated_user
 
 
 # ─────────────────────────────────────────────

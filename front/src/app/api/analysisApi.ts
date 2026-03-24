@@ -62,8 +62,13 @@ export interface KeywordResponse {
     label      : string;
 }
 
-export interface TodayCheckResponse {
+
+export interface AnalysisLimitResponse {
     available: boolean;
+    message: string;
+    limit_count: number | null;
+    used_count?: number;
+    remaining_count?: number | null;
 }
 
 export interface DetailedDatesResponse {
@@ -117,22 +122,15 @@ export async function fetchFactorials(): Promise<KeywordResponse[]> {
     return handleResponse<KeywordResponse[]>(res);
 }
 
-/**
- * 오늘 정밀 분석 가능 여부 확인
- *
- * GET /analysis/check/today
- */
-export async function checkTodayDetailedAnalysis(): Promise<TodayCheckResponse> {
-    const res = await fetch(`${API_BASE}/analysis/check/today`, {
+
+export async function checkAnalysisLimit(
+    modelType: "simple" | "detailed" | "ingredient" | "personal"
+): Promise<AnalysisLimitResponse> {
+    const res = await fetch(`${API_BASE}/chats/analysis/check-limit/${modelType}`, {
         headers: { Authorization: `Bearer ${getToken()}` },
     });
 
-    if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error((data as { detail?: string }).detail ?? `서버 오류 (${res.status})`);
-    }
-
-    return res.json() as Promise<TodayCheckResponse>;
+    return handleResponse<AnalysisLimitResponse>(res);
 }
 
 /**
