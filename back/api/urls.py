@@ -41,6 +41,8 @@ urlpatterns = [
     path("chats/guest/message",                chat_views.guest_message),
     path("chats/<int:chat_room_id>",           chat_views.chat_room_detail),
     path("chats/<int:chat_room_id>/messages",  chat_views.chat_messages),
+    path("chats/<int:chat_room_id>/messages",              chat_views.chat_messages),
+    path("chats/<int:chat_room_id>/messages/stream",       chat_views.chat_messages_stream), 
 
     # ── Upload (/upload) ──
     path("upload",                  upload_views.upload_image),
