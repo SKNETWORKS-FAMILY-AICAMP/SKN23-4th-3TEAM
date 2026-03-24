@@ -263,12 +263,13 @@ export function SettingsPage() {
 
             return;
         }
-        if (!nickname.trim()) {
-            setNicknameError("닉네임을 입력해 주세요.");
-            return;
-        }
+        const trimmedNickname = nickname.trim();
 
-        if (nickname.trim() !== originalNickname.trim() && (!nicknameChecked || nicknameAvailable !== true)) {
+        if (
+            trimmedNickname &&
+            trimmedNickname !== originalNickname.trim() &&
+            (!nicknameChecked || nicknameAvailable !== true)
+        ) {
             setNicknameError("닉네임 중복 확인을 완료해 주세요.");
             return;
         }
@@ -280,8 +281,8 @@ export function SettingsPage() {
         try {
             const skinKeywordId = skinTypeKeywords.find((k) => k.label === skinType)?.keyword_id ?? null;
 
-            await updateCurrentUser({
-                nickname,
+            const updatedUser = await updateCurrentUser({
+                nickname: nickname.trim(),
                 age              : age ? Number(age) : null,
                 gender           : GENDER_TO_API[gender],
                 skin_type        : skinKeywordId,
@@ -289,16 +290,13 @@ export function SettingsPage() {
                 profile_image_url: profileImageUrl,
             });
 
-            // 저장된 닉네임을 현재 기준값으로 갱신하고, 중복 확인 상태를 초기화
-            setOriginalNickname(nickname.trim());
+            setNickname(updatedUser.nickname ?? "");
+            setOriginalNickname(updatedUser.nickname ?? "");
             setNicknameChecked(true);
             setNicknameAvailable(true);
             setNicknameError(null);
-
-            // 저장 후 닉네임 중복확인 안내 문구 숨김
             setNicknameCheckTouched(false);
 
-            // 사이드바 프로필 이미지 갱신 알림
             window.dispatchEvent(new CustomEvent("profileUpdated"));
 
             setSaved(true);
@@ -309,7 +307,6 @@ export function SettingsPage() {
             setIsSaving(false);
         }
     };
-
     // 문의 등록 관련 함수 260314 jsw
     const getInquiryStatus = (item: InquiryItem) => {
         return item.manager_id ? "답변완료" : "미답변";
@@ -624,20 +621,12 @@ export function SettingsPage() {
                                                                 onChange={(e) => {
                                                                     const value = e.target.value;
                                                                     setNickname(value);
-                                                                    setNicknameCheckTouched(false);
-
-                                                                    if (value.trim() === originalNickname.trim()) {
-                                                                        setNicknameChecked(true);
-                                                                        setNicknameAvailable(true);
-                                                                        setNicknameError(null);
-                                                                    } else {
-                                                                        setNicknameChecked(false);
-                                                                        setNicknameAvailable(null);
-                                                                        setNicknameError(null);
-                                                                    }
+                                                                    setNicknameChecked(false);
+                                                                    setNicknameAvailable(null);
+                                                                    setNicknameError(null);
+                                                                    setNicknameCheckTouched(Boolean(value.trim()));
                                                                 }}
-                                                                maxLength={12}
-                                                                placeholder="닉네임 입력"
+                                                                placeholder="닉네임을 입력하세요 (비워두면 랜덤 생성)"
                                                             />
                                                         </div>
 

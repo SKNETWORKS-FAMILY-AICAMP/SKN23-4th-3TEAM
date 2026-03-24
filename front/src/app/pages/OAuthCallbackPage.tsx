@@ -42,11 +42,19 @@ export function OAuthCallbackPage() {
                 const me = await fetchCurrentUser();
                 if (me?.user_id != null) {
                     localStorage.setItem("user_id", String(me.user_id));
+
+                    if (isNew) {
+                        localStorage.removeItem(`has_seen_tip_modal_${me.user_id}`);
+                    }
+                }
+
+                if (isNew) {
+                    localStorage.setItem("should_show_tip_modal", "true");
                 }
 
                 clearGuestData();
 
-            // 신규 가입 유저는 온보딩, 기존 유저는 채팅으로 이동
+                // 신규 가입 유저는 온보딩, 기존 유저는 채팅으로 이동
                 navigate(isNew ? "/onboarding" : "/chat", { replace: true });
             } catch {
                 localStorage.removeItem("access_token");

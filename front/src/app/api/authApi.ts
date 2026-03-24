@@ -25,7 +25,7 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "/api";
 
 export interface SignupBody {
     email             : string;
-    nickname          : string;
+    nickname?          : string;
     password          : string;
     terms_agreed      : boolean;
     privacy_agreed    : boolean;
