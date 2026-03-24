@@ -25,5 +25,5 @@ export default defineConfig({
             },
         },
     },
-    assetsInclude: ['/*.svg', '/*.csv'],
+    assetsInclude: ['**/*.svg', '**/*.csv'],
 })
