@@ -86,6 +86,7 @@ def _run_ai(
     user_id: int,
     chat_history: list[dict],
     is_first_message: bool,
+    step_callback=None,
 ) -> str:
     """
     LangGraph 파이프라인 호출.
@@ -111,10 +112,16 @@ def _run_ai(
     }
     analysis_type = _type_map.get(model_type)
 
+    # 단계별 콜백 호출
+    if step_callback:
+        step_callback("🔍 피부 고민을 분석하고 있어요...")
+
     # S3 URL → bytes 변환 (이미지가 있는 경우)
     image_bytes: list[bytes] = []
 
     if image_urls and analysis_type in ("quick", "detailed", "ingredient", "personal"):
+        if step_callback:
+            step_callback("📸 업로드된 이미지를 확인하고 있어요...")
         for url in image_urls:
             try:
                 resp = _requests.get(url, timeout=10)
@@ -122,6 +129,16 @@ def _run_ai(
                 image_bytes.append(resp.content)
             except Exception as e:
                 print(f"[chat_router] 이미지 다운로드 실패: {url} → {repr(e)}", flush=True)
+
+    if step_callback:
+        if analysis_type in ("quick", "detailed"):
+            step_callback("🔬 AI가 피부 상태를 분석하고 있어요...")
+        elif analysis_type == "ingredient":
+            step_callback("🏷️ 전성분을 추출하고 있어요...")
+        elif analysis_type == "personal":
+            step_callback("🎨 퍼스널컬러를 분석하고 있어요...")
+        else:
+            step_callback("📚 23만 건의 피부 데이터에서 근거를 찾고 있어요...")
 
     report = run(
         user_text=user_text,
@@ -136,7 +153,7 @@ def _run_ai(
     # chat_answer 추출
     return report.get("chat_answer") or "답변을 생성하지 못했어요. 다시 시도해주세요."
 
-def _run_ai_guest(user_text: str, chat_history: list | None = None) -> str:
+def _run_ai_guest(user_text: str, chat_history: list | None = None, step_callback=None) -> str:
     """
     비로그인 게스트 AI 응답 (이미지·DB 저장 없음).
     chat_history: 프론트에서 전달한 이전 대화 내역 (임시 프로필 추출용)
@@ -149,7 +166,14 @@ def _run_ai_guest(user_text: str, chat_history: list | None = None) -> str:
 
     # from ai.orchestrator.graph import run     # ? 위에 이미 선언 되어있는데?
 
+    if step_callback:
+        step_callback("🔍 피부 고민을 분석하고 있어요...")
+
     history = chat_history or []
+
+    if step_callback:
+        step_callback("📚 23만 건의 피부 데이터에서 근거를 찾고 있어요...")
+
     report = run(
         user_text=user_text,
         images=[],
@@ -368,14 +392,47 @@ async def guest_message_stream(body: GuestMessageRequest):
     로딩 중 페르소나 문구 전송.
     """
     async def event_generator():
+        import queue, threading
+
+        step_queue = queue.Queue()
+
+        def step_callback(msg: str):
+            step_queue.put(msg)
+
         # ── 로딩 시작 신호 + 페르소나 문구 전송 ──
         yield f"data: {json.dumps({'type': 'loading', 'message': random.choice(PERSONA_MESSAGES['loading'])}, ensure_ascii=False)}\n\n"
 
+        result_holder = {"text": None, "error": None}
+
+        def run_ai_thread():
+            try:
+                result_holder["text"] = _run_ai_guest(body.content, chat_history=body.chat_history, step_callback=step_callback)
+            except Exception as e:
+                result_holder["error"] = e
+            finally:
+                step_queue.put(None)
+
+        thread = threading.Thread(target=run_ai_thread, daemon=True)
+        thread.start()
+
+        import asyncio
+        while True:
+            try:
+                msg = step_queue.get(timeout=0.3)
+                if msg is None:
+                    break
+                yield f"data: {json.dumps({'type': 'loading', 'message': msg}, ensure_ascii=False)}\n\n"
+            except queue.Empty:
+                await asyncio.sleep(0.1)
+
+        thread.join(timeout=60)
+
         try:
-            ai_text = _run_ai_guest(body.content, chat_history=body.chat_history)
+            if result_holder["error"]:
+                raise result_holder["error"]
 
             # ── 완료 신호 + AI 답변 전송 ──
-            yield f"data: {json.dumps({'type': 'done', 'content': ai_text}, ensure_ascii=False)}\n\n"
+            yield f"data: {json.dumps({'type': 'done', 'content': result_holder['text']}, ensure_ascii=False)}\n\n"
 
         except Exception as e:
             print(f"[guest_stream ERROR] {repr(e)}", flush=True)
@@ -428,18 +485,56 @@ async def send_message_stream(
     ]
 
     async def event_generator():
+        import queue, threading
+
+        step_queue = queue.Queue()
+
+        def step_callback(msg: str):
+            step_queue.put(msg)
+
         # ── 로딩 시작 신호 + 페르소나 문구 전송 ──
         yield f"data: {json.dumps({'type': 'loading', 'message': random.choice(PERSONA_MESSAGES['loading'])}, ensure_ascii=False)}\n\n"
 
+        # AI 파이프라인을 별도 스레드에서 실행
+        result_holder = {"text": None, "error": None}
+
+        def run_ai_thread():
+            try:
+                result_holder["text"] = _run_ai(
+                    user_text        = body.content or "",
+                    image_urls       = body.image_url or [],
+                    model_type       = body.model_type,
+                    user_id          = user_id,
+                    chat_history     = chat_history,
+                    is_first_message = is_first,
+                    step_callback    = step_callback,
+                )
+            except Exception as e:
+                result_holder["error"] = e
+            finally:
+                step_queue.put(None)  # 종료 신호
+
+        thread = threading.Thread(target=run_ai_thread, daemon=True)
+        thread.start()
+
+        # 단계별 메시지를 SSE로 전송
+        import asyncio
+        while True:
+            try:
+                msg = step_queue.get(timeout=0.3)
+                if msg is None:
+                    break
+                yield f"data: {json.dumps({'type': 'loading', 'message': msg}, ensure_ascii=False)}\n\n"
+            except queue.Empty:
+                await asyncio.sleep(0.1)
+
+        thread.join(timeout=60)
+
         try:
-            ai_text = _run_ai(
-                user_text        = body.content or "",
-                image_urls       = body.image_url or [],
-                model_type       = body.model_type,
-                user_id          = user_id,
-                chat_history     = chat_history,
-                is_first_message = is_first,
-            )
+            if result_holder["error"]:
+                raise result_holder["error"]
+
+            ai_text = result_holder["text"]
 
             # AI 응답 DB 저장
             ai_msg = chat_service.save_message(MessageCreate(
