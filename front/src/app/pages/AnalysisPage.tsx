@@ -118,7 +118,7 @@ function DateSelect({
             <button
                 type="button"
                 onClick={() => setOpen((prev) => !prev)}
-                className={`flex h-11 min-w-[160px] items-center gap-2 rounded-2xl border px-3 pr-10 text-sm font-medium shadow-sm transition-all ${
+                className={`flex h-11 min-w-[160px] items-center gap-2 rounded-2xl border px-3 pr-10 text-sm font-medium shadow-sm transition-all cursor-pointer ${
                     open
                         ? "border-[#B7D88F] bg-white ring-2 ring-[#E8F5D0]"
                         : "border-gray-200 bg-white hover:border-[#CFE5AA]"
@@ -147,7 +147,7 @@ function DateSelect({
                                             onChange(date);
                                             setOpen(false);
                                         }}
-                                        className={`flex w-full items-center px-4 py-2.5 text-left text-sm transition-colors ${
+                                        className={`flex w-full items-center px-4 py-2.5 text-left text-sm transition-colors cursor-pointer ${
                                             isSelected
                                                 ? "bg-[#F0FAE4] text-onyou font-semibold"
                                                 : "text-gray-700 hover:bg-gray-50"
@@ -428,7 +428,7 @@ export function AnalysisPage() {
                         <button
                             type="button"
                             onClick={handleKakaoShare}
-                            className="px-4 py-2 rounded-xl bg-[#FEE500] text-[#191919] text-sm font-semibold shadow-sm hover:opacity-90 transition"
+                            className="px-4 py-2 rounded-xl bg-[#FEE500] text-[#191919] text-sm font-semibold shadow-sm cursor-pointer hover:opacity-90 transition"
                         >
                             카카오톡 공유
                         </button>

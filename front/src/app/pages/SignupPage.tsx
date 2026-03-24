@@ -30,8 +30,7 @@ function PasswordStrength({ password }: { password: string }) {
                         style={{ background: i <= strength && strength !== 3 ? strengthColor[strength] : i > strength ? "#E5E7EB" : undefined }}
                     />
                 ))}
-            </div>
-            <div className="flex items-center justify-between">
+            </div><div className="flex items-center justify-between">
                 <span className={`text-[11px] font-medium ${strength === 3 ? "text-onyou" : ""}`}
                     style={{ color: strength > 0 && strength !== 3 ? strengthColor[strength] : strength === 0 ? "#9CA3AF" : undefined }}>
                     {strength > 0 ? strengthLabels[strength] : "비밀번호를 입력하세요"}
@@ -402,6 +401,42 @@ export function SignupPage() {
                                 )}
                             </div>
                             
+                            {/* ── 닉네임 ── */}
+                            <div>
+                                <label className="text-xs font-medium text-gray-500 block">닉네임</label>
+                                <p className="mt-1 text-xxs text-gray-500 mb-1.5">
+                                    닉네임을 입력하지 않으면 랜덤 닉네임이 자동 생성됩니다.
+                                </p>
+                                <div className="flex gap-2 items-start">
+                                    <div className="flex-1">
+                                        <Input
+                                            value={nickname}
+                                            onChange={(e) => {
+                                                const value = e.target.value;
+                                                setNickname(value);
+                                                setNicknameChecked(false);
+                                                setNicknameAvailable(null);
+                                                setNicknameError("");
+                                            }}
+                                            placeholder="닉네임을 입력하세요 (선택)"
+                                        />
+                                    </div>
+
+                                    <button
+                                        type="button"
+                                        onClick={handleCheckNickname}
+                                        disabled={!nickname.trim() || isCheckingNickname}
+                                        className="w-[90px] h-[45px] px-3 py-3 rounded-xl text-sm font-semibold text-white bg-onyou cursor-pointer disabled:opacity-50 transition-all hover:brightness-95 disabled:cursor-not-allowed shrink-0"
+                                    >
+                                        {isCheckingNickname ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : "중복확인"}
+                                    </button>
+                                </div>
+
+                                {nicknameChecked && nicknameAvailable === true && !nicknameError && (
+                                    <p className="text-[11px] text-onyou mt-1.5">사용 가능한 닉네임입니다.</p>
+                                )}
+                            </div>
+                            
                             <div className="rounded-2xl border border-gray-100 bg-[#F8FBF3] px-4 py-4 space-y-3">
                                 <label className="flex items-start gap-3 cursor-pointer">
                                     <input
@@ -460,45 +495,6 @@ export function SignupPage() {
                                 placeholder="실명 입력"
                                 maxLength={20}
                             /> */}
-
-                            {/* ── 닉네임 ── */}
-                            <div>
-                                <label className="text-xs font-medium text-gray-500 block mb-1.5">
-                                    닉네임 <span className="text-red-400">*</span>
-                                </label>
-                                <p className="mt-1 text-xs text-gray-500">
-                                    닉네임을 입력하지 않으면 랜덤 닉네임이 자동 생성됩니다.
-                                </p>
-                                <div className="flex gap-2 items-start">
-                                    <div className="flex-1">
-                                        <Input
-                                            value={nickname}
-                                            onChange={(e) => {
-                                                const value = e.target.value;
-                                                setNickname(value);
-                                                setNicknameChecked(false);
-                                                setNicknameAvailable(null);
-                                                setNicknameError("");
-                                            }}
-                                            placeholder="닉네임을 입력하세요 (선택)"
-                                        />
-                                    </div>
-
-                                    <button
-                                        type="button"
-                                        onClick={handleCheckNickname}
-                                        disabled={!nickname.trim() || isCheckingNickname}
-                                        className="w-[90px] h-[45px] px-3 py-3 rounded-xl text-sm font-semibold text-white bg-onyou disabled:opacity-50 transition-all hover:brightness-95 disabled:cursor-not-allowed shrink-0"
-                                    >
-                                        {isCheckingNickname ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : "중복확인"}
-                                    </button>
-                                </div>
-
-                                {nicknameChecked && nicknameAvailable === true && !nicknameError && (
-                                    <p className="text-[11px] text-onyou mt-1.5">사용 가능한 닉네임입니다.</p>
-                                )}
-                            </div>
-
 
                             {/* 가입 에러 */}
                             {signupError && <Alert message={signupError} />}
