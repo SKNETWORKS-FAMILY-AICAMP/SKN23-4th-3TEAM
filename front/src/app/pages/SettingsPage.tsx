@@ -634,7 +634,7 @@ export function SettingsPage() {
                                                             type="button"
                                                             onClick={handleCheckNickname}
                                                             disabled={!nickname.trim() || isCheckingNickname}
-                                                            className="px-4 h-[46px] rounded-xl text-sm font-medium text-white bg-onyou transition-all hover:brightness-95 disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+                                                            className="px-4 h-[46px] rounded-xl text-sm font-medium text-white bg-onyou transition-all cursor-pointer hover:brightness-95 disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
                                                         >
                                                             {isCheckingNickname ? "확인 중..." : "중복 확인"}
                                                         </button>
@@ -948,7 +948,7 @@ export function SettingsPage() {
                                                     <button
                                                         type="button"
                                                         onClick={() => setShowInquiryForm(true)}
-                                                        className="px-4 h-9 text-sm rounded-lg whitespace-nowrap bg-onyou text-white hover:opacity-90 transition"
+                                                        className="px-4 h-9 text-sm rounded-lg whitespace-nowrap bg-onyou text-white hover:opacity-90 transition cursor-pointer"
                                                     >
                                                         문의하기
                                                     </button>
@@ -974,7 +974,7 @@ export function SettingsPage() {
                                                                 {/* 목록 row */}
                                                                 <button
                                                                     onClick={() => toggleInquiry(item.qna_id)}
-                                                                    className="w-full px-4 py-4 hover:bg-[#FAFCF7] transition-colors"
+                                                                    className="w-full px-4 py-4 hover:bg-[#FAFCF7] transition-colors cursor-pointer"
                                                                 >
                                                                     <div className="flex items-center gap-3 text-left">
                                                                         <span className="w-8 text-sm text-gray-400 flex-shrink-0">
@@ -1071,7 +1071,7 @@ export function SettingsPage() {
                                                                                             <button
                                                                                                 type="button"
                                                                                                 onClick={() => handleStartEditInquiry(item)}
-                                                                                                className="px-4 h-9 rounded-xl bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 transition"
+                                                                                                className="px-4 h-9 rounded-xl bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 transition cursor-pointer"
                                                                                             >
                                                                                                 문의 수정
                                                                                             </button>
@@ -1080,7 +1080,7 @@ export function SettingsPage() {
                                                                                         <button
                                                                                             type="button"
                                                                                             onClick={() => handleDeleteInquiry(item.qna_id)}
-                                                                                            className="px-4 h-9 rounded-xl bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition"
+                                                                                            className="px-4 h-9 rounded-xl bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition cursor-pointer"
                                                                                         >
                                                                                             문의 삭제
                                                                                         </button>
@@ -1249,7 +1249,7 @@ export function SettingsPage() {
                                                                 setShowInquiryForm(false);
                                                                 resetInquiryForm();
                                                             }}
-                                                            className="px-4 h-10 rounded-xl bg-gray-100 text-gray-600 border border-gray-300 hover:bg-gray-200 hover:text-gray-700 transition"
+                                                            className="px-4 h-10 rounded-xl bg-gray-100 text-gray-600 border border-gray-300 cursor-pointer hover:bg-gray-200 hover:text-gray-700 transition"
                                                         >
                                                             취소
                                                         </button>
@@ -1264,7 +1264,7 @@ export function SettingsPage() {
                                                                 isSubmittingInquiry ||
                                                                 isUpdatingInquiry
                                                             }
-                                                            className="px-4 h-10 rounded-xl bg-onyou text-white hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                                                            className="px-4 h-10 rounded-xl bg-onyou text-white cursor-pointer hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
                                                         >
                                                             {editingInquiryId
                                                                 ? (isUpdatingInquiry ? "수정 중..." : "문의 수정")
@@ -1323,7 +1323,7 @@ export function SettingsPage() {
                                                 type="button"
                                                 onClick={handleWithdraw}
                                                 disabled={withdrawConfirmText !== "회원탈퇴" || isWithdrawing}
-                                                className="px-4 h-10 rounded-xl bg-red-500 text-white hover:bg-red-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                                                className="px-4 h-10 rounded-xl bg-red-500 text-white hover:bg-red-600 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                                             >
                                                 {isWithdrawing ? "탈퇴 처리 중..." : "회원 탈퇴"}
                                             </button>

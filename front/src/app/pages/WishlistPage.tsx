@@ -166,7 +166,7 @@ export function WishlistPage() {
                     <button
                       onClick={() => handleRemove(item.wish_id)}
                       disabled={removingId === item.wish_id}
-                      className="flex-shrink-0 inline-flex items-center justify-center w-10 h-10 rounded-xl border border-gray-200 bg-white text-gray-500 hover:bg-gray-50 hover:text-red-500 transition-colors disabled:opacity-50"
+                      className="flex-shrink-0 inline-flex items-center justify-center w-10 h-10 rounded-xl border border-gray-200 bg-white text-gray-500 cursor-pointer hover:bg-gray-50 hover:text-red-500 transition-colors disabled:opacity-50"
                       aria-label="위시리스트 삭제"
                       title="위시리스트 삭제"
                     >

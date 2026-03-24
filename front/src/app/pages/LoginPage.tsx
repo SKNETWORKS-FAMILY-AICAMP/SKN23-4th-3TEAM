@@ -167,7 +167,7 @@ export function LoginPage() {
                         </button>
                         
                     </div>
-                    <p className="mt-4 text-xs text-gray-500 text-center leading-relaxed">
+                    <p className="mt-4 text-xxs text-gray-500 text-center leading-relaxed">
                         소셜 로그인 시 <Link to="/terms" className="underline">이용약관</Link> 및{" "}<Link to="/privacy" className="underline">개인정보처리방침</Link>에 동의한 것으로 간주됩니다.
                 </p>
                 </div>

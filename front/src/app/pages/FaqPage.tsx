@@ -181,7 +181,7 @@ export function FaqPage() {
                                 <button
                                     type="button"
                                     onClick={() => handleToggle(item.id)}
-                                    className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left"
+                                    className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left cursor-pointer"
                                 >
                                     <div className="min-w-0">
                                         <p className="mb-1 text-xs font-semibold text-[#7BA05B]">
