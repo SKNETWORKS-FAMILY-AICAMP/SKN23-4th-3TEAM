@@ -18,7 +18,7 @@ db_manager.py
 ─────────────────────────────────────────────────────────────
 """
 
-load_dotenv(Path(__file__).resolve().parent.parent.parent / ".env")   # .env 파일 로드
+load_dotenv()   # .env 파일 로드
 
 # ─────────────────────────────────────────────
 # 환경변수 로드
@@ -69,11 +69,11 @@ def get_connection() -> pymysql.connections.Connection:
     없으면 DB_HOST로 직접 접속.
     사용 후 반드시 conn.close() 호출 필요.
     """
-    if SERVER == 'local':
+    if SERVER == 'local':   # 로컬 개발 환경: SSH 터널 경유
         tunnel = _get_tunnel()
         host = "127.0.0.1"
         port = tunnel.local_bind_port
-    else:
+    else:                   # EC2 환경: MariaDB 직접 접속 (추후 RDS -> DB 연결로 변경 예정)
         host = DB_HOST
         port = DB_PORT
 
@@ -86,8 +86,8 @@ def get_connection() -> pymysql.connections.Connection:
         charset="utf8mb4",
         cursorclass=pymysql.cursors.DictCursor,
         autocommit=False,
-        ssl={"ssl": {}},
-        init_command="SET time_zone = 'Asia/Seoul'"
+        ssl={"ssl": {}},  # RDS require_secure_transport=ON 대응
+        init_command="SET time_zone = 'Asia/Seoul'" # 타임존 한국시간으로 설정
     )
 
     return conn
@@ -218,6 +218,7 @@ def init_db() -> None:
     statements = [s.strip() for s in sql_script.split(";") if s.strip()]
 
     conn = get_connection()
+
     try:
         with conn.cursor() as cursor:
             for statement in statements:

@@ -273,26 +273,30 @@ class Wishlist:
 # ─────────────────────────────────────────────
 @dataclass
 class Qna:
-    qna_id      : int
-    user_id     : int
-    question    : str
-    created_at  : datetime
-    updated_at  : datetime
-    manager_id  : Optional[int] = None
-    category    : Optional[str] = None
-    answer      : Optional[str] = None
+    qna_id         : int
+    user_id        : int
+    question_title : Optional[str]
+    question       : str
+    created_at     : datetime
+    updated_at     : datetime
+    manager_id     : Optional[int] = None
+    category       : Optional[str] = None
+    answer         : Optional[str] = None
+    nickname       : Optional[str] = None
 
     @staticmethod
     def from_dict(row: dict) -> "Qna":
         return Qna(
-            qna_id      = row["qna_id"],
-            user_id     = row["user_id"],
-            question    = row["question"],
-            created_at  = row["created_at"],
-            updated_at  = row["updated_at"],
-            manager_id  = row.get("manager_id"),
-            category    = row.get("category"),
-            answer      = row.get("answer"),
+            qna_id         = row["qna_id"],
+            user_id        = row["user_id"],
+            question_title = row.get("question_title"),
+            question       = row["question"],
+            created_at     = row["created_at"],
+            updated_at     = row["updated_at"],
+            manager_id     = row.get("manager_id"),
+            category       = row.get("category"),
+            answer         = row.get("answer"),
+            nickname       = row.get("nickname"),
         )
 
 # ─────────────────────────────────────────────

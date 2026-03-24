@@ -73,6 +73,7 @@ export function OnboardingPage() {
             // 저장 실패해도 채팅으로 이동
         } finally {
             setIsLoading(false);
+            localStorage.setItem("should_show_tip_modal", "true");
             navigate("/chat");
         }
     };

@@ -165,16 +165,14 @@ export function LoginPage() {
                                 <path d="M16.273 12.845 7.376 0H0v24h7.727V11.155L16.624 24H24V0h-7.727z" fill="#ffffff" />
                             </svg>
                         </button>
+                        
                     </div>
+                    <p className="mt-4 text-xs text-gray-500 text-center leading-relaxed">
+                        소셜 로그인 시 <Link to="/terms" className="underline">이용약관</Link> 및{" "}<Link to="/privacy" className="underline">개인정보처리방침</Link>에 동의한 것으로 간주됩니다.
+                </p>
                 </div>
 
-                {/* <p className="text-center text-xs text-gray-400 mt-5 leading-relaxed">
-                    로그인함으로써{" "}
-                    <span className="underline cursor-pointer hover:text-onyou">이용약관</span>
-                    {" "}및{" "}
-                    <span className="underline cursor-pointer hover:text-onyou">개인정보 처리방침</span>
-                    에 동의합니다.
-                </p> */}
+
             </motion.div>
         </div>
     );

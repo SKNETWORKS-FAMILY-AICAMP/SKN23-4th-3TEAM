@@ -6,7 +6,8 @@ import { useState, useEffect, useRef } from "react";
 import { Loading } from "@/app/components/ui/loading";
 import { motion, AnimatePresence } from "motion/react";
 import { User, Link2, MessageCircleQuestion, Check, ChevronRight, ChevronLeft, Loader2, Plus, X, UserX } from "lucide-react";
-import { fetchCurrentUser, updateCurrentUser, fetchKeywords, fetchSocialLinks, KeywordItem, checkNickname } from "@/app/api/userApi";
+import { fetchCurrentUser, updateCurrentUser, fetchKeywords, fetchSocialLinks, KeywordItem, checkNickname, deleteCurrentUser,} from "@/app/api/userApi";
+import { fetchQnaList, createQna, updateQnaAnswer, deleteQna, QnaItem, updateQna,} from "@/app/api/qnaApi";
 // import { fetchAllQna, fetchMyQna, createQna, updateQnaAnswer } from "@/app/api/qnaApi";
 
 /** API 응답이 없을 때 사용할 피부 타입 폴백 목록 -> 필요한가..? */
@@ -24,23 +25,16 @@ const GENDER_LABEL: Record<string, string> = {
     male   : "남성",
     female : "여성",
 };
-// 문의 카테고리 
-const CATEGORY_LABEL: Record<number, string> = {
-    1: "서비스 소개",
-    2: "채팅",
-    3: "분석",
-    4: "기타/일반",
-    5: "회원"
-};
 // DB의 QNA 관련 타입 설정
 type InquiryItem = {
     qna_id: number;
     user_id: number;
     manager_id: number | null;
-    category_id: number;
-    question_title: string;
+    category: string | null;
+    question_title: string | null;
     question: string;
     answer: string | null;
+    nickname: string | null;
     created_at: string;
     updated_at: string;
 };
@@ -103,7 +97,7 @@ export function SettingsPage() {
     const [openInquiryId, setOpenInquiryId] = useState<number | null>(null);
     const [showInquiryForm, setShowInquiryForm] = useState(false);
     const [answerDrafts, setAnswerDrafts] = useState<Record<number, string>>({});
-    const [inquiryCategoryId, setInquiryCategoryId] = useState("");
+    const [inquiryCategory, setInquiryCategory] = useState("");
     const [inquiryTitle, setInquiryTitle] = useState("");
     const [inquiryContent, setInquiryContent] = useState("");
     const [isSubmittingInquiry, setIsSubmittingInquiry] = useState(false);
@@ -111,7 +105,8 @@ export function SettingsPage() {
     const [inquiries, setInquiries] = useState<InquiryItem[]>([]);
     const [isLoadingInquiries, setIsLoadingInquiries] = useState(false);
     const [isSubmittingAnswer, setIsSubmittingAnswer] = useState(false);
-
+    const [editingInquiryId, setEditingInquiryId] = useState<number | null>(null);
+    const [isUpdatingInquiry, setIsUpdatingInquiry] = useState(false);
     const allConcerns = [...DEFAULT_CONCERNS, ...customConcerns];
     const totalPages = Math.ceil(inquiries.length / itemsPerPage);
 
@@ -147,7 +142,7 @@ export function SettingsPage() {
                 if (keywords.length > 0) setSkinTypeKeywords(keywords);
 
                 setCurrentUserId(user.user_id);
-                setIsAdmin(Number(user.is_admin) === 1);
+                setIsAdmin(Boolean(user.is_admin));
 
                 setEmail(user.email);
                 setProfileImageUrl(user.profile_image_url ?? null);
@@ -195,13 +190,7 @@ export function SettingsPage() {
         const loadQna = async () => {
             try {
                 setIsLoadingInquiries(true);
-
-                // TODO: 실제 API 연결
-                // const data: InquiryItem[] = effectiveIsAdmin
-                //     ? await fetchAllQna()
-                //     : await fetchMyQna();
-
-                const data: InquiryItem[] = [];
+                const data = await fetchQnaList();
                 setInquiries(data);
                 setCurrentPage(1);
             } catch (err) {
@@ -274,12 +263,13 @@ export function SettingsPage() {
 
             return;
         }
-        if (!nickname.trim()) {
-            setNicknameError("닉네임을 입력해 주세요.");
-            return;
-        }
+        const trimmedNickname = nickname.trim();
 
-        if (nickname.trim() !== originalNickname.trim() && (!nicknameChecked || nicknameAvailable !== true)) {
+        if (
+            trimmedNickname &&
+            trimmedNickname !== originalNickname.trim() &&
+            (!nicknameChecked || nicknameAvailable !== true)
+        ) {
             setNicknameError("닉네임 중복 확인을 완료해 주세요.");
             return;
         }
@@ -291,8 +281,8 @@ export function SettingsPage() {
         try {
             const skinKeywordId = skinTypeKeywords.find((k) => k.label === skinType)?.keyword_id ?? null;
 
-            await updateCurrentUser({
-                nickname,
+            const updatedUser = await updateCurrentUser({
+                nickname: nickname.trim(),
                 age              : age ? Number(age) : null,
                 gender           : GENDER_TO_API[gender],
                 skin_type        : skinKeywordId,
@@ -300,16 +290,13 @@ export function SettingsPage() {
                 profile_image_url: profileImageUrl,
             });
 
-            // 저장된 닉네임을 현재 기준값으로 갱신하고, 중복 확인 상태를 초기화
-            setOriginalNickname(nickname.trim());
+            setNickname(updatedUser.nickname ?? "");
+            setOriginalNickname(updatedUser.nickname ?? "");
             setNicknameChecked(true);
             setNicknameAvailable(true);
             setNicknameError(null);
-
-            // 저장 후 닉네임 중복확인 안내 문구 숨김
             setNicknameCheckTouched(false);
 
-            // 사이드바 프로필 이미지 갱신 알림
             window.dispatchEvent(new CustomEvent("profileUpdated"));
 
             setSaved(true);
@@ -320,12 +307,29 @@ export function SettingsPage() {
             setIsSaving(false);
         }
     };
-
     // 문의 등록 관련 함수 260314 jsw
     const getInquiryStatus = (item: InquiryItem) => {
         return item.manager_id ? "답변완료" : "미답변";
     };
+    const formatInquiryDate = (value: string) => {
+        if (!value) return "-";
 
+        const raw = value.includes("T") ? value : value.replace(" ", "T");
+        const date = new Date(raw);
+
+        if (Number.isNaN(date.getTime())) {
+            return value.replace("T", " ");
+        }
+
+        return date.toLocaleString("ko-KR", {
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: false,
+        });
+    };
     // 페이지 번호 목록 생성
     const getPageNumbers = () => {
         const pages: (number | string)[] = [];
@@ -344,29 +348,51 @@ export function SettingsPage() {
 
         return pages;
     };
+    const resetInquiryForm = () => {
+        setEditingInquiryId(null);
+        setInquiryCategory("");
+        setInquiryTitle("");
+        setInquiryContent("");
+    };
+
     const handleInquirySubmit = async () => {
-        if (!inquiryCategoryId || !inquiryTitle.trim() || !inquiryContent.trim() || !currentUserId) return;
+        if (!inquiryCategory || !inquiryTitle.trim() || !inquiryContent.trim()) return;
 
         try {
-            setIsSubmittingInquiry(true);
+            if (editingInquiryId) {
+                setIsUpdatingInquiry(true);
 
-            // TODO: 실제 API 연결
-            // await createQna({
-            //     user_id: currentUserId,
-            //     category_id: Number(inquiryCategoryId),
-            //     question_title: inquiryTitle.trim(),
-            //     question: inquiryContent.trim(),
-            // });
+                const updated = await updateQna(editingInquiryId, {
+                    category: inquiryCategory,
+                    question_title: inquiryTitle.trim(),
+                    question: inquiryContent.trim(),
+                });
+
+                setInquiries((prev) =>
+                    prev.map((item) => (item.qna_id === editingInquiryId ? updated : item))
+                );
+            } else {
+                setIsSubmittingInquiry(true);
+
+                const created = await createQna({
+                    category: inquiryCategory,
+                    question_title: inquiryTitle.trim(),
+                    question: inquiryContent.trim(),
+                });
+
+                setInquiries((prev) => [created, ...prev]);
+                setCurrentPage(1);
+            }
 
             setInquirySaved(true);
-            setInquiryCategoryId("");
-            setInquiryTitle("");
-            setInquiryContent("");
+            resetInquiryForm();
             setShowInquiryForm(false);
-            setCurrentPage(1);
             setTimeout(() => setInquirySaved(false), 3000);
+        } catch (err) {
+            alert(err instanceof Error ? err.message : editingInquiryId ? "문의 수정에 실패했습니다." : "문의 등록에 실패했습니다.");
         } finally {
             setIsSubmittingInquiry(false);
+            setIsUpdatingInquiry(false);
         }
     };
     const handleSubmitAnswer = async (item: InquiryItem) => {
@@ -376,30 +402,44 @@ export function SettingsPage() {
         try {
             setIsSubmittingAnswer(true);
 
-            // TODO: 실제 API 연결
-            // await updateQnaAnswer(item.qna_id, { answer: answerText });
+            const updated = await updateQnaAnswer(item.qna_id, { answer: answerText });
 
             setInquiries((prev) =>
-                prev.map((i) =>
-                    i.qna_id === item.qna_id
-                        ? {
-                              ...i,
-                              answer: answerText,
-                              manager_id: currentUserId ?? 1,
-                          }
-                        : i
-                )
+                prev.map((i) => (i.qna_id === item.qna_id ? updated : i))
             );
 
             setAnswerDrafts((prev) => ({
                 ...prev,
                 [item.qna_id]: "",
             }));
+        } catch (err) {
+            alert(err instanceof Error ? err.message : "답변 등록에 실패했습니다.");
         } finally {
             setIsSubmittingAnswer(false);
         }
     };
+    const handleStartEditInquiry = (item: InquiryItem) => {
+        setEditingInquiryId(item.qna_id);
+        setInquiryCategory(item.category ?? "");
+        setInquiryTitle(item.question_title ?? "");
+        setInquiryContent(item.question ?? "");
+        setShowInquiryForm(true);
+    };
+    const handleDeleteInquiry = async (qnaId: number) => {
+        const ok = window.confirm("이 문의를 삭제하시겠습니까?");
+        if (!ok) return;
 
+        try {
+            await deleteQna(qnaId);
+            setInquiries((prev) => prev.filter((item) => item.qna_id !== qnaId));
+
+            if (openInquiryId === qnaId) {
+                setOpenInquiryId(null);
+            }
+        } catch (err) {
+            alert(err instanceof Error ? err.message : "문의 삭제에 실패했습니다.");
+        }
+    };
     const handleWithdraw = async () => {
         if (withdrawConfirmText !== "회원탈퇴") {
             setWithdrawError("확인 문구를 정확히 입력해 주세요.");
@@ -410,9 +450,14 @@ export function SettingsPage() {
         setWithdrawError(null);
 
         try {
-            // await deleteCurrentUser();
+            await deleteCurrentUser();
 
-            alert("회원 탈퇴가 완료되었습니다.");
+            localStorage.removeItem("access_token");
+            localStorage.removeItem("user_id");
+            localStorage.removeItem("guest_chats");
+            localStorage.removeItem("guest_chat_count");
+
+            alert("회원 탈퇴가 완료되었습니다. 10일 이내 재로그인 시 계정이 복구될 수 있습니다.");
             window.location.href = "/";
         } catch (err) {
             setWithdrawError(err instanceof Error ? err.message : "회원 탈퇴에 실패했습니다.");
@@ -576,20 +621,12 @@ export function SettingsPage() {
                                                                 onChange={(e) => {
                                                                     const value = e.target.value;
                                                                     setNickname(value);
-                                                                    setNicknameCheckTouched(false);
-
-                                                                    if (value.trim() === originalNickname.trim()) {
-                                                                        setNicknameChecked(true);
-                                                                        setNicknameAvailable(true);
-                                                                        setNicknameError(null);
-                                                                    } else {
-                                                                        setNicknameChecked(false);
-                                                                        setNicknameAvailable(null);
-                                                                        setNicknameError(null);
-                                                                    }
+                                                                    setNicknameChecked(false);
+                                                                    setNicknameAvailable(null);
+                                                                    setNicknameError(null);
+                                                                    setNicknameCheckTouched(Boolean(value.trim()));
                                                                 }}
-                                                                maxLength={12}
-                                                                placeholder="닉네임 입력"
+                                                                placeholder="닉네임을 입력하세요 (비워두면 랜덤 생성)"
                                                             />
                                                         </div>
 
@@ -947,9 +984,9 @@ export function SettingsPage() {
                                                                         <div className="flex-1 min-w-0">
                                                                             <div className="flex items-center gap-2 mb-1">
                                                                                 <span className="truncate text-sm font-semibold text-gray-800">
-                                                                                    {item.question_title.length > 40
-                                                                                        ? `${item.question_title.slice(0, 40)}...`
-                                                                                        : item.question_title}
+                                                                                    {(item.question_title?.trim() || item.question).length > 40
+                                                                                        ? `${(item.question_title?.trim() || item.question).slice(0, 40)}...`
+                                                                                        : (item.question_title?.trim() || item.question)}
                                                                                 </span>
 
                                                                                 <span
@@ -964,8 +1001,13 @@ export function SettingsPage() {
                                                                             </div>
 
                                                                             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-400">
-                                                                                <span>{CATEGORY_LABEL[item.category_id] ?? "기타"}</span>
-                                                                                <span>{item.created_at}</span>
+                                                                                    {effectiveIsAdmin && (
+                                                                                        <span className="font-medium text-gray-500">
+                                                                                            작성자: {item.nickname ?? `사용자#${item.user_id}`}
+                                                                                        </span>
+                                                                                    )}
+                                                                                <span>{item.category ?? "기타"}</span>
+                                                                                <span>{formatInquiryDate(item.created_at)}</span>
                                                                             </div>
                                                                         </div>
 
@@ -993,9 +1035,6 @@ export function SettingsPage() {
                                                                                     <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
                                                                                         <div className="flex items-center justify-between mb-2">
                                                                                         <p className="text-xs font-semibold text-gray-500">문의 내용</p>
-                                                                                            <span className="text-[11px] text-gray-400">
-                                                                                                {item.created_at}
-                                                                                            </span>
                                                                                         </div>
                                                                                         <div className="text-sm leading-6 text-gray-700 whitespace-pre-wrap">
                                                                                             {item.question || "문의 내용이 없습니다."}
@@ -1027,9 +1066,27 @@ export function SettingsPage() {
                                                                                             </div>
                                                                                         )}
                                                                                     </div>
+                                                                                    <div className="flex justify-end gap-2">
+                                                                                        {!effectiveIsAdmin && !item.answer && (
+                                                                                            <button
+                                                                                                type="button"
+                                                                                                onClick={() => handleStartEditInquiry(item)}
+                                                                                                className="px-4 h-9 rounded-xl bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 transition"
+                                                                                            >
+                                                                                                문의 수정
+                                                                                            </button>
+                                                                                        )}
 
+                                                                                        <button
+                                                                                            type="button"
+                                                                                            onClick={() => handleDeleteInquiry(item.qna_id)}
+                                                                                            className="px-4 h-9 rounded-xl bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition"
+                                                                                        >
+                                                                                            문의 삭제
+                                                                                        </button>
+                                                                                    </div>
                                                                                 {/* 관리자 답변 작성 */}
-                                                                                    {effectiveIsAdmin && !item.manager_id && (
+                                                                                    {effectiveIsAdmin &&(
                                                                                         <div className="rounded-2xl border border-onyou/20 bg-white p-4 shadow-sm">
                                                                                         <p className="text-xs font-semibold text-gray-500 mb-3">관리자 답변 작성</p>
 
@@ -1125,15 +1182,22 @@ export function SettingsPage() {
                                                 {/* 모달 헤더 */}
                                                     <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
                                                         <div>
-                                                            <h3 className="font-semibold text-gray-800 text-base">문의 작성</h3>
+                                                            <h3 className="font-semibold text-gray-800 text-base">
+                                                                {editingInquiryId ? "문의 수정" : "문의 작성"}
+                                                            </h3>
                                                             <p className="text-xs text-gray-400 mt-1">
-                                                                궁금한 내용을 남겨주시면 확인 후 답변드릴게요
+                                                                {editingInquiryId
+                                                                    ? "문의 내용을 수정할 수 있습니다"
+                                                                    : "궁금한 내용을 남겨주시면 확인 후 답변드릴게요"}
                                                             </p>
                                                         </div>
 
                                                         <button
                                                             type="button"
-                                                            onClick={() => setShowInquiryForm(false)}
+                                                            onClick={() => {
+                                                                setShowInquiryForm(false);
+                                                                resetInquiryForm();
+                                                            }}
                                                             className="w-9 h-9 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition"
                                                         >
                                                             ✕
@@ -1143,25 +1207,23 @@ export function SettingsPage() {
                                                 {/* 모달 본문 */}
                                                     <div className="p-5 space-y-4">
                                                         <select
-                                                            value={inquiryCategoryId}
-                                                            onChange={(e) => setInquiryCategoryId(e.target.value)}
+                                                            value={inquiryCategory}
+                                                            onChange={(e) => setInquiryCategory(e.target.value)}
                                                             className="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-onyou"
                                                         >
                                                             <option value="">문의 분류 선택</option>
-                                                            <option value="1">서비스 소개</option>
-                                                            <option value="2">채팅</option>
-                                                            <option value="3">분석</option>
-                                                            <option value="4">기타/일반</option>
-                                                            <option value="5">회원</option>
+                                                            <option value="서비스 이용">서비스 이용</option>
+                                                            <option value="채팅">채팅</option>
+                                                            <option value="분석">분석</option>
+                                                            <option value="기타/일반">기타/일반</option>
+                                                            <option value="회원">회원</option>
                                                         </select>
-
                                                         <Input
                                                             label="문의 제목"
                                                             value={inquiryTitle}
                                                             onChange={(e) => setInquiryTitle(e.target.value)}
                                                             placeholder="문의 제목을 입력하세요"
                                                         />
-
                                                         <textarea
                                                             value={inquiryContent}
                                                             onChange={(e) => setInquiryContent(e.target.value)}
@@ -1179,7 +1241,10 @@ export function SettingsPage() {
                                                     <div className="flex justify-end gap-2 px-5 py-4 border-t border-gray-100 bg-gray-50">
                                                         <button
                                                             type="button"
-                                                            onClick={() => setShowInquiryForm(false)}
+                                                            onClick={() => {
+                                                                setShowInquiryForm(false);
+                                                                resetInquiryForm();
+                                                            }}
                                                             className="px-4 h-10 rounded-xl bg-gray-100 text-gray-600 border border-gray-300 hover:bg-gray-200 hover:text-gray-700 transition"
                                                         >
                                                             취소
@@ -1189,14 +1254,18 @@ export function SettingsPage() {
                                                             type="button"
                                                             onClick={handleInquirySubmit}
                                                             disabled={
-                                                                !inquiryCategoryId ||
+                                                                !inquiryCategory ||
                                                                 !inquiryTitle.trim() ||
                                                                 !inquiryContent.trim() ||
-                                                                isSubmittingInquiry
+                                                                isSubmittingInquiry ||
+                                                                isUpdatingInquiry
                                                             }
                                                             className="px-4 h-10 rounded-xl bg-onyou text-white hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
                                                         >
-                                                            {isSubmittingInquiry ? "등록 중..." : "문의 등록"}
+                                                            {editingInquiryId
+                                                                ? (isUpdatingInquiry ? "수정 중..." : "문의 수정")
+                                                                : (isSubmittingInquiry ? "등록 중..." : "문의 등록")
+                                                            }
                                                         </button>
                                                     </div>
                                                 </div>
@@ -1214,16 +1283,16 @@ export function SettingsPage() {
                                     <div className="bg-white rounded-2xl p-5 border border-red-100 shadow-sm">
                                         <h3 className="font-semibold text-red-600 mb-2 text-sm">회원 탈퇴</h3>
                                         <p className="text-sm text-gray-600 leading-6">
-                                            회원 탈퇴를 진행하면 계정 정보와 이용 내역이 삭제될 수 있으며,
-                                            이 작업은 되돌릴 수 없습니다.
+                                            회원 탈퇴를 진행하면 계정이 탈퇴 상태로 전환되며,
+                                            탈퇴 후 10일이 지나면 관련 데이터가 완전히 삭제됩니다.
                                         </p>
 
                                         <div className="mt-5 rounded-xl bg-red-50 border border-red-100 p-4">
                                             <p className="text-sm font-medium text-red-600 mb-2">탈퇴 전 확인해 주세요</p>
                                             <ul className="text-sm text-gray-700 space-y-1 list-disc pl-5">
-                                                <li>탈퇴 후에는 계정을 복구할 수 없습니다.</li>
-                                                <li>작성한 문의 내역 또는 일부 데이터가 삭제될 수 있습니다.</li>
-                                                <li>소셜 로그인 계정 연동도 함께 해제될 수 있습니다.</li>
+                                                <li>탈퇴 후 10일 이내에는 다시 로그인하면 계정이 복구될 수 있습니다.</li>
+                                                <li>탈퇴 후 10일이 지나면 계정과 관련 이미지 및 데이터가 완전히 삭제됩니다.</li>
+                                                <li>완전 삭제 이후에는 계정을 복구할 수 없습니다.</li>
                                             </ul>
                                         </div>
 

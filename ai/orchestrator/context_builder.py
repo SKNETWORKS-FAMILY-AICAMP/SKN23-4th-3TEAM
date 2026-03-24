@@ -49,6 +49,35 @@ def _load_from_db(user_id: int) -> dict | None:
                 tags = [f"{f.get('region','')}-{f.get('name','')}" for f in top if f.get("name")]
                 recent_summary = f"최근 분석: {', '.join(tags)}" if tags else None
 
+        # 피부 MBTI 결과 조회
+        skin_mbti = None
+        try:
+            mbti_row = execute_one(
+                "SELECT result_code, result_json FROM user_test_results WHERE user_id = %s AND test_type = 'skin_mbti'",
+                (user_id,)
+            )
+            if mbti_row and mbti_row.get("result_json"):
+                import json as _json
+                mbti_data = mbti_row["result_json"]
+                if isinstance(mbti_data, str):
+                    mbti_data = _json.loads(mbti_data)
+                mbti_result = mbti_data.get("result", {})
+                skin_mbti = {
+                    "code": mbti_row.get("result_code", ""),
+                    "title": mbti_result.get("title", ""),
+                    "subtitle": mbti_result.get("subtitle", ""),
+                    "description": mbti_result.get("description", ""),
+                    "habits": mbti_result.get("habits", ""),
+                    "morning_routine": mbti_result.get("morning_routine", []),
+                    "night_routine": mbti_result.get("night_routine", []),
+                    "care_tips": mbti_result.get("care_tips", []),
+                    "avoid_habits": mbti_result.get("avoid_habits", []),
+                    "chatbot_suggestion": mbti_result.get("chatbot_suggestion", ""),
+                }
+                print(f"[context_builder] MBTI 로드: {skin_mbti['code']} ({skin_mbti['title']})", flush=True)
+        except Exception as e:
+            print(f"[context_builder] MBTI 로드 실패 (무시): {e}", flush=True)
+
         return {
             "user_id": user_id,
             "skin_type_label": skin_type_label,
@@ -56,6 +85,7 @@ def _load_from_db(user_id: int) -> dict | None:
             "age": user.age,
             "gender": user.gender,
             "recent_analysis_summary": recent_summary,
+            "skin_mbti": skin_mbti,
         }
 
     except Exception as e:

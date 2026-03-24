@@ -1,5 +1,5 @@
 import json
-
+import secrets
 from typing import Optional
 from datetime import datetime
 
@@ -57,7 +57,8 @@ analysis_service.py
     3. 사용자의 분석 히스토리 전체 조회
     4. 가장 최근 분석 결과 조회
     5. 분석 결과 삭제 (soft delete)
-    6. 위시리스트 추가 / 조회 / 삭제
+    6. 분석 결과 공유 링크 생성 / 공개 조회
+    7. 위시리스트 추가 / 조회 / 삭제
 
 흐름:
     FastAPI 라우터 → analysis_service 함수 호출
@@ -529,3 +530,113 @@ def remove_all_wishlist(user_id: int) -> bool:
     )
 
     return affected > 0
+
+# ─────────────────────────────────────────────
+# 공유 링크 헬퍼
+# ─────────────────────────────────────────────
+
+def _generate_share_token(length: int = 40) -> str:
+    """
+    공유용 랜덤 토큰 생성.
+    URL에 사용 가능한 안전한 문자열을 반환.
+    """
+    return secrets.token_urlsafe(length)[:length]
+
+
+# ─────────────────────────────────────────────
+# 6. 피부 분석 결과 공유 링크 생성
+# ─────────────────────────────────────────────
+
+def create_analysis_share_link(analysis_id: int, user_id: int, front_base_url: str) -> Optional[dict]:
+    """
+    피부 분석 결과 공유 링크 생성.
+    - 본인 결과인지 확인
+    - share_token이 없으면 새로 생성
+    - is_public = 1, shared_at = 현재 시각으로 갱신
+    - 프론트 공유 URL 반환
+
+    사용 예시:
+        result = create_analysis_share_link(
+            analysis_id=10,
+            user_id=1,
+            front_base_url="http://localhost:5173"
+        )
+    """
+    row = execute_one(
+        """
+        SELECT analysis_id, user_id, share_token
+        FROM skin_analysis_results
+        WHERE analysis_id = %s
+          AND user_id = %s
+          AND deleted_at IS NULL
+        LIMIT 1
+        """,
+        (analysis_id, user_id)
+    )
+
+    if not row:
+        return None
+
+    share_token = row["share_token"]
+
+    if not share_token:
+        share_token = _generate_share_token(40)
+
+        execute_write(
+            """
+            UPDATE skin_analysis_results
+            SET share_token = %s,
+                is_public   = 1,
+                shared_at   = %s
+            WHERE analysis_id = %s
+            """,
+            (share_token, datetime.now(), analysis_id)
+        )
+    else:
+        execute_write(
+            """
+            UPDATE skin_analysis_results
+            SET is_public = 1,
+                shared_at = %s
+            WHERE analysis_id = %s
+            """,
+            (datetime.now(), analysis_id)
+        )
+
+    return {
+        "analysis_id": analysis_id,
+        "share_token": share_token,
+        "share_url": f"{front_base_url}/shared/analysis/{share_token}",
+    }
+
+
+# ─────────────────────────────────────────────
+# 7. 공유된 피부 분석 결과 조회
+# ─────────────────────────────────────────────
+
+def get_shared_analysis_result(share_token: str) -> Optional[SkinAnalysisResult]:
+    """
+    공유 토큰으로 공개된 피부 분석 결과 조회.
+    - is_public = 1
+    - deleted_at IS NULL 인 결과만 허용
+    """
+    row = execute_one(
+        """
+        SELECT *
+        FROM skin_analysis_results
+        WHERE share_token = %s
+          AND is_public = 1
+          AND deleted_at IS NULL
+        LIMIT 1
+        """,
+        (share_token,)
+    )
+
+    if not row:
+        return None
+
+    result = SkinAnalysisResult.from_dict(row)
+    result.image_urls = _get_image_urls("analysis", result.analysis_id)
+    _inject_factorial(result)
+
+    return result

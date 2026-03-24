@@ -7,7 +7,7 @@ from db.models import User
 from typing import Optional
 from datetime import datetime
 from db.schemas import UserCreate, UserUpdate
-from db.db_manager import execute_one, execute_write
+from db.db_manager import execute_one, execute_write, execute_query
 
 # ─────────────────────────────────────────────
 # 프로필 이미지 헬퍼 (images + entity_images)
@@ -229,37 +229,60 @@ def update_user(user_id: int, data: UserUpdate) -> User:
     사용자 프로필 수정.
     - 변경할 필드만 골라서 UPDATE (None인 필드는 건너뜀)
     - 닉네임 변경 시 중복 확인 포함
+    - nickname이 빈 문자열이면 랜덤 닉네임 자동 생성
     - profile_image_url은 users 테이블이 아닌 images + entity_images에 저장
-
-    사용 예시:
-        updated = update_user(1, UserUpdate(nickname="새닉네임", age=25))
-        updated = update_user(1, UserUpdate(profile_image_url="https://s3.../profile.jpg"))
     """
     raw = data.model_dump()
 
-    # profile_image_url은 users 테이블 컬럼이 아니므로 분리해서 처리
+    # profile_image_url은 users 테이블 컬럼이 아니라 별도 처리
     profile_image_url = raw.pop("profile_image_url", None)
 
-    fields = {k: v for k, v in raw.items() if v is not None}
+    # 현재 사용자 조회
+    current_user = get_user_by_id(user_id)
+    if not current_user:
+        raise ValueError("사용자를 찾을 수 없습니다.")
 
-    if not fields and profile_image_url is None:
-        raise ValueError("수정할 내용이 없습니다.")
+    # nickname 처리
+    if "nickname" in raw and raw["nickname"] is not None:
+        nickname = str(raw["nickname"]).strip()
+
+        # 비워서 저장하면 랜덤 닉네임 자동 생성
+        if not nickname:
+            raw["nickname"] = generate_random_nickname()
+        else:
+            # 기존 닉네임과 다를 때만 중복 체크
+            if nickname != (current_user.nickname or "").strip() and is_nickname_taken(nickname):
+                raise ValueError("이미 사용 중인 닉네임입니다.")
+            raw["nickname"] = nickname
+
+    # None 값은 제외
+    fields = {k: v for k, v in raw.items() if v is not None}
 
     # users 테이블 업데이트
     if fields:
-        set_clause = ", ".join([f"{key} = %s" for key in fields])
-        values = tuple(fields.values()) + (user_id,)
+        set_clause = ", ".join([f"{key} = %s" for key in fields.keys()])
+        values = list(fields.values()) + [user_id]
 
         execute_write(
-            f"UPDATE users SET {set_clause} WHERE user_id = %s AND deleted_at IS NULL",
-            values
+            f"""
+            UPDATE users
+            SET {set_clause}
+            WHERE user_id = %s AND deleted_at IS NULL
+            """,
+            tuple(values)
         )
 
-    # 프로필 이미지 저장 (images + entity_images)
-    if profile_image_url:
-        _upsert_profile_image(user_id, profile_image_url)
+    # 프로필 이미지 별도 처리
+    if profile_image_url is not None:
+        cleaned_url = str(profile_image_url).strip()
+        if cleaned_url:
+            _upsert_profile_image(user_id, cleaned_url.split("?")[0])
 
-    return get_user_by_id(user_id)
+    updated_user = get_user_by_id(user_id)
+    if not updated_user:
+        raise RuntimeError("프로필 수정 후 사용자 조회에 실패했습니다.")
+
+    return updated_user
 
 
 # ─────────────────────────────────────────────
@@ -269,28 +292,122 @@ def update_user(user_id: int, data: UserUpdate) -> User:
 def delete_user(user_id: int) -> bool:
     """
     회원 탈퇴 처리 (soft delete).
-    - deleted_at에 현재 시각 기록
-    - 실제 데이터는 삭제하지 않음 (복구 가능)
-    - auth_providers는 hard delete (재가입 시 충돌 방지)
-
-    사용 예시:
-        success = delete_user(1)
+    - deleted_at에 현재 시각만 기록
+    - email / nickname 변조 없음 (10일 이내 복구 가능하도록)
+    - auth_providers 유지 (복구 시 로그인 수단 그대로 사용)
+    - 실제 하드 삭제는 스케줄러(cleanup_scheduler.py)에서 처리
     """
     affected = execute_write(
-        """
-        UPDATE users
-        SET deleted_at = %s,
-            email    = CONCAT('deleted_', user_id, '_', email),
-            nickname = CONCAT('deleted_', user_id, '_', nickname)
-        WHERE user_id = %s AND deleted_at IS NULL
-        """,
+        "UPDATE users SET deleted_at = %s WHERE user_id = %s AND deleted_at IS NULL",
         (datetime.now(), user_id)
     )
+    return affected > 0
 
-    if affected > 0:
+def get_user_including_deleted(email: str) -> Optional[User]:
+    """
+    탈퇴 예정 계정 포함 이메일로 사용자 조회.
+    - auth_service.login_local() 전용
+    - 일반 조회에서는 절대 사용 금지 (deleted_at 조건 없음)
+    """
+    row = execute_one(
+        "SELECT * FROM users WHERE email = %s",
+        (email,)
+    )
+    if not row:
+        return None
+
+    user = User.from_dict(row)
+    user.profile_image_url = _get_profile_image_url(user.user_id)
+
+    return user
+
+
+def restore_user(user_id: int) -> bool:
+    """
+    탈퇴 예정 사용자 복구.
+    - deleted_at을 NULL로 초기화
+    - auth_service에서 로그인 성공 시 자동 호출
+
+    사용 예시:
+        restore_user(1)
+    """
+    affected = execute_write(
+        "UPDATE users SET deleted_at = NULL WHERE user_id = %s AND deleted_at IS NOT NULL",
+        (user_id,)
+    )
+    return affected > 0
+
+
+def hard_delete_user(user_id: int) -> bool:
+    """
+    사용자 데이터 완전 삭제 (cleanup_scheduler.py 전용).
+    순서:
+        1. 해당 유저의 모든 S3 이미지 URL 수집
+        2. S3에서 이미지 파일 삭제
+        3. users 하드 DELETE
+            → CASCADE로 아래 테이블 자동 삭제:
+                auth_providers / chat_rooms / chat_messages
+                skin_analysis_results / wishlist / user_test_results / entity_images
+        4. 고아 images 행 정리
+    """
+    import boto3
+    import logging
+
+    logger = logging.getLogger(__name__)
+
+    # 1. 해당 유저의 모든 이미지 URL 수집 (entity_type별로 정확히 조인)
+    rows = execute_query(
+        """
+        SELECT i.image_id, i.image_url
+        FROM images i
+        JOIN entity_images ei ON i.image_id = ei.image_id
+        WHERE
+            (ei.entity_type = 'profile' AND ei.entity_id = %s)
+            OR (ei.entity_type = 'message' AND ei.entity_id IN (
+                SELECT cm.message_id
+                FROM chat_messages cm
+                JOIN chat_rooms cr ON cm.chat_room_id = cr.chat_room_id
+                WHERE cr.user_id = %s
+            ))
+            OR (ei.entity_type = 'analysis' AND ei.entity_id IN (
+                SELECT analysis_id FROM skin_analysis_results WHERE user_id = %s
+            ))
+        GROUP BY i.image_id, i.image_url
+        """,
+        (user_id, user_id, user_id)
+    )
+
+    # 2. S3 이미지 삭제
+    if rows:
+        try:
+            s3     = boto3.client("s3")
+            bucket = os.getenv("S3_BUCKET_NAME", "")
+            for row in rows:
+                try:
+                    key = row["image_url"].split(".amazonaws.com/")[-1]
+                    s3.delete_object(Bucket=bucket, Key=key)
+                except Exception as e:
+                    logger.warning(f"[hard_delete] S3 삭제 실패 image_id={row['image_id']}: {e}")
+        except Exception as e:
+            logger.warning(f"[hard_delete] S3 클라이언트 오류: {e}")
+
+    # 3. users 하드 DELETE (CASCADE로 연관 데이터 자동 삭제)
+    affected = execute_write(
+        "DELETE FROM users WHERE user_id = %s",
+        (user_id,)
+    )
+
+    # 4. 고아 images 행 정리
+    if rows:
+        image_ids    = [row["image_id"] for row in rows]
+        placeholders = ", ".join(["%s"] * len(image_ids))
         execute_write(
-            "DELETE FROM auth_providers WHERE user_id = %s",
-            (user_id,)
+            f"""
+            DELETE FROM images
+            WHERE image_id IN ({placeholders})
+                AND image_id NOT IN (SELECT image_id FROM entity_images)
+            """,
+            tuple(image_ids)
         )
 
     return affected > 0

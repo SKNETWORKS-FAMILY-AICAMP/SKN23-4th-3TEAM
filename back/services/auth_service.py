@@ -1,12 +1,14 @@
 import os
 import httpx
 import bcrypt
+import random
 import secrets
 
 from typing import Optional
+from datetime import datetime
 from dotenv import load_dotenv
-from api.middleware import create_access_token
-from services.user_service import (get_user_by_email, get_user_by_id, create_user)
+from routers.deps import create_access_token
+from services.user_service import (get_user_by_email, get_user_by_id, create_user, generate_random_nickname, is_nickname_taken, get_user_including_deleted, restore_user)
 
 from db.db_manager import execute_one, execute_write, execute_query
 from db.models import AuthProvider, User
@@ -18,8 +20,8 @@ auth_service.py
 목적  : 인증 및 로그인 관련 비즈니스 로직 담당
 역할  :
     1. local 로그인 수단 등록 (비밀번호 해시 포함)
-    2. local 이메일/비밀번호 로그인 검증
-    3. Google / Kakao 소셜 로그인 처리
+    2. local 이메일/비밀번호 로그인 검증 (탈퇴 예정 계정 자동 복구 포함)
+    3. Google / Kakao / Naver 소셜 로그인 처리 (탈퇴 예정 계정 자동 복구 포함)
     4. 로그인 수단 조회
 
 흐름:
@@ -30,6 +32,10 @@ auth_service.py
 의존성:
     auth_service → user_service (단방향)
     JWT 발급은 routers/deps.py의 create_access_token() 사용
+
+탈퇴 복구 정책:
+    - 탈퇴 후 10일 이내 로그인 시 자동 복구 (deleted_at → NULL)
+    - 10일 초과 시 로그인 거부 → 스케줄러가 하드 삭제 처리
 ─────────────────────────────────────────────────────────────
 """
 
@@ -108,22 +114,53 @@ def register_local_auth(user_id: int, email: str, plain_password: str) -> AuthPr
 def login_local(email: str, plain_password: str) -> dict:
     """
     local 이메일/비밀번호 로그인 검증.
-    - 성공 시 JWT 토큰과 User 반환
-    - JWT 발급은 deps.py의 create_access_token() 사용
-
-    사용 예시:
-        result = login_local("test@test.com", "plain_password_123")
-        token  = result["access_token"]
-        user   = result["user"]
+    - 탈퇴 예정(deleted_at IS NOT NULL) 계정도 로그인 허용
+    - 10일 이내 → 비밀번호 검증 통과 시 자동 복구 후 정상 로그인
+    - 10일 초과 → 로그인 거부
+    - restored: True이면 프론트에서 복구 안내 메시지 표시
     """
-    user = get_user_by_email(email)
+    from datetime import timedelta
+
+    # 탈퇴 계정 포함 조회
+    user = get_user_including_deleted(email)
 
     if not user:
         raise ValueError("존재하지 않는 이메일입니다.")
-    
-    if not user.is_active:
-        raise ValueError("비활성화된 계정입니다.")
 
+    # ── 탈퇴 예정 계정 처리 ──────────────────────
+    if user.deleted_at is not None:
+
+        if datetime.now() - user.deleted_at >= timedelta(days=10):
+            raise ValueError("탈퇴 처리가 완료된 계정입니다. 재가입 후 이용해주세요.")
+
+        # 10일 이내 → 비밀번호 먼저 검증
+        auth_row = execute_one(
+            """
+            SELECT password_hash FROM auth_providers
+            WHERE user_id = %s AND provider_type = 'local'
+            """,
+            (user.user_id,)
+        )
+
+        if not auth_row:
+            raise ValueError("local 로그인 수단이 등록되지 않은 계정입니다.")
+
+        if not _verify_password(plain_password, auth_row["password_hash"]):
+            raise ValueError("비밀번호가 일치하지 않습니다.")
+
+        # 검증 통과 → 탈퇴 복구
+        restore_user(user.user_id)
+        token = create_access_token(user.user_id)
+
+        return {
+            "access_token" : token,
+            "token_type"   : "bearer",
+            "user"         : user,
+            "restored"     : True,
+        }
+    # ─────────────────────────────────────────────
+
+    # 일반 로그인
     auth_row = execute_one(
         """
         SELECT password_hash FROM auth_providers
@@ -134,15 +171,18 @@ def login_local(email: str, plain_password: str) -> dict:
 
     if not auth_row:
         raise ValueError("local 로그인 수단이 등록되지 않은 계정입니다.")
-    
+
     if not _verify_password(plain_password, auth_row["password_hash"]):
         raise ValueError("비밀번호가 일치하지 않습니다.")
 
-    # deps.py의 create_access_token 사용 (user_id만 전달)
     token = create_access_token(user.user_id)
 
-    return {"access_token": token, "token_type": "bearer", "user": user}
-
+    return {
+        "access_token" : token,
+        "token_type"   : "bearer",
+        "user"         : user,
+        "restored"     : False,
+    }
 
 # ─────────────────────────────────────────────
 # 3. Google 소셜 로그인
@@ -207,7 +247,7 @@ async def google_callback(code: str) -> dict:
         user_info   = user_res.json()
         provider_id = user_info.get("id")       # Google 고유 사용자 ID
         email       = user_info.get("email")
-        name        = user_info.get("name", "")
+        nickname    = user_info.get("name", "")
 
         if not provider_id or not email:
             raise ValueError("Google 사용자 정보 조회 실패")
@@ -217,7 +257,7 @@ async def google_callback(code: str) -> dict:
         provider_type = "google",
         provider_id   = provider_id,
         email         = email,
-        name          = name,
+        nickname      = nickname,
     )
 
     # 4. JWT 발급 (deps.py 사용)
@@ -289,7 +329,7 @@ async def kakao_callback(code: str) -> dict:
         provider_id   = str(user_info.get("id"))  # Kakao 고유 사용자 ID
         kakao_account = user_info.get("kakao_account", {})
         email         = kakao_account.get("email")
-        name          = kakao_account.get("profile", {}).get("nickname", "")
+        nickname      = kakao_account.get("profile", {}).get("nickname", "")
 
         if not provider_id or not email:
             raise ValueError("Kakao 사용자 정보 조회 실패 (이메일 동의 필요)")
@@ -299,7 +339,7 @@ async def kakao_callback(code: str) -> dict:
         provider_type = "kakao",
         provider_id   = provider_id,
         email         = email,
-        name          = name,
+        nickname      = nickname,
     )
 
     # 4. JWT 발급 (deps.py 사용)
@@ -376,7 +416,7 @@ async def naver_callback(code: str, state: str) -> dict:
         response    = user_info.get("response", {})
         provider_id = str(response.get("id", ""))
         email       = response.get("email")
-        name        = response.get("name", "")
+        nickname    = response.get("nickname", "")
 
         if not provider_id or not email:
             raise ValueError("Naver 사용자 정보 조회 실패 (이메일 동의 필요)")
@@ -386,7 +426,7 @@ async def naver_callback(code: str, state: str) -> dict:
         provider_type = "naver",
         provider_id   = provider_id,
         email         = email,
-        name          = name,
+        nickname      = nickname,
     )
 
     # 4. JWT 발급 (deps.py 사용)
@@ -403,7 +443,7 @@ def _get_or_create_social_user(
     provider_type : str,
     provider_id   : str,
     email         : str,
-    name          : str,
+    nickname      : str = "",
 ) -> tuple[User, bool]:
     """
     소셜 로그인 공통 처리.
@@ -421,7 +461,31 @@ def _get_or_create_social_user(
     )
 
     if auth_row:
-        return get_user_by_id(auth_row["user_id"]), False
+        from datetime import timedelta
+
+        user = get_user_by_id(auth_row["user_id"])  # deleted_at IS NULL 조건 포함
+
+        if user:
+            return user, False
+
+        # users가 없으면 탈퇴 예정 계정인지 확인
+        deleted_row = execute_one(
+            "SELECT user_id, deleted_at FROM users WHERE user_id = %s AND deleted_at IS NOT NULL",
+            (auth_row["user_id"],)
+        )
+
+        if deleted_row:
+            if datetime.now() - deleted_row["deleted_at"] < timedelta(days=10):
+                # 10일 이내 → 소셜 로그인으로 자동 복구
+                restore_user(deleted_row["user_id"])
+                user = get_user_by_id(deleted_row["user_id"])
+                return user, False
+
+        # 10일 초과 or 완전 삭제 → 고아 행 정리 후 신규 생성으로 처리
+        execute_write(
+            "DELETE FROM auth_providers WHERE provider_type = %s AND provider_id = %s",
+            (provider_type, provider_id)
+        )
 
     # 같은 이메일로 가입된 유저 확인 → 소셜 수단만 추가 연결
     existing_user = get_user_by_email(email)
@@ -438,15 +502,25 @@ def _get_or_create_social_user(
         return existing_user, False
 
     # 완전 신규 유저 → 자동 회원가입
-    # 닉네임 중복 방지를 위해 provider_id 뒤 6자리 붙임
-    nickname = f"{name}_{provider_id[-6:]}" if name else f"user_{provider_id[-6:]}"
+    if not nickname:    # 닉네임이 없는 경우: 랜덤 닉네임 생성
+        nickname = generate_random_nickname()
+    elif is_nickname_taken(nickname):   # 소셜에서 닉네임을 받은 경우.. 중복이면 뒤에 랜덤 숫자 4자리 추가
+        for _ in range(10):
+            candidate = f"{nickname}_{random.randint(1000, 9999)}"
+
+            if not is_nickname_taken(candidate):
+                nickname = candidate
+                break
+        else:
+            nickname = generate_random_nickname()
+
     user = create_user(UserCreate(
         email          = email,
-        name           = name or "소셜유저",
         nickname       = nickname,
         terms_agreed   = True,
         privacy_agreed = True,
     ))
+
     execute_write(
         """
         INSERT INTO auth_providers (user_id, provider_type, provider_id)
@@ -521,9 +595,6 @@ def reset_password(email: str, new_password: str) -> None:
 
     if not user:
         raise ValueError("존재하지 않는 이메일입니다.")
-    
-    if not user.is_active:
-        raise ValueError("비활성화된 계정입니다.")
 
     # local 로그인 수단 존재 확인
     auth_row = execute_one(

@@ -4,15 +4,18 @@
  * back/routers/analysis_router.py 의 /analysis 엔드포인트와 통신.
  *
  * 사용하는 엔드포인트:
- *   GET  /analysis/model/detailed   → fetchDetailAnalysis()
- *   GET  /keywords/factorials       → fetchFactorials()
- *   GET  /analysis/check/today      → checkTodayDetailedAnalysis()
- *   GET  /analysis/dates            → fetchDetailedAnalysisDates()
- *   GET  /analysis/by-date          → fetchAnalysisByDate()
+ *   GET  /analysis/model/detailed        → fetchDetailAnalysis()
+ *   GET  /keywords/factorials            → fetchFactorials()
+ *   GET  /analysis/check/today           → checkTodayDetailedAnalysis()
+ *   GET  /analysis/dates                 → fetchDetailedAnalysisDates()
+ *   GET  /analysis/by-date               → fetchAnalysisByDate()
+ *   POST /analysis/share/{analysis_id}   → createAnalysisShareLink()
+ *   GET  /analysis/shared/{share_token}  → fetchSharedAnalysisResult()
  * ─────────────────────────────────────────────────────────────
  */
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
+// const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
+const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "/api";
 
 function getToken(): string {
     const token = localStorage.getItem("access_token");
@@ -59,8 +62,13 @@ export interface KeywordResponse {
     label      : string;
 }
 
-export interface TodayCheckResponse {
+
+export interface AnalysisLimitResponse {
     available: boolean;
+    message: string;
+    limit_count: number | null;
+    used_count?: number;
+    remaining_count?: number | null;
 }
 
 export interface DetailedDatesResponse {
@@ -114,22 +122,15 @@ export async function fetchFactorials(): Promise<KeywordResponse[]> {
     return handleResponse<KeywordResponse[]>(res);
 }
 
-/**
- * 오늘 정밀 분석 가능 여부 확인
- *
- * GET /analysis/check/today
- */
-export async function checkTodayDetailedAnalysis(): Promise<TodayCheckResponse> {
-    const res = await fetch(`${API_BASE}/analysis/check/today`, {
+
+export async function checkAnalysisLimit(
+    modelType: "simple" | "detailed" | "ingredient" | "personal"
+): Promise<AnalysisLimitResponse> {
+    const res = await fetch(`${API_BASE}/chats/analysis/check-limit/${modelType}`, {
         headers: { Authorization: `Bearer ${getToken()}` },
     });
 
-    if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error((data as { detail?: string }).detail ?? `서버 오류 (${res.status})`);
-    }
-
-    return res.json() as Promise<TodayCheckResponse>;
+    return handleResponse<AnalysisLimitResponse>(res);
 }
 
 /**
@@ -167,4 +168,42 @@ export async function fetchAnalysisByDate(dates: string[]): Promise<AnalysisByDa
     });
 
     return handleResponse<AnalysisByDateItem[]>(res);
+}
+/**
+ * 피부 분석 공유 url 조회
+ *
+ * GET /analysis/by-date?dates=2026-03-05
+ * GET /analysis/by-date?dates=2026-03-05&dates=2026-03-02
+ */
+export interface AnalysisShareResponse {
+    message: string;
+    data: {
+        analysis_id: number;
+        share_token: string;
+        share_url: string;
+    };
+}
+/**
+ * 피부 분석 공유 링크 생성
+ *
+ * POST /analysis/share/{analysis_id}
+ */
+export async function createAnalysisShareLink(analysisId: number): Promise<AnalysisShareResponse> {
+    const res = await fetch(`${API_BASE}/analysis/share/${analysisId}`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${getToken()}` },
+    });
+
+    return handleResponse<AnalysisShareResponse>(res);
+}
+
+/**
+ * 공유된 피부 분석 결과 조회
+ *
+ * GET /analysis/shared/{share_token}
+ */
+export async function fetchSharedAnalysisResult(token: string): Promise<AnalysisResult> {
+    const res = await fetch(`${API_BASE}/analysis/shared/${token}`);
+
+    return handleResponse<AnalysisResult>(res);
 }

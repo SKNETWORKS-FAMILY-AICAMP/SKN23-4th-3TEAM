@@ -1,13 +1,9 @@
-import { useMemo, useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router";
 import { motion } from "motion/react";
+import { useMemo, useState, useEffect } from "react";
+import { Loading } from "@/app/components/ui/loading";
+import { useNavigate, useLocation } from "react-router";
 import { ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
-import {
-    submitSkinMbti,
-    fetchSavedSkinMbti,
-    type SkinMbtiOption,
-    type SkinMbtiResultData,
-} from "@/app/api/skinMbtiApi";
+import { submitSkinMbti, fetchSavedSkinMbti, type SkinMbtiOption,type SkinMbtiResultData,} from "@/app/api/skinMbtiApi";
 
 interface SkinMbtiQuestion {
     id: number;
@@ -130,7 +126,7 @@ const QUESTIONS: SkinMbtiQuestion[] = [
         id: 12,
         question: "2주 정도 써도 효과가 애매하면?",
         options: [
-            "조금 더 꾸준히 써본다",
+            "효과는 신경 안쓰는 편이다",
             "기본 보습은 유지하고 좀 더 지켜본다",
             "루틴 일부를 바로 바꿔본다",
             "다른 성분이나 제품 조합을 찾아본다",
@@ -229,15 +225,7 @@ export function SkinMbtiPage() {
     };
 
     if (isCheckingSavedResult) {
-        return (
-            <div className="h-full overflow-y-auto bg-[#F8FBF3]">
-                <div className="max-w-3xl mx-auto px-4 py-10">
-                    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center text-sm text-gray-500">
-                        결과를 확인하는 중입니다...
-                    </div>
-                </div>
-            </div>
-        );
+        return <Loading />;
     }
 
     return (
