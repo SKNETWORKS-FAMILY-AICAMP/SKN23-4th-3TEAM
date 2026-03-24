@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
 
 type FaqItem = {
     id: number;
@@ -198,13 +199,23 @@ export function FaqPage() {
                                     />
                                 </button>
 
-                                {isOpen && (
-                                    <div className="border-t border-gray-100 bg-gray-50 px-5 py-4">
-                                        <p className="text-sm leading-7 text-gray-700">
-                                            A. {item.answer}
-                                        </p>
-                                    </div>
-                                )}
+                                <AnimatePresence initial={false}>
+                                    {isOpen && (
+                                        <motion.div
+                                            initial={{ height: 0, opacity: 0 }}
+                                            animate={{ height: "auto", opacity: 1 }}
+                                            exit={{ height: 0, opacity: 0 }}
+                                            transition={{ duration: 0.25, ease: "easeInOut" }}
+                                            className="overflow-hidden"
+                                        >
+                                            <div className="border-t border-gray-100 bg-gray-50 px-5 py-4">
+                                                <p className="text-sm leading-7 text-gray-700">
+                                                    A. {item.answer}
+                                                </p>
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
                             </div>
                         );
                     })}

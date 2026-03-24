@@ -1192,7 +1192,7 @@ export function ChatPage() {
                 ) : !chat_content && messages.length === 0 ? (
                     <EmptyChatState />
                 ) : (
-                    <div className="px-4 py-4 space-y-4">
+                    <div className="px-4 pt-4 pb-4 space-y-4">
                         <AnimatePresence initial={false}>
                             {messages.map((msg) => (
                                 <motion.div
@@ -1203,7 +1203,7 @@ export function ChatPage() {
                                     className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"} gap-3`}
                                 >
                                     {msg.role === "bot" && (
-                                        <Bot className='-mt-[16px]' />
+                                        <Bot className='mt-0' />
                                     )}
                                     <div className={`flex flex-col gap-1 ${msg.role === "user" ? "items-end" : "items-start"} ${
                                         msg.role === "bot" && parsePersonalColor(msg.content) ? "w-[55%]" : "max-w-[75%]"
@@ -1379,7 +1379,7 @@ export function ChatPage() {
                                         <span className="text-xxs text-gray-400 px-1">{msg.time}</span>
                                     </div>
                                     {msg.role === "user" && (
-                                        <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0 overflow-hidden -mt-[16px]">
+                                        <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0 overflow-hidden mt-0">
                                             <img src={userProfileUrl ?? DefaultProfile} className="w-full h-full object-cover" alt="User" />
                                         </div>
                                     )}
