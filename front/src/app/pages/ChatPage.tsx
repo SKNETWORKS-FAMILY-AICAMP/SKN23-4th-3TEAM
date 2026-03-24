@@ -12,8 +12,9 @@ import { Loading } from "@/app/components/ui/loading";
 import { motion, AnimatePresence } from "motion/react";
 import ChatLoading from "@/assets/animations/logo_pop_1.webm";
 import LogoTextWebm from "@/assets/animations/logo_text.webm";
-import { checkTodayDetailedAnalysis } from "@/app/api/analysisApi";
+// import { checkTodayDetailedAnalysis } from "@/app/api/analysisApi";
 import { TipGuideModal } from "@/app/components/onboarding/TipGuideModal";
+import { SkinTriviaModal } from "@/app/components/common/SkinTriviaModal";
 import { WebcamCaptureModal } from "@/app/components/common/WebcamCaptureModal";
 import { addToWishlist, fetchWishlist, removeFromWishlist } from "@/app/api/wishlistApi";
 import { X, ZoomIn, ImagePlus, ChevronDown, Lock, ExternalLink, Heart, Loader2 } from "lucide-react";
@@ -100,20 +101,85 @@ const COLOR_NAME_TO_HEX: Record<string, string> = {
     "라이트 그레이": "#D3D3D3", "크림 화이트": "#FFFDD0", "소프트 화이트": "#F5F5F5",
     "페일 블루": "#B0C4DE", "파우더 블루": "#B0C4DE",
     "올리브 브라운": "#6B5B3A", "카라멜": "#C19A6B", "다크 초콜릿": "#3E2723",
+    // GPT 추가 생성 가능 컬러
+    "아이시 실버": "#C0C0C0", "아이시실버": "#C0C0C0",
+    "쿨 퍼플": "#7B68EE", "쿨퍼플": "#7B68EE",
+    "쿨 그레이": "#808080", "쿨그레이": "#808080",
+    "네이비": "#000080", "차콜 그레이": "#36454F", "차콜그레이": "#36454F",
+    "퓨어 화이트": "#FFFFFF", "쿨 베리": "#8B008B", "쿨베리": "#8B008B",
+    "푸시아 핑크": "#FF77FF", "푸시아핑크": "#FF77FF",
+    "라이트 코랄": "#F08080", "라이트코랄": "#F08080",
+    "아이시 블루": "#A5D8FF", "아이시블루": "#A5D8FF",
+    "아이시 핑크": "#FFD1DC", "아이시핑크": "#FFD1DC",
+    "딥 로즈": "#C21E56", "딥로즈": "#C21E56",
+    "브라이트 핑크": "#FF69B4", "브라이트핑크": "#FF69B4",
+    "클리어 레드": "#FF2400", "클리어레드": "#FF2400",
+    "소프트 핑크": "#FFB6C1", "소프트핑크": "#FFB6C1",
+    "밝은 코랄": "#FF7F50", "웜 핑크": "#FF69B4", "웜핑크": "#FF69B4",
+    "밝은 오렌지": "#FF8C00", "골드": "#FFD700", "로즈 골드": "#B76E79", "로즈골드": "#B76E79",
+    "피치 핑크": "#FFDAB9", "피치핑크": "#FFDAB9",
+    "연핑크": "#FFB6C1", "연보라": "#D8BFD8", "연베이지": "#F5E6CC",
+    "다크 네이비": "#000033", "다크네이비": "#000033",
+    "아이보리": "#FFFFF0", "베이지": "#F5F5DC",
+    "코랄": "#FF7F50", "버건디": "#800020",
+    "올리브 그린": "#556B2F", "올리브그린": "#556B2F",
+    "플래티넘": "#E5E4E2", "플래티넘 블론드": "#E5E4E2", "플래티넘블론드": "#E5E4E2",
+    // GPT 빈출 생성 컬러 (띄어쓰기 있음/없음 모두)
+    "아이스민트": "#AAF0D1", "아이스 민트": "#AAF0D1",
+    "실버그레이": "#C0C0C0", "실버 그레이": "#C0C0C0", "실버": "#C0C0C0",
+    "스노우화이트": "#FFFAFA", "스노우 화이트": "#FFFAFA",
+    "머스터드옐로우": "#FFDB58", "머스터드 옐로우": "#FFDB58",
+    "코랄오렌지": "#FF7F50", "코랄 오렌지": "#FF7F50",
+    "머드브라운": "#6B4226", "머드 브라운": "#6B4226",
+    "브라운베이지": "#C4A882", "브라운 베이지": "#C4A882",
+    "딥베리": "#8B008B", "딥 베리": "#8B008B",
+    "로즈쿼츠": "#F7CAC9", "로즈 쿼츠": "#F7CAC9",
+    "쿨블랙": "#0A0A0A", "쿨 블랙": "#0A0A0A",
+    "다크애쉬브라운": "#5C4033", "다크 애쉬 브라운": "#5C4033", "다크애쉬 브라운": "#5C4033",
+    "쿨브라운": "#8B7D6B",
+    "쿨핑크": "#FF69B4",
+    "아이스핑크": "#FFD1DC", "아이스 핑크": "#FFD1DC",
+    "아이스블루": "#A5D8FF", "아이스 블루": "#A5D8FF",
+    "로즈우드": "#65000B", "로즈 우드": "#65000B",
+    "스모키그레이": "#2F4F4F", "스모키 그레이": "#2F4F4F",
+    "베리핑크": "#8B008B", "베리 핑크": "#8B008B",
+    "다크 카키": "#556B2F",
+    "밀키베이지": "#F5E6CC", "밀키 베이지": "#F5E6CC",
+    "쿨라벤더": "#B4A7D6", "쿨 라벤더": "#B4A7D6",
+    "딥와인": "#722F37", "딥 와인": "#722F37",
+    "핫핑크": "#FF69B4", "핫 핑크": "#FF69B4",
+    "밀키 핑크": "#FFB6C1",
+    "피치코랄": "#FFB5A7", "피치 코랄": "#FFB5A7",
+    "누드베이지": "#E8C4B8", "누드 베이지": "#E8C4B8",
+    "누드핑크": "#E8B4B8", "누드 핑크": "#E8B4B8",
+    "웜베이지": "#D2B48C", "웜 베이지": "#D2B48C",
+    "그레이": "#808080", "회색": "#808080",
+    "화이트": "#FFFFFF", "흰색": "#FFFFFF", "검정": "#000000",
+    "레드": "#FF0000", "핑크": "#FFC0CB", "블루": "#0000FF",
+    "그린": "#008000", "옐로우": "#FFFF00", "오렌지": "#FFA500", "퍼플": "#800080",
+    "브라운": "#A52A2A", "크림": "#FFFDD0", "민트": "#98FFB3",
 };
 
-// 텍스트에서 컬러 이름을 파싱하고 HEX로 변환하는 함수
+// 텍스트에서 컬러 이름과 HEX를 파싱하는 함수
+// 새 형식: "컬러명(#HEX)" → HEX 직접 추출
+// 구 형식: "컬러명" → COLOR_NAME_TO_HEX 매핑 폴백
 function parseColorNames(text: string): { name: string; hex: string }[] {
-    // "🎨 추천 컬러 : 라벤더그레이, 아이시로즈, 소프트 블루" 형태에서 컬러 추출
     const colonIdx = text.indexOf(":");
     if (colonIdx === -1) return [];
     const colorPart = text.substring(colonIdx + 1).trim();
-    const names = colorPart.split(",").map(s => s.trim()).filter(Boolean);
+    const items = colorPart.split(",").map(s => s.trim()).filter(Boolean);
 
-    return names.map(name => ({
-        name,
-        hex: COLOR_NAME_TO_HEX[name] || COLOR_NAME_TO_HEX[name.replace(/ /g, "")] || "",
-    })).filter(c => c.hex);
+    return items.map(item => {
+        // 새 형식: "컬러명(#HEX)" 또는 "컬러명(#RRGGBB)"
+        const hexMatch = item.match(/^(.+?)\s*\(\s*(#[0-9A-Fa-f]{3,6})\s*\)$/);
+        if (hexMatch) {
+            return { name: hexMatch[1].trim(), hex: hexMatch[2] };
+        }
+        // 구 형식 폴백: COLOR_NAME_TO_HEX 매핑
+        const name = item;
+        const hex = COLOR_NAME_TO_HEX[name] || COLOR_NAME_TO_HEX[name.replace(/ /g, "")] || "";
+        return { name, hex };
+    }).filter(c => c.hex);
 }
 
 // React children에서 텍스트만 추출하는 헬퍼
@@ -124,15 +190,24 @@ function extractText(node: any): string {
     return "";
 }
 
+// 텍스트에서 "(#HEX)" 패턴을 제거하는 헬퍼 (퍼스널컬러 답변 표시용)
+function stripHexCodes(text: string): string {
+    return text.replace(/\s*\(#[0-9A-Fa-f]{3,6}\)/g, "");
+}
+
 // 퍼스널컬러 답변 감지 함수
-function parsePersonalColor(content: string): { typeName: string; colorHexList: string[] } | null {
+function parsePersonalColor(content: string): { typeName: string; seasonTag: string; colorHexList: string[] } | null {
     // 🎨 **감성이름** 또는 🎨 감성이름 패턴으로 타입명 추출
     const nameMatch = content.match(/🎨\s*\*?\*?(.+?)\*?\*?\s*\n/);
     if (!nameMatch) return null;
     const typeName = nameMatch[1].replace(/\*/g, "").trim();
     if (!PC_CATCHPHRASES[typeName]) return null;
 
-    return { typeName, colorHexList: [] };
+    // 🏷️ 시즌 태그 추출 (예: "겨울 브라이트")
+    const seasonMatch = content.match(/🏷️\s*(.+?)[\n\r]/);
+    const seasonTag = seasonMatch ? seasonMatch[1].replace(/\*/g, "").trim() : "";
+
+    return { typeName, seasonTag, colorHexList: [] };
 }
 
 type AnalysisType = "default" | "simple" | "detailed" | "ingredient" | "personal";
@@ -408,8 +483,10 @@ export function ChatPage() {
     const [input, setInput] = useState("");
     const [expandedImage, setExpandedImage] = useState<string | null>(null);
     const [isSending, setIsSending] = useState(false);
+    const [isTriviaOpen, setIsTriviaOpen] = useState(false);
     const [isLoadingHistory, setIsLoadingHistory] = useState(false);
     const [personaMessage, setPersonaMessage] = useState("");
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [streamError, setStreamError] = useState<string | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -634,7 +711,7 @@ export function ChatPage() {
     }, []);
     const handleToggleWishlist = async (
         link: { name: string; url: string },
-        msgId: number,
+        _msgId: number,
     ) => {
         if (!isLoggedIn) {
             triggerWishlistToast();
@@ -824,10 +901,14 @@ export function ChatPage() {
                 await sendGuestMessageStream(trimmedInput, chatHistory, (event) => {
                     if (event.type === "loading") {
                         setPersonaMessage(event.message);
+                        if (event.message.includes("근거를 찾고") || event.message.includes("답변을 작성")) {
+                            setIsTriviaOpen(true);
+                        }
                         return;
                     }
 
                     if (event.type === "done") {
+                        setIsTriviaOpen(false);
                         const aiMsg: Message = {
                             id: Date.now() + 1,
                             role: "bot",
@@ -844,6 +925,7 @@ export function ChatPage() {
                     }
 
                     if (event.type === "error") {
+                        setIsTriviaOpen(false);
                         setPersonaMessage("");
                         setStreamError(event.message);
                     }
@@ -880,10 +962,14 @@ export function ChatPage() {
                     async (event) => {
                         if (event.type === "loading") {
                             setPersonaMessage(event.message);
+                            if (event.message.includes("근거를 찾고") || event.message.includes("답변을 작성") || event.message.includes("분석하고") || event.message.includes("추출하고")) {
+                                setIsTriviaOpen(true);
+                            }
                             return;
                         }
 
                         if (event.type === "done") {
+                            setIsTriviaOpen(false);
                             setPersonaMessage("");
 
                             try {
@@ -896,6 +982,7 @@ export function ChatPage() {
                         }
 
                         if (event.type === "error") {
+                            setIsTriviaOpen(false);
                             setPersonaMessage("");
                             setStreamError(event.message);
                         }
@@ -1117,22 +1204,32 @@ export function ChatPage() {
                                                     <>
                                                         {/* 퍼스널컬러 카드 (퍼스널컬러 답변일 때만) */}
                                                         {pcInfo && (
-                                                            <div className="bg-gradient-to-br from-gray-50 via-white to-gray-50 px-5 pt-6 pb-4">
-                                                                {/* 일러스트 + 감성 멘트 */}
-                                                                <div className="flex items-center gap-4">
-                                                                    {PC_ILLUSTRATIONS[pcInfo.typeName] && (
+                                                            <div className="bg-gradient-to-br from-gray-50 via-white to-gray-50 px-5 pt-5 pb-4">
+                                                                {/* 일러스트 (가로 넓게) */}
+                                                                {PC_ILLUSTRATIONS[pcInfo.typeName] && (
+                                                                    <div className="w-full rounded-2xl overflow-hidden shadow-md border border-gray-100 mb-4">
                                                                         <img
                                                                             src={PC_ILLUSTRATIONS[pcInfo.typeName]}
                                                                             alt={pcInfo.typeName}
-                                                                            className="w-20 h-20 object-cover rounded-full border-2 border-white shadow-md flex-shrink-0"
+                                                                            className="w-full h-auto object-cover"
+                                                                            style={{ aspectRatio: "800 / 360" }}
                                                                         />
-                                                                    )}
-                                                                    <div className="flex flex-col gap-1">
-                                                                        <p className="text-xs text-gray-400 font-medium tracking-wide">나의 퍼스널컬러</p>
-                                                                        <p className="text-sm text-gray-600 italic leading-relaxed">
-                                                                            "{PC_CATCHPHRASES[pcInfo.typeName]}"
-                                                                        </p>
                                                                     </div>
+                                                                )}
+                                                                {/* 감성 멘트 (아래) */}
+                                                                <div className="text-center">
+                                                                    <p className="text-xs text-gray-400 font-medium tracking-wide mb-2">나의 퍼스널컬러</p>
+                                                                    <p className="text-lg font-bold text-gray-800 mb-1">
+                                                                        🎨 {pcInfo.typeName}
+                                                                    </p>
+                                                                    {pcInfo.seasonTag && (
+                                                                        <p className="text-xs text-gray-500 font-medium mb-2">
+                                                                            🏷️ {pcInfo.seasonTag}
+                                                                        </p>
+                                                                    )}
+                                                                    <p className="text-sm text-gray-600 italic leading-relaxed">
+                                                                        "{PC_CATCHPHRASES[pcInfo.typeName]}"
+                                                                    </p>
                                                                 </div>
                                                             </div>
                                                         )}
@@ -1142,6 +1239,9 @@ export function ChatPage() {
                                                                     p: ({ children }) => {
                                                                         if (pcInfo) {
                                                                             const text = extractText(children);
+                                                                            // 카드에 이미 표시된 🎨 타입명, 🏷️ 시즌 줄은 숨김
+                                                                            if (text.startsWith("🎨") && !text.includes("추천 컬러")) return null;
+                                                                            if (text.startsWith("🏷️")) return null;
                                                                             // "🎨 추천 컬러 : ..." 줄 감지
                                                                             if (text.includes("추천 컬러") && text.includes("🎨") && !text.includes("피해야") && !text.includes("뉴트럴")) {
                                                                                 const colors = parseColorNames(text);
@@ -1180,7 +1280,7 @@ export function ChatPage() {
                                                                     hr:     () => <hr className="my-2 border-gray-200" />,
                                                                 }}
                                                             >
-                                                                {normalizeMarkdown(mainText)}
+                                                                {normalizeMarkdown(pcInfo ? stripHexCodes(mainText) : mainText)}
                                                             </ReactMarkdown>
                                                         </div>
                                                         {links.length > 0 && (
@@ -1482,6 +1582,10 @@ export function ChatPage() {
                     open={isWebcamOpen}
                     onClose={handleCloseWebcam}
                     onCapture={handleCaptureFromWebcam}
+                />
+                <SkinTriviaModal
+                    open={isTriviaOpen}
+                    onClose={() => setIsTriviaOpen(false)}
                 />
             </AnimatePresence>
             {/* // llm 파트 마무리 전까지 봉인 jsw 0318 정밀분석(프론트) */}
