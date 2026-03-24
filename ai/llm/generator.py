@@ -153,6 +153,78 @@ def generate_report(
 
     # 프롬프트 변수 치환
     import json as _json
+
+    # 분석 intent에서 얼굴/이미지 검증 실패 시 통일된 안내 메시지 반환
+    _VISION_ERROR_INTENTS = {"personal_color", "skin_analysis_fast", "skin_analysis_deep", "ingredient_analysis"}
+    if intent in _VISION_ERROR_INTENTS and vision_result and vision_result.get("mode") == "error":
+        error_reason = vision_result.get("error", "")
+        if intent == "personal_color":
+            return {
+                "chat_answer": (
+                    "퍼스널컬러 분석을 위해서는 **실제 사람의 정면 얼굴 사진**이 필요해요.\n\n"
+                    "🧴 **사진 가이드**\n"
+                    "• 메이크업을 제거한 맨 얼굴 사진을 사용해주세요\n"
+                    "• 정면을 바라보는 사진이어야 해요\n"
+                    "• 만화, 캐릭터, 동물 사진은 분석이 어려워요\n"
+                    "• 밝은 조명에서 촬영된 선명한 사진을 권장해요\n\n"
+                    "🔍 **왜 정확한 사진이 필요한가요?**\n"
+                    "퍼스널컬러 진단은 피부톤, 눈동자 색, 입술 색감을 종합적으로 분석하기 때문에 "
+                    "실제 얼굴의 자연스러운 색감이 잘 드러나는 사진이 필수예요.\n\n"
+                    "💡 **촬영 팁**\n"
+                    "• 자연광 또는 밝은 실내 조명에서 촬영해주세요\n"
+                    "• 그림자가 지지 않는 환경이 좋아요\n"
+                    "• 필터나 보정 없는 원본 사진을 사용해주세요\n\n"
+                    "조건에 맞는 사진으로 다시 업로드해주시면 정확한 퍼스널컬러를 알려드릴게요! 📸"
+                ),
+                "intent": "personal_color",
+                "products": [],
+            }
+        elif intent in ("skin_analysis_fast", "skin_analysis_deep"):
+            mode_name = "빠른 분석" if intent == "skin_analysis_fast" else "정밀 분석"
+            photo_guide = "정면 얼굴 사진 1장" if intent == "skin_analysis_fast" else "정면·좌측·우측 얼굴 사진 3장"
+            return {
+                "chat_answer": (
+                    f"피부 분석을 위해서는 **실제 사람의 얼굴 사진**이 필요해요.\n\n"
+                    f"🧴 **{mode_name} 사진 가이드**\n"
+                    f"• {photo_guide}을 준비해주세요\n"
+                    f"• 메이크업을 제거하고 세안 후 물기가 없는 상태에서 촬영해주세요\n"
+                    f"• 만화, 캐릭터, 동물, 풍경 사진은 분석이 어려워요\n"
+                    f"• 얼굴 전체가 화면에 나오도록 촬영해주세요\n\n"
+                    f"🔍 **왜 정확한 사진이 필요한가요?**\n"
+                    f"피부 분석은 수분, 탄력, 주름, 모공, 색소침착 등의 피부 지표를 정량 측정하기 때문에 "
+                    f"실제 피부 상태가 잘 드러나는 사진이 필수예요.\n\n"
+                    f"💡 **촬영 팁**\n"
+                    f"• 밝은 조명에서 그림자 없이 촬영해주세요\n"
+                    f"• 흔들림 없이 선명하게 촬영해주세요\n"
+                    f"• 머리카락이 얼굴을 가리지 않도록 정리해주세요\n\n"
+                    f"조건에 맞는 사진으로 다시 업로드해주시면 정확한 피부 분석 결과를 알려드릴게요! 📸"
+                ),
+                "intent": intent,
+                "products": [],
+            }
+        elif intent == "ingredient_analysis":
+            return {
+                "chat_answer": (
+                    "성분 분석을 위해서는 **화장품 전성분표 사진**이 필요해요.\n\n"
+                    "🧴 **사진 가이드**\n"
+                    "• 화장품 뒷면의 전성분표가 보이는 사진을 올려주세요\n"
+                    "• 글자가 선명하게 보이도록 가까이에서 촬영해주세요\n"
+                    "• 얼굴, 풍경, 제품 앞면 사진은 성분 추출이 어려워요\n"
+                    "• 전성분 영역이 잘리지 않도록 전체가 보이게 촬영해주세요\n\n"
+                    "🔍 **왜 전성분표 사진이 필요한가요?**\n"
+                    "OCR로 성분을 추출한 뒤 회원님의 피부타입과 고민에 맞는 성분인지, "
+                    "주의해야 할 성분이 포함되어 있는지 분석해드려요.\n\n"
+                    "💡 **촬영 팁**\n"
+                    "• 수평을 맞춰서 촬영해주세요\n"
+                    "• 그림자가 지지 않는 환경이 좋아요\n"
+                    "• 흔들림 없이 또렷하게 촬영해주세요\n\n"
+                    "조건에 맞는 사진으로 다시 업로드해주시면 성분을 분석해드릴게요! 📸"
+                ),
+                "intent": "ingredient_analysis",
+                "products": [],
+            }
+
+    # 퍼스널컬러 정상 판정 (type_result 있음)
     if intent == "personal_color" and vision_result and vision_result.get("type_result"):
         tr = vision_result["type_result"]
         task_prompt = task_prompt_template.format(
