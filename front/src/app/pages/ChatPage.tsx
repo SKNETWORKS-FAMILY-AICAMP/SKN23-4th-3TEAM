@@ -856,24 +856,24 @@ export function ChatPage() {
             return;
         }
 
-        try {
-            const result = await checkAnalysisLimit(
-                type as "simple" | "detailed" | "ingredient" | "personal"
-            );
+        // try {
+        //     const result = await checkAnalysisLimit(
+        //         type as "simple" | "detailed" | "ingredient" | "personal"
+        //     );
 
-            if (!result.available) {
-                setAnalysisDropdownOpen(false);
-                openLimitModal(result.message || "오늘 사용 가능한 횟수를 초과했습니다.");
-                return;
-            }
+        //     if (!result.available) {
+        //         setAnalysisDropdownOpen(false);
+        //         openLimitModal(result.message || "오늘 사용 가능한 횟수를 초과했습니다.");
+        //         return;
+        //     }
 
             setAnalysisType(type);
             setAnalysisDropdownOpen(false);
-        } catch (err) {
-            console.error("분석 가능 여부 확인 실패:", err);
-            setAnalysisDropdownOpen(false);
-            openLimitModal("분석 가능 여부를 확인하지 못했습니다.");
-        }
+        // } catch (err) {
+        //     console.error("분석 가능 여부 확인 실패:", err);
+        //     setAnalysisDropdownOpen(false);
+        //     openLimitModal("분석 가능 여부를 확인하지 못했습니다.");
+        // }
     };
     
     
@@ -881,27 +881,27 @@ export function ChatPage() {
     const handleSend = async () => {
         if (!canSend) return;
 
-        if (
-    isLoggedIn &&
-        analysisType !== "default" &&
-        ["simple", "detailed", "ingredient", "personal"].includes(analysisType) &&
-        uploadSlots.some((s) => s.preview)
-    ) {
-        try {
-            const result = await checkAnalysisLimit(
-                analysisType as "simple" | "detailed" | "ingredient" | "personal"
-            );
+    //     if (
+    // isLoggedIn &&
+    //     analysisType !== "default" &&
+    //     ["simple", "detailed", "ingredient", "personal"].includes(analysisType) &&
+    //     uploadSlots.some((s) => s.preview)
+    // ) {
+    //     try {
+    //         const result = await checkAnalysisLimit(
+    //             analysisType as "simple" | "detailed" | "ingredient" | "personal"
+    //         );
 
-            if (!result.available) {
-                openLimitModal(result.message || "오늘 사용 가능한 횟수를 초과했습니다.");
-                return;
-            }
-        } catch (err) {
-            console.error("분석 가능 여부 확인 실패:", err);
-            openLimitModal("분석 가능 여부를 확인하지 못했습니다.");
-            return;
-        }
-    }
+    //         if (!result.available) {
+    //             openLimitModal(result.message || "오늘 사용 가능한 횟수를 초과했습니다.");
+    //             return;
+    //         }
+    //     } catch (err) {
+    //         console.error("분석 가능 여부 확인 실패:", err);
+    //         openLimitModal("분석 가능 여부를 확인하지 못했습니다.");
+    //         return;
+    //     }
+    // }
         setPersonaMessage("");
         const trimmedInput      = input.trim();
         const previews          = uploadSlots.filter((s) => s.preview).map((s) => s.preview!);
