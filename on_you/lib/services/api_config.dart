@@ -1,5 +1,6 @@
 class ApiConfig {
-  static const String baseUrl = 'http://192.168.0.143:8000';
+  static const String baseUrl = 'https://3-36-101-246.sslip.io';
+  // static const String baseUrl = 'http://192.168.0.143:8000';   // 로컬
   // 안드로이드 에뮬레이터: static const String baseUrl = 'http://10.0.2.2:8000';
   // static const String baseUrl = '222.112.208.72:8000';
 
