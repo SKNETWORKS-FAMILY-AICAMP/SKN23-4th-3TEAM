@@ -31,6 +31,7 @@ FOLDER_MAP = {
     "simple"    : "skin-analysis",
     "detailed"  : "skin-analysis",
     "ingredient": "ingredient-analysis",
+    "personal"  : "personal-analysis",
     "profile"   : "profile",
 }
 

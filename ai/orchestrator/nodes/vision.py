@@ -24,7 +24,7 @@ import tempfile
 from ai.orchestrator.state import GraphState
 
 
-# ── GPT Vision 얼굴 검증 ───────────────────────────────────────
+# GPT Vision 얼굴 검증
 
 def _encode_image_b64(image_bytes: bytes) -> str:
     """이미지 bytes → base64 문자열"""
@@ -54,12 +54,17 @@ def _validate_face_images(images: list, mode: str) -> dict:
             # 빠른 분석: 정면 얼굴 1장 확인
             b64 = _encode_image_b64(images[0])
             prompt = (
-                "이 이미지가 사람의 얼굴 사진인지 판단해주세요.\n"
+                "이 이미지가 실제 사람의 얼굴 사진인지 판단해주세요.\n"
                 "반드시 아래 JSON 형식으로만 답변하세요:\n"
                 '{"is_face": true/false, "reason": "간단한 이유"}\n\n'
                 "판단 기준:\n"
-                "- is_face: true → 사람 얼굴이 명확하게 찍힌 사진\n"
-                "- is_face: false → 얼굴이 없거나, 동물, 사물, 풍경 등 다른 사진"
+                "- is_face: true → 실제 사람의 얼굴이 명확하게 찍힌 사진 (셀카, 증명사진 등)\n"
+                "- is_face: false → 아래 중 하나라도 해당되면 false:\n"
+                "  * 만화, 애니메이션, 캐릭터, 일러스트, 그림\n"
+                "  * 인형, 피규어, 조각상, 마네킹\n"
+                "  * 동물, 사물, 풍경, 음식\n"
+                "  * 얼굴이 없거나 확인 불가능한 사진\n"
+                "  * AI 생성 이미지, 합성 이미지"
             )
             messages = [{
                 "role": "user",
@@ -76,13 +81,17 @@ def _validate_face_images(images: list, mode: str) -> dict:
             # 정밀 분석: 좌측/정면/우측 3장 순서 확인
             b64_list = [_encode_image_b64(img) for img in images[:3]]
             prompt = (
-                "3장의 이미지가 피부 분석용 얼굴 사진인지, 그리고 순서가 올바른지 판단해주세요.\n"
+                "3장의 이미지가 피부 분석용 실제 사람의 얼굴 사진인지, 그리고 순서가 올바른지 판단해주세요.\n"
                 "업로드 순서: 첫 번째=정면, 두 번째=좌측, 세 번째=우측\n\n"
                 "반드시 아래 JSON 형식으로만 답변하세요:\n"
                 '{"is_face": true/false, "order_correct": true/false, "reason": "간단한 이유"}\n\n'
                 "판단 기준:\n"
-                "- is_face: true → 3장 모두 사람 얼굴 사진\n"
-                "- is_face: false → 얼굴이 아닌 사진이 1장이라도 있음\n"
+                "- is_face: true → 3장 모두 실제 사람의 얼굴 사진\n"
+                "- is_face: false → 아래 중 하나라도 해당되는 사진이 1장이라도 있으면 false:\n"
+                "  * 만화, 애니메이션, 캐릭터, 일러스트, 그림\n"
+                "  * 인형, 피규어, 조각상, 마네킹\n"
+                "  * 동물, 사물, 풍경, 음식\n"
+                "  * AI 생성 이미지, 합성 이미지\n"
                 "- order_correct: true → 첫번째는 얼굴 정면, 두번째는 얼굴 좌측면, 세번째는 얼굴 우측면\n"
                 "- order_correct: false → 순서가 맞지 않거나 판단 불가\n"
                 "- is_face가 false면 order_correct는 false로 설정"
@@ -113,9 +122,11 @@ def _validate_face_images(images: list, mode: str) -> dict:
             return {
                 "valid": False,
                 "reason": (
-                    "사람 얼굴 사진이 아닌 것 같아요 😊\n\n"
-                    "피부 분석을 위해 얼굴이 잘 보이는 사진으로 다시 올려주세요.\n"
-                    "- 정면을 바라보는 얼굴 사진\n"
+                    "실제 사람의 얼굴 사진이 필요해요 😊\n\n"
+                    "피부 분석은 실제 얼굴 사진으로만 가능합니다.\n"
+                    "캐릭터, 그림, 인형 등은 분석할 수 없어요.\n\n"
+                    "아래 조건에 맞는 사진으로 다시 올려주세요:\n"
+                    "- 실제 사람의 정면 얼굴 사진\n"
                     "- 얼굴 전체가 화면에 나오도록\n"
                     "- 밝은 조명에서 촬영한 사진"
                 )
@@ -141,7 +152,7 @@ def _validate_face_images(images: list, mode: str) -> dict:
         return {"valid": True}
 
 
-# ── 임시 파일 헬퍼 ────────────────────────────────────────────
+# 임시 파일 헬퍼
 
 def _bytes_to_tempfile(image_bytes: bytes, suffix: str = ".jpg") -> str:
     """이미지 bytes를 임시 파일로 저장하고 경로를 반환합니다."""
@@ -175,7 +186,7 @@ def _get_deep_predict():
     return predict_deep
 
 
-# ── 메인 노드 ────────────────────────────────────────────────
+# 메인 노드
 
 def vision_node(state: GraphState) -> GraphState:
     """
@@ -267,54 +278,111 @@ def vision_node(state: GraphState) -> GraphState:
             if len(images) < 1:
                 raise ValueError("성분 분석에는 화장품 성분표 사진 1장이 필요해요.")
 
-            print("[VISION] 성분 분석 시작 (데모 모드)", flush=True)
+            print("[VISION] 성분 분석 시작 (PaddleOCR)", flush=True)
 
-            # ── 데모용: 미리 추출된 전성분 JSON에서 순서대로 반환 ──
-            import json
-            import hashlib
+            from ai.tools.ocr_engine import run_ocr
 
-            demo_dir = os.path.join(
-                os.path.dirname(os.path.abspath(__file__)),
-                "..", "..", "..", "skin_ai", "ingredient_demo"
+            vision_result = run_ocr(images[0])
+
+            if vision_result.get("error"):
+                print(f"[VISION] OCR 오류: {vision_result['error']}", flush=True)
+                return {"vision_result": {
+                    "mode": "error",
+                    "error": vision_result["error"],
+                    "qc": {"status": "fail", "reason": "ocr_failed"}
+                }}
+
+            if not vision_result.get("ingredients"):
+                print("[VISION] OCR 성공했으나 전성분 추출 실패", flush=True)
+                return {"vision_result": {
+                    "mode": "error",
+                    "error": "전성분을 찾지 못했어요. 전성분이 잘 보이도록 다시 촬영해주세요.",
+                    "qc": {"status": "fail", "reason": "no_ingredients"}
+                }}
+
+            print(
+                f"[VISION] OCR 완료: {vision_result['ingredient_count']}개 성분 추출"
+                f" | 제품명='{vision_result.get('product_name', '')}'",
+                flush=True,
             )
-            demo_json_path = os.path.join(demo_dir, "demo_products.json")
 
-            if os.path.exists(demo_json_path):
-                with open(demo_json_path, "r", encoding="utf-8") as f:
-                    demo_products = json.load(f)
+        elif analysis_type == "personal":
+            if len(images) < 1:
+                raise ValueError("퍼스널컬러 분석에는 얼굴 사진 1장이 필요해요.")
 
-                # 카운터 파일로 순서 추적 (1번째 호출→0, 2번째→1, 3번째→2, 다시→0)
-                counter_path = os.path.join(demo_dir, ".demo_counter")
-                try:
-                    with open(counter_path, "r") as f:
-                        idx = int(f.read().strip()) % len(demo_products)
-                except (FileNotFoundError, ValueError):
-                    idx = 0
+            # 얼굴 검증 (기존 빠른 분석과 동일)
+            print("[VISION QC] 퍼스널컬러 얼굴 검증 중...", flush=True)
+            qc = _validate_face_images(images, mode="quick")
+            if not qc["valid"]:
+                print(f"[VISION QC] 검증 실패 → 분석 중단", flush=True)
+                return {"vision_result": {
+                    "mode": "error",
+                    "error": qc["reason"],
+                    "qc": {"status": "fail", "reason": "invalid_image"}
+                }}
 
-                # 다음 호출을 위해 카운터 증가
-                with open(counter_path, "w") as f:
-                    f.write(str(idx + 1))
+            print("[VISION] 퍼스널컬러 분석 시작 (GPT 이미지 분석)", flush=True)
 
-                product = demo_products[idx]
-                print(
-                    f"[VISION] 데모 제품 매칭: [{idx}] {product['product_name']} "
-                    f"({len(product['ingredients'])}개 성분)",
-                    flush=True,
+            # GPT에게 이미지를 보여주고 8개 키워드 점수 산출
+            from openai import OpenAI as _OpenAI
+            from ai.config.settings import OPENAI_API_KEY as _API_KEY
+            from ai.llm.prompts.personal_color import SCORING_PROMPT, determine_type, TRADITIONAL_KEYWORDS
+            import json as _json
+
+            _client = _OpenAI(api_key=_API_KEY)
+            b64 = _encode_image_b64(images[0])
+
+            _scoring_messages = [{
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": SCORING_PROMPT},
+                    {"type": "image_url", "image_url": {
+                        "url": f"data:image/jpeg;base64,{b64}",
+                        "detail": "high"
+                    }},
+                ]
+            }]
+
+            # 최대 2회 시도 (점수 합이 0이면 재시도)
+            raw_scores = None
+            for attempt in range(2):
+                resp = _client.chat.completions.create(
+                    model="gpt-4o",
+                    messages=_scoring_messages,
+                    max_tokens=300,
+                    temperature=0.5,
+                    response_format={"type": "json_object"},
                 )
+                raw_content = resp.choices[0].message.content
+                print(f"[VISION] GPT 원본 응답 (시도 {attempt+1}): {raw_content}", flush=True)
 
-                vision_result = {
-                    "mode": "ingredient",
-                    "product_name": product.get("product_name", ""),
-                    "brand": product.get("brand", ""),
-                    "ingredients": product.get("ingredients", []),
-                    "ingredient_count": len(product.get("ingredients", [])),
-                    "source": "demo",
-                }
-            else:
-                print(f"[VISION] 데모 JSON 없음: {demo_json_path}", flush=True)
-                raise FileNotFoundError(
-                    "성분 분석 모델을 사용할 수 없어요. 관리자에게 문의해주세요."
-                )
+                parsed = _json.loads(raw_content)
+                # 새 형식: {"analysis": "...", "scores": {...}} 또는 기존 형식: {"봄 라이트": 0, ...}
+                if "scores" in parsed:
+                    raw_scores = parsed["scores"]
+                    analysis_text = parsed.get("analysis", "")
+                    if analysis_text:
+                        print(f"[VISION] GPT 분석: {analysis_text}", flush=True)
+                else:
+                    raw_scores = parsed
+
+                # 점수 합 검증
+                total = sum(raw_scores.get(k, 0) for k in TRADITIONAL_KEYWORDS)
+                if total >= 90:  # 100이어야 하지만 약간의 오차 허용
+                    break
+                print(f"[VISION] 점수 합계 {total} → 재시도", flush=True)
+
+            print(f"[VISION] 퍼스널컬러 점수: {raw_scores}", flush=True)
+
+            # 14타입 중 확정
+            type_result = determine_type(raw_scores)
+            print(f"[VISION] 확정 타입: {type_result['name']} ({type_result['type_key']})", flush=True)
+
+            vision_result = {
+                "mode": "personal_color",
+                "scores": raw_scores,
+                "type_result": type_result,
+            }
 
         else:
             raise ValueError(f"알 수 없는 analysis_type: {analysis_type}")

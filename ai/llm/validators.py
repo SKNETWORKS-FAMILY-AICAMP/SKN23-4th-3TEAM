@@ -34,6 +34,21 @@ _FALLBACK_ANSWER = (
     "증상이 심하다면 피부과 상담을 권장해요."
 )
 
+import re
+
+# 영문 스네이크케이스 변수명 패턴 (3글자 이상 + 언더스코어 포함)
+_INTERNAL_NAME_RE = re.compile(r'[a-z][a-z0-9]*(?:_[a-z0-9]+){1,}')
+
+def _strip_internal_names(text: str) -> str:
+    """chat_answer에서 내부 변수명(스네이크케이스)이 포함된 줄을 제거한다."""
+    lines = text.split("\n")
+    cleaned = []
+    for line in lines:
+        if _INTERNAL_NAME_RE.search(line):
+            continue
+        cleaned.append(line)
+    return "\n".join(cleaned)
+
 
 def _normalize(raw: Dict[str, Any]) -> Dict[str, Any]:
     if not isinstance(raw, dict):
@@ -41,6 +56,7 @@ def _normalize(raw: Dict[str, Any]) -> Dict[str, Any]:
 
     # 상위 필드 기본값
     raw["chat_answer"] = _s(raw.get("chat_answer")) or _FALLBACK_ANSWER
+    raw["chat_answer"] = _strip_internal_names(raw["chat_answer"])
     raw["summary"] = _s(raw.get("summary")) or "요청을 바탕으로 안내드립니다."
     raw["intent"] = _s(raw.get("intent"))
     raw["room_title"] = raw.get("room_title")

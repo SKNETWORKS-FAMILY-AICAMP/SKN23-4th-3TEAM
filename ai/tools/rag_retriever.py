@@ -31,7 +31,7 @@ except ImportError:
     SKIN_TYPE_RULES = CONCERN_TAG_RULES = INGREDIENT_TAG_RULES = {}
 
 
-# ── 임베딩 함수 싱글톤 (모듈 import 시 1회만 생성) ─────────────
+# 임베딩 함수 싱글톤 (모듈 import 시 1회만 생성)
 print("[RAG] 임베딩 모델 초기화 중...", flush=True)
 _t0 = time.perf_counter()
 _embed_fn = embedding_functions.SentenceTransformerEmbeddingFunction(
@@ -57,7 +57,7 @@ def _embed_cached(text: str):
     return _embed_fn([text])[0]
 
 
-# ── where 필터 생성 ───────────────────────────────────────────
+# where 필터 생성
 def _build_where(intent: str, query: str, user_profile: dict | None) -> dict | None:
     """
     intent + 프로필 기반 ChromaDB where 필터 생성.
@@ -170,7 +170,7 @@ def _to_passages(res: dict) -> list:
     return passages
 
 
-# ── 메인 검색 함수 ────────────────────────────────────────────
+# 메인 검색 함수
 def search(
     query: str,
     intent: str,

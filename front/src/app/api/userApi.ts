@@ -10,7 +10,8 @@
  * ─────────────────────────────────────────────────────────────
  */
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
+// const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
+const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "/api";
 
 function getToken(): string {
     const token = localStorage.getItem("access_token");
@@ -26,15 +27,14 @@ function getToken(): string {
 
 export interface UserResponse {
     user_id           : number;
+    is_admin          : boolean;
     email             : string;
-    name              : string;
     nickname          : string;
     age               : number | null;
     gender            : "male" | "female" | null;
     skin_type         : number | null;
     skin_concern      : string | null;
     profile_image_url : string | null;
-    is_active         : boolean;
     created_at        : string;
 }
 export interface UserUpdateBody {
@@ -144,4 +144,43 @@ export async function fetchKeywords(type?: string): Promise<KeywordItem[]> {
     }
 
     return res.json() as Promise<KeywordItem[]>;
+}
+
+/**
+ * 닉네임 중복 확인. (인증 불필요)
+ * 
+ * GET /users/check/nickname?nickname={nickname}
+ *
+ * @param nickname  중복 확인할 닉네임
+ */
+export async function checkNickname(nickname: string): Promise<{ available: boolean }> {
+    const res = await fetch(
+        `${API_BASE}/users/check/nickname?nickname=${encodeURIComponent(nickname)}`
+    );
+
+    if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error((data as { detail?: string }).detail ?? `서버 오류 (${res.status})`);
+    }
+
+    return res.json() as Promise<{ available: boolean }>;
+}
+
+/**
+ * 회원 탈퇴
+ *
+ * DELETE /users/me
+ */
+export async function deleteCurrentUser(): Promise<void> {
+    const res = await fetch(`${API_BASE}/users/me`, {
+        method: "DELETE",
+        headers: {
+            Authorization: `Bearer ${getToken()}`,
+        },
+    });
+
+    if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error((data as { detail?: string }).detail ?? `서버 오류 (${res.status})`);
+    }
 }

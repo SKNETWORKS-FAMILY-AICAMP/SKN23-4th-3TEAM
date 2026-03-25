@@ -15,6 +15,12 @@ from ai.orchestrator.graph import run
 from fastapi import APIRouter, HTTPException, Depends
 from db.schemas import (ChatRoomCreate, ChatRoomResponse, MessageCreate, MessageResponse)
 
+# 페르소나 로딩 문구
+import json
+import random
+import openpyxl
+from fastapi.responses import StreamingResponse
+
 """
 chat_router.py
 ─────────────────────────────────────────────────────────────
@@ -30,6 +36,21 @@ chat_router.py
 """
 
 router = APIRouter(prefix="/chats", tags=["Chat"])
+
+# ─────────────────────────────────────────────
+# 페르소나 문구 로드 (서버 시작 시 1회만 실행)
+# ─────────────────────────────────────────────
+
+def _load_persona_messages():
+    _BASE = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    wb = openpyxl.load_workbook(os.path.join(_BASE, "assets", "ongle_contents_with_emoji.xlsx"))
+    return {
+        "loading"  : [row[1] for row in wb["로딩멘트"].iter_rows(min_row=2, values_only=True)],
+        "tips"     : [row[1] for row in wb["피부정보꿀팁"].iter_rows(min_row=2, values_only=True)],
+        "positive" : [row[1] for row in wb["긍정메시지"].iter_rows(min_row=2, values_only=True)],
+    }
+
+PERSONA_MESSAGES = _load_persona_messages()
 
 # ─────────────────────────────────────────────
 # 내부 헬퍼
@@ -50,8 +71,8 @@ def _msg_to_response(msg) -> MessageResponse:
         role         = msg.role,
         model_type   = msg.model_type,
         content      = msg.content,
-        image_url    = msg.image_url,
         created_at   = msg.created_at,
+        image_url    = msg.image_urls,
     )
 
 # ─────────────────────────────────────────────
@@ -65,6 +86,7 @@ def _run_ai(
     user_id: int,
     chat_history: list[dict],
     is_first_message: bool,
+    step_callback=None,
 ) -> str:
     """
     LangGraph 파이프라인 호출.
@@ -86,13 +108,20 @@ def _run_ai(
         "simple":     "quick",
         "detailed":   "detailed",
         "ingredient": "ingredient",
+        "personal":   "personal",
     }
     analysis_type = _type_map.get(model_type)
+
+    # 단계별 콜백 호출
+    if step_callback:
+        step_callback("🔍 피부 고민을 분석하고 있어요...")
 
     # S3 URL → bytes 변환 (이미지가 있는 경우)
     image_bytes: list[bytes] = []
 
-    if image_urls and analysis_type in ("quick", "detailed", "ingredient"):
+    if image_urls and analysis_type in ("quick", "detailed", "ingredient", "personal"):
+        if step_callback:
+            step_callback("📸 업로드된 이미지를 확인하고 있어요...")
         for url in image_urls:
             try:
                 resp = _requests.get(url, timeout=10)
@@ -100,6 +129,16 @@ def _run_ai(
                 image_bytes.append(resp.content)
             except Exception as e:
                 print(f"[chat_router] 이미지 다운로드 실패: {url} → {repr(e)}", flush=True)
+
+    if step_callback:
+        if analysis_type in ("quick", "detailed"):
+            step_callback("🔬 AI가 피부 상태를 분석하고 있어요...")
+        elif analysis_type == "ingredient":
+            step_callback("🏷️ 전성분을 추출하고 있어요...")
+        elif analysis_type == "personal":
+            step_callback("🎨 퍼스널컬러를 분석하고 있어요...")
+        else:
+            step_callback("📚 23만 건의 피부 데이터에서 근거를 찾고 있어요...")
 
     report = run(
         user_text=user_text,
@@ -114,7 +153,7 @@ def _run_ai(
     # chat_answer 추출
     return report.get("chat_answer") or "답변을 생성하지 못했어요. 다시 시도해주세요."
 
-def _run_ai_guest(user_text: str, chat_history: list | None = None) -> str:
+def _run_ai_guest(user_text: str, chat_history: list | None = None, step_callback=None) -> str:
     """
     비로그인 게스트 AI 응답 (이미지·DB 저장 없음).
     chat_history: 프론트에서 전달한 이전 대화 내역 (임시 프로필 추출용)
@@ -127,7 +166,14 @@ def _run_ai_guest(user_text: str, chat_history: list | None = None) -> str:
 
     # from ai.orchestrator.graph import run     # ? 위에 이미 선언 되어있는데?
 
+    if step_callback:
+        step_callback("🔍 피부 고민을 분석하고 있어요...")
+
     history = chat_history or []
+
+    if step_callback:
+        step_callback("📚 23만 건의 피부 데이터에서 근거를 찾고 있어요...")
+
     report = run(
         user_text=user_text,
         images=[],
@@ -218,6 +264,33 @@ def guest_message(body: GuestMessageRequest):
 # 메시지
 # ─────────────────────────────────────────────
 
+@router.get("/analysis/check-limit/{model_type}")
+def check_analysis_limit(
+    model_type: str,
+    user_id: int = Depends(get_current_user_id),
+):
+    available, message = chat_service.check_today_image_analysis_limit(user_id, model_type)
+    limit_count = chat_service.get_daily_image_limit(model_type)
+
+    if limit_count is None:
+        return {
+            "available": True,
+            "message": "",
+            "limit_count": None,
+            "used_count": 0,
+            "remaining_count": None,
+        }
+
+    used_count = chat_service.count_today_image_analysis_usage(user_id, model_type)
+
+    return {
+        "available": available,
+        "message": message,
+        "limit_count": limit_count,
+        "used_count": used_count,
+        "remaining_count": max(0, limit_count - used_count),
+    }
+
 @router.post("/{chat_room_id}/messages", response_model=list[MessageResponse], status_code=201)
 def send_message(
     chat_room_id : int,
@@ -254,7 +327,13 @@ def send_message(
     if room.user_id != user_id:
         raise HTTPException(status_code=403, detail="접근 권한이 없습니다.")
 
-    # 2. 사용자 메시지 DB 저장
+    # 2. 이미지 분석 일일 제한 체크
+    # if body.model_type in ("simple", "detailed", "ingredient", "personal") and body.image_url:
+    #     available, message = chat_service.check_today_image_analysis_limit(user_id, body.model_type)
+    #     if not available:
+    #         raise HTTPException(status_code=400, detail=message)
+
+    # 3. 사용자 메시지 DB 저장
     try:
         user_msg = chat_service.save_message(body)
     except ValueError as e:
@@ -333,3 +412,190 @@ def get_messages(
         messages = chat_service.get_messages_by_room(chat_room_id)
 
     return [_msg_to_response(m) for m in messages]
+
+# ─────────────────────────────────────────────
+# 비로그인 게스트 채팅 SSE (페르소나 포함)
+# ─────────────────────────────────────────────
+
+@router.post("/guest/message/stream")
+async def guest_message_stream(body: GuestMessageRequest):
+    """
+    비로그인 사용자 SSE 채팅.
+    인증 불필요, DB 저장 없음.
+    로딩 중 페르소나 문구 전송.
+    """
+    async def event_generator():
+        import queue, threading
+
+        step_queue = queue.Queue()
+
+        def step_callback(msg: str):
+            step_queue.put(msg)
+
+        # ── 로딩 시작 신호 + 페르소나 문구 전송 ──
+        yield f"data: {json.dumps({'type': 'loading', 'message': random.choice(PERSONA_MESSAGES['loading'])}, ensure_ascii=False)}\n\n"
+
+        result_holder = {"text": None, "error": None}
+
+        def run_ai_thread():
+            try:
+                result_holder["text"] = _run_ai_guest(body.content, chat_history=body.chat_history, step_callback=step_callback)
+            except Exception as e:
+                result_holder["error"] = e
+            finally:
+                step_queue.put(None)
+
+        thread = threading.Thread(target=run_ai_thread, daemon=True)
+        thread.start()
+
+        import asyncio
+        while True:
+            try:
+                msg = step_queue.get(timeout=0.3)
+                if msg is None:
+                    break
+                yield f"data: {json.dumps({'type': 'loading', 'message': msg}, ensure_ascii=False)}\n\n"
+            except queue.Empty:
+                await asyncio.sleep(0.1)
+
+        thread.join(timeout=60)
+
+        try:
+            if result_holder["error"]:
+                raise result_holder["error"]
+
+            # ── 완료 신호 + AI 답변 전송 ──
+            yield f"data: {json.dumps({'type': 'done', 'content': result_holder['text']}, ensure_ascii=False)}\n\n"
+
+        except Exception as e:
+            print(f"[guest_stream ERROR] {repr(e)}", flush=True)
+            yield f"data: {json.dumps({'type': 'error', 'message': '잠시 후 다시 시도해주세요.'}, ensure_ascii=False)}\n\n"
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control"    : "no-cache",
+            "X-Accel-Buffering": "no",
+        }
+    )
+
+# ─────────────────────────────────────────────
+# 메시지 전송 (SSE 스트리밍 - 로딩 페르소나 포함)
+# ─────────────────────────────────────────────
+
+@router.post("/{chat_room_id}/messages/stream")
+async def send_message_stream(
+    chat_room_id : int,
+    body         : MessageCreate,
+    user_id      : int = Depends(get_current_user_id),
+):
+    # 1. 채팅방 소유권 확인
+    room = chat_service.get_chat_room_by_id(chat_room_id)
+    if not room:
+        raise HTTPException(status_code=404, detail="채팅방을 찾을 수 없습니다.")
+    if room.user_id != user_id:
+        raise HTTPException(status_code=403, detail="접근 권한이 없습니다.")
+
+    # 2. 이미지 분석 일일 제한 체크
+    # if body.model_type in ("simple", "detailed", "ingredient", "personal") and body.image_url:
+    #     available, message = chat_service.check_today_image_analysis_limit(user_id, body.model_type)
+
+    #     if not available:
+    #         raise HTTPException(status_code=400, detail=message)
+    
+    # 3. 사용자 메시지 DB 저장
+    try:
+        user_msg = chat_service.save_message(body)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    # 3. 첫 메시지 제목 설정
+    is_first = not room.title
+    if is_first and body.content:
+        title = body.content[:30] + ("..." if len(body.content) > 30 else "")
+        chat_service.update_chat_room_title(chat_room_id, title)
+
+    # 4. 히스토리 조회
+    history_msgs = chat_service.get_messages_by_room(chat_room_id)
+    chat_history = [
+        {"role": m.role, "content": m.content or ""}
+        for m in history_msgs[:-1]
+        if m.role in ("user", "assistant") and m.content
+    ]
+
+    async def event_generator():
+        import queue, threading
+
+        step_queue = queue.Queue()
+
+        def step_callback(msg: str):
+            step_queue.put(msg)
+
+        # ── 로딩 시작 신호 + 페르소나 문구 전송 ──
+        yield f"data: {json.dumps({'type': 'loading', 'message': random.choice(PERSONA_MESSAGES['loading'])}, ensure_ascii=False)}\n\n"
+
+        # AI 파이프라인을 별도 스레드에서 실행
+        result_holder = {"text": None, "error": None}
+
+        def run_ai_thread():
+            try:
+                result_holder["text"] = _run_ai(
+                    user_text        = body.content or "",
+                    image_urls       = body.image_url or [],
+                    model_type       = body.model_type,
+                    user_id          = user_id,
+                    chat_history     = chat_history,
+                    is_first_message = is_first,
+                    step_callback    = step_callback,
+                )
+            except Exception as e:
+                result_holder["error"] = e
+            finally:
+                step_queue.put(None)  # 종료 신호
+
+        thread = threading.Thread(target=run_ai_thread, daemon=True)
+        thread.start()
+
+        # 단계별 메시지를 SSE로 전송
+        import asyncio
+        while True:
+            try:
+                msg = step_queue.get(timeout=0.3)
+                if msg is None:
+                    break
+                yield f"data: {json.dumps({'type': 'loading', 'message': msg}, ensure_ascii=False)}\n\n"
+            except queue.Empty:
+                await asyncio.sleep(0.1)
+
+        thread.join(timeout=60)
+
+        try:
+            if result_holder["error"]:
+                raise result_holder["error"]
+
+            ai_text = result_holder["text"]
+
+            # AI 응답 DB 저장
+            ai_msg = chat_service.save_message(MessageCreate(
+                chat_room_id = chat_room_id,
+                role         = "assistant",
+                model_type   = body.model_type,
+                content      = ai_text,
+            ))
+
+            # ── 완료 신호 + AI 답변 전송 ──
+            yield f"data: {json.dumps({'type': 'done', 'content': ai_text}, ensure_ascii=False)}\n\n"
+
+        except Exception as e:
+            print(f"[stream ERROR] {repr(e)}", flush=True)
+            yield f"data: {json.dumps({'type': 'error', 'message': '잠시 후 다시 시도해주세요.'}, ensure_ascii=False)}\n\n"
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control"    : "no-cache",
+            "X-Accel-Buffering": "no",
+        }
+    )

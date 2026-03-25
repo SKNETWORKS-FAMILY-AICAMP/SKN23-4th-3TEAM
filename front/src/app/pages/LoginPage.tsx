@@ -6,7 +6,7 @@ import { Input } from "@/app/components/ui/input";
 import { Button } from "@/app/components/ui/button";
 import { login, startSocialLogin } from "@/app/api/authApi";
 import LogoIdle from "@/assets/animations/logo_idle_1.webm";
-
+import { fetchCurrentUser } from "@/app/api/userApi";
 export function LoginPage() {
     const navigate = useNavigate();
     const [email, setEmail]                 = useState("");
@@ -35,7 +35,10 @@ export function LoginPage() {
         try {
             await login(email, password);
 
-            navigate("/chat", { replace: true });
+            const me = await fetchCurrentUser();
+            localStorage.setItem("user_id", String(me.user_id));
+
+            navigate("/chat");
         } catch (err) {
             setError(err instanceof Error ? err.message : "로그인에 실패했습니다.");
         } finally {
@@ -134,7 +137,7 @@ export function LoginPage() {
                         </button>
 
                         {/* 카카오 로그인 */}
-                        {/* <button
+                        <button
                             type="button"
                             onClick={() => startSocialLogin("kakao")}
                             aria-label="카카오로 로그인"
@@ -148,7 +151,7 @@ export function LoginPage() {
                                     fillOpacity="0.85"
                                 />
                             </svg>
-                        </button> */}
+                        </button>
 
                         {/* 네이버 로그인 */}
                         <button
@@ -162,16 +165,14 @@ export function LoginPage() {
                                 <path d="M16.273 12.845 7.376 0H0v24h7.727V11.155L16.624 24H24V0h-7.727z" fill="#ffffff" />
                             </svg>
                         </button>
+                        
                     </div>
+                    <p className="mt-4 text-xxs text-gray-500 text-center leading-relaxed">
+                        소셜 로그인 시 <Link to="/terms" className="underline">이용약관</Link> 및{" "}<Link to="/privacy" className="underline">개인정보처리방침</Link>에 동의한 것으로 간주됩니다.
+                </p>
                 </div>
 
-                {/* <p className="text-center text-xs text-gray-400 mt-5 leading-relaxed">
-                    로그인함으로써{" "}
-                    <span className="underline cursor-pointer hover:text-onyou">이용약관</span>
-                    {" "}및{" "}
-                    <span className="underline cursor-pointer hover:text-onyou">개인정보 처리방침</span>
-                    에 동의합니다.
-                </p> */}
+
             </motion.div>
         </div>
     );

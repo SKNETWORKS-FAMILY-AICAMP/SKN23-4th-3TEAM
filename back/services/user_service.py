@@ -1,9 +1,85 @@
 
+import json
+import random
+
+from pathlib import Path
 from db.models import User
 from typing import Optional
 from datetime import datetime
 from db.schemas import UserCreate, UserUpdate
-from db.db_manager import execute_one, execute_write
+from db.db_manager import execute_one, execute_write, execute_query
+
+# ─────────────────────────────────────────────
+# 프로필 이미지 헬퍼 (images + entity_images)
+# ─────────────────────────────────────────────
+
+def _get_profile_image_url(user_id: int) -> Optional[str]:
+    """
+    user_id에 연결된 프로필 이미지 URL 조회.
+    entity_type='profile' 기준으로 가장 최근 1개 반환.
+    """
+    row = execute_one(
+        """
+        SELECT i.image_url
+        FROM images i
+        JOIN entity_images ei ON i.image_id = ei.image_id
+        WHERE ei.entity_type = 'profile' AND ei.entity_id = %s
+        ORDER BY ei.entity_image_id DESC
+        LIMIT 1
+        """,
+        (user_id,)
+    )
+    return row["image_url"] if row else None
+
+def _upsert_profile_image(user_id: int, image_url: str) -> None:
+    """
+    프로필 이미지를 저장하거나 교체.
+    - images 테이블에 URL 중복 저장 방지 (기존 URL이면 재사용)
+    - entity_images에서 해당 user의 기존 매핑은 삭제 후 새 매핑 삽입 (1:1 유지)
+    """
+    # 1. images 테이블에서 URL 조회 또는 신규 삽입
+    existing = execute_one(
+        "SELECT image_id FROM images WHERE image_url = %s LIMIT 1",
+        (image_url,)
+    )
+    image_id = existing["image_id"] if existing else execute_write(
+        "INSERT INTO images (image_url) VALUES (%s)",
+        (image_url,)
+    )
+
+    # 2. 기존 프로필 매핑 삭제 (user당 프로필 이미지 1개 유지)
+    execute_write(
+        "DELETE FROM entity_images WHERE entity_type = 'profile' AND entity_id = %s",
+        (user_id,)
+    )
+
+    # 3. 새 매핑 삽입
+    execute_write(
+        "INSERT INTO entity_images (image_id, entity_type, entity_id) VALUES (%s, 'profile', %s)",
+        (image_id, user_id)
+    )
+
+_nicknames: list[str] = []
+
+def _load_nicknames() -> list[str]:
+    global _nicknames
+    if not _nicknames:
+        path = Path(__file__).parent.parent / "assets" / "nicknames.json"
+        _nicknames = json.loads(path.read_text(encoding="utf-8"))
+    return _nicknames
+
+def generate_random_nickname() -> str:
+    """
+    중복되지 않는 랜덤 닉네임 생성.
+    - assets/nicknames.json의 이름 뒤에 4자리 랜덤 숫자를 붙임
+    - 중복 시 숫자를 바꿔 최대 10회 재시도
+    """
+    names = _load_nicknames()
+    for _ in range(10):
+        nickname = f"{random.choice(names)}_{random.randint(1000, 9999)}"
+        if not is_nickname_taken(nickname):
+            return nickname
+    raise ValueError("사용 가능한 닉네임을 생성하지 못했습니다. 잠시 후 다시 시도해주세요.")
 
 """
 user_service.py
@@ -35,7 +111,7 @@ def is_email_taken(email: str) -> bool:
     """
     row = execute_one(
         "SELECT user_id FROM users WHERE email = %s AND deleted_at IS NULL",
-        (email)
+        (email,)
     )
 
     return row is not None
@@ -72,7 +148,6 @@ def create_user(data: UserCreate) -> User:
     사용 예시:
         user = create_user(UserCreate(
             email          = "test@test.com",
-            name           = "홍길동",
             nickname       = "길동이",
             terms_agreed   = True,
             privacy_agreed = True,
@@ -83,13 +158,18 @@ def create_user(data: UserCreate) -> User:
 
     user_id = execute_write(
         """
-        INSERT INTO users (email, name, nickname, terms_agreed, privacy_agreed)
-        VALUES (%s, %s, %s, %s, %s)
+        INSERT INTO users (email, nickname, terms_agreed, privacy_agreed)
+        VALUES (%s, %s, %s, %s)
         """,
-        (data.email, data.name, data.nickname, data.terms_agreed, data.privacy_agreed)
+        (data.email, data.nickname, data.terms_agreed, data.privacy_agreed)
     )
 
-    return get_user_by_id(user_id)
+    user = get_user_by_id(user_id) or get_user_by_email(data.email)
+
+    if not user:
+        raise RuntimeError("회원 생성 후 사용자 조회에 실패했습니다.")
+
+    return user
 
 
 # ─────────────────────────────────────────────
@@ -106,10 +186,16 @@ def get_user_by_id(user_id: int) -> Optional[User]:
     """
     row = execute_one(
         "SELECT * FROM users WHERE user_id = %s AND deleted_at IS NULL",
-        (user_id)
+        (user_id,)
     )
 
-    return User.from_dict(row) if row else None
+    if not row:
+        return None
+
+    user = User.from_dict(row)
+    user.profile_image_url = _get_profile_image_url(user_id)
+
+    return user
 
 
 def get_user_by_email(email: str) -> Optional[User]:
@@ -122,10 +208,16 @@ def get_user_by_email(email: str) -> Optional[User]:
     """
     row = execute_one(
         "SELECT * FROM users WHERE email = %s AND deleted_at IS NULL",
-        (email)
+        (email,)
     )
 
-    return User.from_dict(row) if row else None
+    if not row:
+        return None
+
+    user = User.from_dict(row)
+    user.profile_image_url = _get_profile_image_url(user.user_id)
+
+    return user
 
 
 # ─────────────────────────────────────────────
@@ -137,24 +229,60 @@ def update_user(user_id: int, data: UserUpdate) -> User:
     사용자 프로필 수정.
     - 변경할 필드만 골라서 UPDATE (None인 필드는 건너뜀)
     - 닉네임 변경 시 중복 확인 포함
-
-    사용 예시:
-        updated = update_user(1, UserUpdate(nickname="새닉네임", age=25))
+    - nickname이 빈 문자열이면 랜덤 닉네임 자동 생성
+    - profile_image_url은 users 테이블이 아닌 images + entity_images에 저장
     """
-    fields = {k: v for k, v in data.model_dump().items() if v is not None}
+    raw = data.model_dump()
 
-    if not fields:
-        raise ValueError("수정할 내용이 없습니다.")
+    # profile_image_url은 users 테이블 컬럼이 아니라 별도 처리
+    profile_image_url = raw.pop("profile_image_url", None)
 
-    set_clause = ", ".join([f"{key} = %s" for key in fields])
-    values = tuple(fields.values()) + (user_id,)
+    # 현재 사용자 조회
+    current_user = get_user_by_id(user_id)
+    if not current_user:
+        raise ValueError("사용자를 찾을 수 없습니다.")
 
-    execute_write(
-        f"UPDATE users SET {set_clause} WHERE user_id = %s AND deleted_at IS NULL",
-        values
-    )
+    # nickname 처리
+    if "nickname" in raw and raw["nickname"] is not None:
+        nickname = str(raw["nickname"]).strip()
 
-    return get_user_by_id(user_id)
+        # 비워서 저장하면 랜덤 닉네임 자동 생성
+        if not nickname:
+            raw["nickname"] = generate_random_nickname()
+        else:
+            # 기존 닉네임과 다를 때만 중복 체크
+            if nickname != (current_user.nickname or "").strip() and is_nickname_taken(nickname):
+                raise ValueError("이미 사용 중인 닉네임입니다.")
+            raw["nickname"] = nickname
+
+    # None 값은 제외
+    fields = {k: v for k, v in raw.items() if v is not None}
+
+    # users 테이블 업데이트
+    if fields:
+        set_clause = ", ".join([f"{key} = %s" for key in fields.keys()])
+        values = list(fields.values()) + [user_id]
+
+        execute_write(
+            f"""
+            UPDATE users
+            SET {set_clause}
+            WHERE user_id = %s AND deleted_at IS NULL
+            """,
+            tuple(values)
+        )
+
+    # 프로필 이미지 별도 처리
+    if profile_image_url is not None:
+        cleaned_url = str(profile_image_url).strip()
+        if cleaned_url:
+            _upsert_profile_image(user_id, cleaned_url.split("?")[0])
+
+    updated_user = get_user_by_id(user_id)
+    if not updated_user:
+        raise RuntimeError("프로필 수정 후 사용자 조회에 실패했습니다.")
+
+    return updated_user
 
 
 # ─────────────────────────────────────────────
@@ -164,19 +292,122 @@ def update_user(user_id: int, data: UserUpdate) -> User:
 def delete_user(user_id: int) -> bool:
     """
     회원 탈퇴 처리 (soft delete).
-    - deleted_at에 현재 시각 기록, is_active = FALSE 처리
-    - 실제 데이터는 삭제하지 않음 (복구 가능)
-
-    사용 예시:
-        success = delete_user(1)
+    - deleted_at에 현재 시각만 기록
+    - email / nickname 변조 없음 (10일 이내 복구 가능하도록)
+    - auth_providers 유지 (복구 시 로그인 수단 그대로 사용)
+    - 실제 하드 삭제는 스케줄러(cleanup_scheduler.py)에서 처리
     """
     affected = execute_write(
-        """
-        UPDATE users
-        SET deleted_at = %s, is_active = FALSE
-        WHERE user_id = %s AND deleted_at IS NULL
-        """,
+        "UPDATE users SET deleted_at = %s WHERE user_id = %s AND deleted_at IS NULL",
         (datetime.now(), user_id)
     )
+    return affected > 0
+
+def get_user_including_deleted(email: str) -> Optional[User]:
+    """
+    탈퇴 예정 계정 포함 이메일로 사용자 조회.
+    - auth_service.login_local() 전용
+    - 일반 조회에서는 절대 사용 금지 (deleted_at 조건 없음)
+    """
+    row = execute_one(
+        "SELECT * FROM users WHERE email = %s",
+        (email,)
+    )
+    if not row:
+        return None
+
+    user = User.from_dict(row)
+    user.profile_image_url = _get_profile_image_url(user.user_id)
+
+    return user
+
+
+def restore_user(user_id: int) -> bool:
+    """
+    탈퇴 예정 사용자 복구.
+    - deleted_at을 NULL로 초기화
+    - auth_service에서 로그인 성공 시 자동 호출
+
+    사용 예시:
+        restore_user(1)
+    """
+    affected = execute_write(
+        "UPDATE users SET deleted_at = NULL WHERE user_id = %s AND deleted_at IS NOT NULL",
+        (user_id,)
+    )
+    return affected > 0
+
+
+def hard_delete_user(user_id: int) -> bool:
+    """
+    사용자 데이터 완전 삭제 (cleanup_scheduler.py 전용).
+    순서:
+        1. 해당 유저의 모든 S3 이미지 URL 수집
+        2. S3에서 이미지 파일 삭제
+        3. users 하드 DELETE
+            → CASCADE로 아래 테이블 자동 삭제:
+                auth_providers / chat_rooms / chat_messages
+                skin_analysis_results / wishlist / user_test_results / entity_images
+        4. 고아 images 행 정리
+    """
+    import boto3
+    import logging
+
+    logger = logging.getLogger(__name__)
+
+    # 1. 해당 유저의 모든 이미지 URL 수집 (entity_type별로 정확히 조인)
+    rows = execute_query(
+        """
+        SELECT i.image_id, i.image_url
+        FROM images i
+        JOIN entity_images ei ON i.image_id = ei.image_id
+        WHERE
+            (ei.entity_type = 'profile' AND ei.entity_id = %s)
+            OR (ei.entity_type = 'message' AND ei.entity_id IN (
+                SELECT cm.message_id
+                FROM chat_messages cm
+                JOIN chat_rooms cr ON cm.chat_room_id = cr.chat_room_id
+                WHERE cr.user_id = %s
+            ))
+            OR (ei.entity_type = 'analysis' AND ei.entity_id IN (
+                SELECT analysis_id FROM skin_analysis_results WHERE user_id = %s
+            ))
+        GROUP BY i.image_id, i.image_url
+        """,
+        (user_id, user_id, user_id)
+    )
+
+    # 2. S3 이미지 삭제
+    if rows:
+        try:
+            s3     = boto3.client("s3")
+            bucket = os.getenv("S3_BUCKET_NAME", "")
+            for row in rows:
+                try:
+                    key = row["image_url"].split(".amazonaws.com/")[-1]
+                    s3.delete_object(Bucket=bucket, Key=key)
+                except Exception as e:
+                    logger.warning(f"[hard_delete] S3 삭제 실패 image_id={row['image_id']}: {e}")
+        except Exception as e:
+            logger.warning(f"[hard_delete] S3 클라이언트 오류: {e}")
+
+    # 3. users 하드 DELETE (CASCADE로 연관 데이터 자동 삭제)
+    affected = execute_write(
+        "DELETE FROM users WHERE user_id = %s",
+        (user_id,)
+    )
+
+    # 4. 고아 images 행 정리
+    if rows:
+        image_ids    = [row["image_id"] for row in rows]
+        placeholders = ", ".join(["%s"] * len(image_ids))
+        execute_write(
+            f"""
+            DELETE FROM images
+            WHERE image_id IN ({placeholders})
+                AND image_id NOT IN (SELECT image_id FROM entity_images)
+            """,
+            tuple(image_ids)
+        )
 
     return affected > 0

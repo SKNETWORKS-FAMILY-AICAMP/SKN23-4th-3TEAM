@@ -1,6 +1,6 @@
 import LOGO from "@/assets/logo.png";
 import { logout } from "@/app/api/authApi";
-import { Icon } from "@/app/components/ui/icon"
+import { Icon, type IconName } from "@/app/components/ui/icon"
 import DefaultProfile from "@/assets/profile.png"
 import { useState, useEffect, useRef } from "react";
 import { useToast } from "@/app/components/ui/toast";
@@ -40,10 +40,15 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     const [user, setUser] = useState<UserResponse | null>(null);
     const { toast, ToastContainer } = useToast();
 
-    const navItems = [
-        { path: "/analysis", label: "피부 분석", icon: 'beauty' as const },
-        { path: "/wishlist", label: "위시리스트", icon: 'wish' as const },
-    ];
+    const navItems: Array<{
+    path: string;
+    label: string;
+    icon: IconName;
+        }> = [
+            { path: "/analysis", label: "피부 분석", icon: "beauty" },
+            { path: "/skin-mbti", label: "피부 MBTI", icon: "mbti" },
+            { path: "/wishlist", label: "위시리스트", icon: "wish" },
+        ];
 
     const isLoggedIn = !!localStorage.getItem("access_token");
 

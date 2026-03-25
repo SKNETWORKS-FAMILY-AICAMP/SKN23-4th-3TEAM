@@ -7,6 +7,7 @@ import { Button } from "@/app/components/ui/button";
 import { motion, AnimatePresence } from "motion/react";
 import LogoIdle from "@/assets/animations/logo_idle_1.webm";
 import { Eye, EyeOff, Check, X, AlertCircle, Mail, Loader2 } from "lucide-react";
+import { checkNickname, fetchCurrentUser } from "@/app/api/userApi";
 
 function PasswordStrength({ password }: { password: string }) {
     const checks = [
@@ -29,8 +30,7 @@ function PasswordStrength({ password }: { password: string }) {
                         style={{ background: i <= strength && strength !== 3 ? strengthColor[strength] : i > strength ? "#E5E7EB" : undefined }}
                     />
                 ))}
-            </div>
-            <div className="flex items-center justify-between">
+            </div><div className="flex items-center justify-between">
                 <span className={`text-[11px] font-medium ${strength === 3 ? "text-onyou" : ""}`}
                     style={{ color: strength > 0 && strength !== 3 ? strengthColor[strength] : strength === 0 ? "#9CA3AF" : undefined }}>
                     {strength > 0 ? strengthLabels[strength] : "비밀번호를 입력하세요"}
@@ -59,9 +59,10 @@ export function SignupPage() {
     const [password, setPassword]         = useState("");
     const [passwordConfirm, setPasswordConfirm] = useState("");
     const [showConfirm, setShowConfirm]   = useState(false);
-    const [name, setName]                 = useState("");
+    // const [name, setName]                 = useState("");
     const [nickname, setNickname]         = useState("");
-    const [agreed] = useState(true);
+    const [agreeTerms, setAgreeTerms]     = useState(false);
+    const [agreePrivacy, setAgreePrivacy] = useState(false);
 
     // 로딩 / 에러
     const [isSending, setIsSending]     = useState(false);
@@ -70,6 +71,12 @@ export function SignupPage() {
     const [emailError, setEmailError]   = useState("");
     const [verifyError, setVerifyError] = useState("");
     const [signupError, setSignupError] = useState("");
+
+    // 닉네임 중복 체크
+    const [nicknameChecked, setNicknameChecked] = useState(false);
+    const [nicknameAvailable, setNicknameAvailable] = useState<boolean | null>(null);
+    const [nicknameError, setNicknameError] = useState("");
+    const [isCheckingNickname, setIsCheckingNickname] = useState(false);
 
     const isPasswordStrong = [
         password.length >= 8,
@@ -80,13 +87,19 @@ export function SignupPage() {
 
     const passwordMatch = password === passwordConfirm && passwordConfirm.length > 0;
 
+    const hasNickname = nickname.trim().length > 0;
+
+    const isNicknameValid =
+        !hasNickname || (nicknameChecked && nicknameAvailable === true);
+
     const isValid =
         email.length > 0 &&
         emailVerified &&
-        name.length > 0 &&
+        isNicknameValid &&
         isPasswordStrong &&
         passwordMatch &&
-        agreed;
+        agreeTerms &&
+        agreePrivacy; 
 
     /** 이메일 인증 코드 발송 */
     const handleSendEmail = async () => {
@@ -135,7 +148,19 @@ export function SignupPage() {
 
     /** 가입 완료 → 온보딩 이동 */
     const handleSignup = async () => {
-        if (!isValid || isLoading) return;
+        if (isLoading) return;
+
+        if (!agreeTerms || !agreePrivacy) {
+            setSignupError("이용약관 및 개인정보처리방침에 동의해야 회원가입이 가능합니다.");
+            return;
+        }
+
+        if (nickname.trim() && (!nicknameChecked || nicknameAvailable !== true)) {
+            setNicknameError("닉네임 중복 확인을 완료해 주세요.");
+            return;
+        }
+
+        if (!isValid) return;
 
         setIsLoading(true);
         setSignupError("");
@@ -143,23 +168,26 @@ export function SignupPage() {
         try {
             await authApi.signup({
                 email,
-                name,
-                nickname         : nickname.trim() || name,
+                nickname: nickname.trim() || undefined,
                 password,
-                terms_agreed     : agreed,
-                privacy_agreed   : agreed,
+                terms_agreed: agreeTerms,
+                privacy_agreed: agreePrivacy,
                 verification_code: verifyCode,
             });
 
-            // 자동 로그인
             await authApi.login(email, password);
 
-            // 신규 가입 → 온보딩으로 이동
+            const me = await fetchCurrentUser();
+            if (me?.user_id != null) {
+                localStorage.setItem("user_id", String(me.user_id));
+                localStorage.removeItem(`has_seen_tip_modal_${me.user_id}`);
+            }
+
+            localStorage.setItem("should_show_tip_modal", "true");
             navigate("/onboarding", { replace: true });
         } catch (e) {
             const msg = e instanceof Error ? e.message : "가입에 실패했습니다. 다시 시도해 주세요.";
 
-            // OTP 만료 에러 → 이메일 재인증 유도
             if (msg.includes("인증 코드")) {
                 setEmailVerified(false);
                 setEmailSent(false);
@@ -171,6 +199,36 @@ export function SignupPage() {
             }
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const handleCheckNickname = async () => {
+        const value = nickname.trim();
+
+        if (!value) {
+            setNicknameError("닉네임을 입력해 주세요.");
+            setNicknameChecked(false);
+            setNicknameAvailable(null);
+            return;
+        }
+
+        setIsCheckingNickname(true);
+        setNicknameError("");
+
+        try {
+            const data = await checkNickname(value);
+            setNicknameChecked(true);
+            setNicknameAvailable(data.available);
+
+            if (!data.available) {
+                setNicknameError("이미 사용 중인 닉네임입니다.");
+            }
+        } catch (e) {
+            setNicknameChecked(false);
+            setNicknameAvailable(null);
+            setNicknameError(e instanceof Error ? e.message : "닉네임 확인에 실패했습니다.");
+        } finally {
+            setIsCheckingNickname(false);
         }
     };
 
@@ -342,26 +400,101 @@ export function SignupPage() {
                                     <p className="text-[11px] text-red-400 mt-1">비밀번호가 일치하지 않습니다</p>
                                 )}
                             </div>
+                            
+                            {/* ── 닉네임 ── */}
+                            <div>
+                                <label className="text-xs font-medium text-gray-500 block">닉네임</label>
+                                <p className="mt-1 text-xxs text-gray-500 mb-1.5">
+                                    닉네임을 입력하지 않으면 랜덤 닉네임이 자동 생성됩니다.
+                                </p>
+                                <div className="flex gap-2 items-start">
+                                    <div className="flex-1">
+                                        <Input
+                                            value={nickname}
+                                            onChange={(e) => {
+                                                const value = e.target.value;
+                                                setNickname(value);
+                                                setNicknameChecked(false);
+                                                setNicknameAvailable(null);
+                                                setNicknameError("");
+                                            }}
+                                            placeholder="닉네임을 입력하세요 (선택)"
+                                        />
+                                    </div>
 
+                                    <button
+                                        type="button"
+                                        onClick={handleCheckNickname}
+                                        disabled={!nickname.trim() || isCheckingNickname}
+                                        className="w-[90px] h-[45px] px-3 py-3 rounded-xl text-sm font-semibold text-white bg-onyou cursor-pointer disabled:opacity-50 transition-all hover:brightness-95 disabled:cursor-not-allowed shrink-0"
+                                    >
+                                        {isCheckingNickname ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : "중복확인"}
+                                    </button>
+                                </div>
+
+                                {nicknameChecked && nicknameAvailable === true && !nicknameError && (
+                                    <p className="text-[11px] text-onyou mt-1.5">사용 가능한 닉네임입니다.</p>
+                                )}
+                            </div>
+                            
+                            <div className="rounded-2xl border border-gray-100 bg-[#F8FBF3] px-4 py-4 space-y-3">
+                                <label className="flex items-start gap-3 cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={agreeTerms}
+                                        onChange={(e) => {
+                                            setAgreeTerms(e.target.checked);
+                                            setSignupError("");
+                                        }}
+                                        className="mt-1 h-4 w-4 accent-[#7BAE64] cursor-pointer"
+                                    />
+                                    <span className="text-sm text-gray-700 leading-relaxed">
+                                        <span className="text-red-500 font-medium mr-1">[필수]</span>
+                                        이용약관에 동의합니다.{" "}
+                                        <Link
+                                            to="/terms"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-onyou underline underline-offset-2 hover:opacity-80"
+                                        >
+                                            보기
+                                        </Link>
+                                    </span>
+                                </label>
+
+                                <label className="flex items-start gap-3 cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={agreePrivacy}
+                                        onChange={(e) => {
+                                            setAgreePrivacy(e.target.checked);
+                                            setSignupError("");
+                                        }}
+                                        className="mt-1 h-4 w-4 accent-[#7BAE64] cursor-pointer"
+                                    />
+                                    <span className="text-sm text-gray-700 leading-relaxed">
+                                        <span className="text-red-500 font-medium mr-1">[필수]</span>
+                                        개인정보처리방침에 동의합니다.{" "}
+                                        <Link
+                                            to="/privacy"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-onyou underline underline-offset-2 hover:opacity-80"
+                                        >
+                                            보기
+                                        </Link>
+                                    </span>
+                                </label>
+                            </div>
                             {/* ── 이름 ── */}
-                            <Input
+                            {/* <Input
                                 label="이름"
                                 required
                                 value={name}
                                 onChange={(e) => setName(e.target.value)}
                                 placeholder="실명 입력"
                                 maxLength={20}
-                            />
-
-                            {/* ── 닉네임 ── */}
-                            <Input
-                                label="닉네임"
-                                value={nickname}
-                                onChange={(e) => setNickname(e.target.value)}
-                                placeholder="닉네임 (선택, 미입력 시 이름으로 설정)"
-                                maxLength={12}
-                            />
-
+                            /> */}
 
                             {/* 가입 에러 */}
                             {signupError && <Alert message={signupError} />}

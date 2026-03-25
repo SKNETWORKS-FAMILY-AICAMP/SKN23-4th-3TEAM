@@ -1,0 +1,47 @@
+name: on_you
+description: "A new Flutter project."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.11.1
+
+dependencies:
+  flutter:
+    sdk: flutter
+  http: ^1.2.0
+  shared_preferences: ^2.2.2
+  url_launcher: ^6.2.5
+  video_player: ^2.8.2
+  camera: ^0.12.0
+  google_mlkit_face_detection: ^0.13.2
+  image: ^4.8.0
+  app_links: any
+  share_plus: ^10.0.2
+  cupertino_icons: ^1.0.8
+  image_picker: ^1.2.1
+  dio: ^5.9.2
+  flutter_secure_storage: ^10.0.0
+  flutter_markdown: ^0.7.7+1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/chat_avatar.png"
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/
+    - assets/videos/
+    - assets/social/
+    - assets/images/skin_mbti/
+    - assets/images/home/

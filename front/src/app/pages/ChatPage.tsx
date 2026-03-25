@@ -9,14 +9,208 @@ import { uploadImage } from "@/app/api/uploadApi";
 import { useState, useRef, useEffect } from "react";
 import { fetchCurrentUser } from "@/app/api/userApi";
 import { Loading } from "@/app/components/ui/loading";
-import { addToWishlist } from "@/app/api/wishlistApi";
 import { motion, AnimatePresence } from "motion/react";
+import { checkAnalysisLimit } from "@/app/api/analysisApi";
 import ChatLoading from "@/assets/animations/logo_pop_1.webm";
 import LogoTextWebm from "@/assets/animations/logo_text.webm";
+import { TipGuideModal } from "@/app/components/onboarding/TipGuideModal";
+import { SkinTriviaModal } from "@/app/components/common/SkinTriviaModal";
+import { WebcamCaptureModal } from "@/app/components/common/WebcamCaptureModal";
+import { addToWishlist, fetchWishlist, removeFromWishlist } from "@/app/api/wishlistApi";
 import { X, ZoomIn, ImagePlus, ChevronDown, Lock, ExternalLink, Heart, Loader2 } from "lucide-react";
-import { createChatRoom, fetchMessages, sendMessage, sendGuestMessage, type ChatMessage } from "@/app/api/chatApi";
+import { createChatRoom, fetchMessages,sendMemberMessageStream,sendGuestMessageStream, type ChatMessage } from "@/app/api/chatApi";
 
-type AnalysisType = "default" | "simple" | "detailed" | "ingredient";
+// 퍼스널컬러 일러스트 매핑
+// 파일명만 바꾸면 팀원이 만든 일러스트로 교체 가능
+const PC_ILLUSTRATIONS: Record<string, string> = {
+    "복숭아 크림 웜":      "/assets/personal-color/pc_spring_light.png",
+    "레몬 캔디 웜":        "/assets/personal-color/pc_spring_bright.png",
+    "새벽 소다 쿨":        "/assets/personal-color/pc_summer_light.png",
+    "안개 로즈 쿨":        "/assets/personal-color/pc_summer_mute.png",
+    "밀크티 올리브 웜":    "/assets/personal-color/pc_autumn_mute.png",
+    "메이플 시나몬 웜":    "/assets/personal-color/pc_autumn_deep.png",
+    "체리 글라스 쿨":      "/assets/personal-color/pc_winter_bright.png",
+    "벨벳 자두 쿨":        "/assets/personal-color/pc_winter_deep.png",
+    "살구 버블 웜":        "/assets/personal-color/pc_bridge_spring.png",
+    "안개 이슬 쿨":        "/assets/personal-color/pc_bridge_summer.png",
+    "메이플 포그 웜":      "/assets/personal-color/pc_bridge_autumn.png",
+    "별빛 베리 쿨":        "/assets/personal-color/pc_bridge_winter.png",
+    "코튼 피치 뉴트럴":    "/assets/personal-color/pc_bridge_neutral_light.png",
+    "로즈 티 포그 뉴트럴":  "/assets/personal-color/pc_bridge_neutral_mute.png",
+};
+
+// 퍼스널컬러 감성 멘트 매핑
+const PC_CATCHPHRASES: Record<string, string> = {
+    "복숭아 크림 웜":      "햇살이 머무는 자리마다 꽃이 피는 사람",
+    "레몬 캔디 웜":        "웃는 것만으로 주변이 환해지는 비타민 같은 존재",
+    "새벽 소다 쿨":        "투명한 새벽 공기처럼 맑고 여린 빛을 가진 사람",
+    "안개 로즈 쿨":        "조용히 피어난 장미처럼 은은하게 시선을 잡는 사람",
+    "밀크티 올리브 웜":    "함께 있으면 편안해지는, 밀크티 같은 온기를 가진 사람",
+    "메이플 시나몬 웜":    "가만히 있어도 깊이가 느껴지는 가을의 향기",
+    "체리 글라스 쿨":      "한 번 보면 잊기 어려운 선명하고 강렬한 존재감",
+    "벨벳 자두 쿨":        "가만히 있어도 기품이 느껴지는 인간 명품",
+    "살구 버블 웜":        "상큼한 햇살처럼 얼굴에 생기와 사랑스러움을 가득 채운 사람",
+    "안개 이슬 쿨":        "이슬 맺힌 아침처럼 청초하고 투명한 아름다움",
+    "메이플 포그 웜":      "안개 낀 숲속처럼 부드럽고 깊은 분위기를 가진 사람",
+    "별빛 베리 쿨":        "밤하늘의 별처럼 또렷하고 강한 빛을 품은 사람",
+    "코튼 피치 뉴트럴":    "솜사탕처럼 포근하고 맑은 빛으로 사람을 편안하게 만드는 존재",
+    "로즈 티 포그 뉴트럴":  "잔잔한 감성으로 세련된 무드를 완성하는 당신만의 컬러",
+};
+
+// 퍼스널컬러 컬러 이름 → HEX 매핑 (GPT 답변에서 추출한 컬러 이름과 매칭)
+const COLOR_NAME_TO_HEX: Record<string, string> = {
+    // 웜톤 계열
+    "피치": "#FFDAB9", "크림코랄": "#F7B39B", "살구": "#FBC4AB", "버터옐로우": "#F5E6A3",
+    "라이트 베이지": "#F5E6CC", "살구코랄": "#F7A38E", "피치버블": "#FFB5A7",
+    "라이트 오렌지": "#FFA552", "크림옐로우": "#F5E6A3", "멜론": "#98D8A8",
+    "레몬옐로우": "#FFF44F", "브라이트 코랄": "#FF6F61", "애플그린": "#8DB600",
+    "클리어 오렌지": "#FF7F32", "밝은 터콰이즈": "#40E0D0",
+    "올리브": "#808000", "카멜": "#C19A6B", "모카": "#6F4E37", "누디코랄": "#E8967A",
+    "소프트 브라운": "#A0785A", "테라코타": "#CC7751",
+    "메이플브라운": "#8B4513", "브릭": "#CB4154", "다크카키": "#556B2F",
+    "시나몬": "#D2691E", "초콜릿": "#3E2723", "딥카멜": "#A0785A",
+    "토프": "#897B6D", "브릭베이지": "#C8826E", "스모키올리브": "#6B6F4A",
+    "머스타드": "#E1AD01", "다크버건디": "#800020",
+    // 쿨톤 계열
+    "소다블루": "#87CEEB", "밀키핑크": "#FFB6C1", "라벤더": "#B4A7D6",
+    "파우더블루": "#B0C4DE", "아이시로즈": "#F4C2C2",
+    "더스티핑크": "#D4A5A5", "모브": "#967BB6", "로즈베이지": "#C9ADA7",
+    "그레이블루": "#A4B8C4", "쿨토프": "#B8A99A",
+    "라벤더그레이": "#B4A7C7", "소프트 블루": "#A4C8E1", "쿨핑크베이지": "#D4B5A0",
+    "연모브": "#C3A6C9", "민트그린": "#98D8A8", "페일라벤더": "#D6CADD",
+    "스카이블루": "#87CEEB", "페일 민트": "#B2DFDB",
+    "체리레드": "#DC143C", "푸시아": "#FF00FF", "로열블루": "#4169E1",
+    "퓨어화이트": "#FFFFFF", "블랙": "#000000",
+    "자두": "#8E4585", "와인": "#722F37", "딥네이비": "#000080",
+    "차콜": "#36454F", "블랙체리": "#3D0C11",
+    "베리와인": "#722F37", "딥푸시아": "#C154C1", "블루블랙": "#1A1A2E",
+    "플럼": "#8E4585", "크리스탈 화이트": "#F0F0F0",
+    // 뉴트럴 계열
+    "밀키피치": "#FFDAB9", "코튼핑크": "#FFB6C1", "소프트 라일락": "#C8A2C8",
+    "크림베이지": "#F5E6CC",
+    "밀크티로즈": "#C4A69D", "토프핑크": "#B8988A", "그레이지": "#A89B8C",
+    "더스티모카": "#8B7D6B",
+    // 공통
+    "쿨 핑크": "#DDA0DD", "소프트 로즈": "#E8B4B8", "베이지 핑크": "#E8C4B8",
+    "코랄 핑크": "#F88379", "라이트 베리": "#C9A0DC",
+    "라벤더 핑크": "#D8BFD8", "소프트 코랄": "#F08080", "쿨 베이지": "#C8B8A2",
+    "라벤더 그레이": "#B4A7C7", "소프트 그레이": "#C0C0C0", "쿨 브라운": "#8B7D6B",
+    "브릭레드": "#CB4154", "딥코랄": "#E07060", "브릭 레드": "#CB4154",
+    "머스터드 브라운": "#B8860B", "로즈 브라운": "#A07060", "브릭 오렌지": "#CC5500",
+    "스모키 올리브": "#6B6F4A", "딥 브라운": "#4E3B2A", "토프 그레이": "#897B6D",
+    "라이트 그레이": "#D3D3D3", "크림 화이트": "#FFFDD0", "소프트 화이트": "#F5F5F5",
+    "페일 블루": "#B0C4DE", "파우더 블루": "#B0C4DE",
+    "올리브 브라운": "#6B5B3A", "카라멜": "#C19A6B", "다크 초콜릿": "#3E2723",
+    // GPT 추가 생성 가능 컬러
+    "아이시 실버": "#C0C0C0", "아이시실버": "#C0C0C0",
+    "쿨 퍼플": "#7B68EE", "쿨퍼플": "#7B68EE",
+    "쿨 그레이": "#808080", "쿨그레이": "#808080",
+    "네이비": "#000080", "차콜 그레이": "#36454F", "차콜그레이": "#36454F",
+    "퓨어 화이트": "#FFFFFF", "쿨 베리": "#8B008B", "쿨베리": "#8B008B",
+    "푸시아 핑크": "#FF77FF", "푸시아핑크": "#FF77FF",
+    "라이트 코랄": "#F08080", "라이트코랄": "#F08080",
+    "아이시 블루": "#A5D8FF", "아이시블루": "#A5D8FF",
+    "아이시 핑크": "#FFD1DC", "아이시핑크": "#FFD1DC",
+    "딥 로즈": "#C21E56", "딥로즈": "#C21E56",
+    "브라이트 핑크": "#FF69B4", "브라이트핑크": "#FF69B4",
+    "클리어 레드": "#FF2400", "클리어레드": "#FF2400",
+    "소프트 핑크": "#FFB6C1", "소프트핑크": "#FFB6C1",
+    "밝은 코랄": "#FF7F50", "웜 핑크": "#FF69B4", "웜핑크": "#FF69B4",
+    "밝은 오렌지": "#FF8C00", "골드": "#FFD700", "로즈 골드": "#B76E79", "로즈골드": "#B76E79",
+    "피치 핑크": "#FFDAB9", "피치핑크": "#FFDAB9",
+    "연핑크": "#FFB6C1", "연보라": "#D8BFD8", "연베이지": "#F5E6CC",
+    "다크 네이비": "#000033", "다크네이비": "#000033",
+    "아이보리": "#FFFFF0", "베이지": "#F5F5DC",
+    "코랄": "#FF7F50", "버건디": "#800020",
+    "올리브 그린": "#556B2F", "올리브그린": "#556B2F",
+    "플래티넘": "#E5E4E2", "플래티넘 블론드": "#E5E4E2", "플래티넘블론드": "#E5E4E2",
+    // GPT 빈출 생성 컬러 (띄어쓰기 있음/없음 모두)
+    "아이스민트": "#AAF0D1", "아이스 민트": "#AAF0D1",
+    "실버그레이": "#C0C0C0", "실버 그레이": "#C0C0C0", "실버": "#C0C0C0",
+    "스노우화이트": "#FFFAFA", "스노우 화이트": "#FFFAFA",
+    "머스터드옐로우": "#FFDB58", "머스터드 옐로우": "#FFDB58",
+    "코랄오렌지": "#FF7F50", "코랄 오렌지": "#FF7F50",
+    "머드브라운": "#6B4226", "머드 브라운": "#6B4226",
+    "브라운베이지": "#C4A882", "브라운 베이지": "#C4A882",
+    "딥베리": "#8B008B", "딥 베리": "#8B008B",
+    "로즈쿼츠": "#F7CAC9", "로즈 쿼츠": "#F7CAC9",
+    "쿨블랙": "#0A0A0A", "쿨 블랙": "#0A0A0A",
+    "다크애쉬브라운": "#5C4033", "다크 애쉬 브라운": "#5C4033", "다크애쉬 브라운": "#5C4033",
+    "쿨브라운": "#8B7D6B",
+    "쿨핑크": "#FF69B4",
+    "아이스핑크": "#FFD1DC", "아이스 핑크": "#FFD1DC",
+    "아이스블루": "#A5D8FF", "아이스 블루": "#A5D8FF",
+    "로즈우드": "#65000B", "로즈 우드": "#65000B",
+    "스모키그레이": "#2F4F4F", "스모키 그레이": "#2F4F4F",
+    "베리핑크": "#8B008B", "베리 핑크": "#8B008B",
+    "다크 카키": "#556B2F",
+    "밀키베이지": "#F5E6CC", "밀키 베이지": "#F5E6CC",
+    "쿨라벤더": "#B4A7D6", "쿨 라벤더": "#B4A7D6",
+    "딥와인": "#722F37", "딥 와인": "#722F37",
+    "핫핑크": "#FF69B4", "핫 핑크": "#FF69B4",
+    "밀키 핑크": "#FFB6C1",
+    "피치코랄": "#FFB5A7", "피치 코랄": "#FFB5A7",
+    "누드베이지": "#E8C4B8", "누드 베이지": "#E8C4B8",
+    "누드핑크": "#E8B4B8", "누드 핑크": "#E8B4B8",
+    "웜베이지": "#D2B48C", "웜 베이지": "#D2B48C",
+    "그레이": "#808080", "회색": "#808080",
+    "화이트": "#FFFFFF", "흰색": "#FFFFFF", "검정": "#000000",
+    "레드": "#FF0000", "핑크": "#FFC0CB", "블루": "#0000FF",
+    "그린": "#008000", "옐로우": "#FFFF00", "오렌지": "#FFA500", "퍼플": "#800080",
+    "브라운": "#A52A2A", "크림": "#FFFDD0", "민트": "#98FFB3",
+};
+
+// 텍스트에서 컬러 이름과 HEX를 파싱하는 함수
+// 새 형식: "컬러명(#HEX)" → HEX 직접 추출
+// 구 형식: "컬러명" → COLOR_NAME_TO_HEX 매핑 폴백
+function parseColorNames(text: string): { name: string; hex: string }[] {
+    const colonIdx = text.indexOf(":");
+    if (colonIdx === -1) return [];
+    const colorPart = text.substring(colonIdx + 1).trim();
+    const items = colorPart.split(",").map(s => s.trim()).filter(Boolean);
+
+    return items.map(item => {
+        // 새 형식: "컬러명(#HEX)" 또는 "컬러명(#RRGGBB)"
+        const hexMatch = item.match(/^(.+?)\s*\(\s*(#[0-9A-Fa-f]{3,6})\s*\)$/);
+        if (hexMatch) {
+            return { name: hexMatch[1].trim(), hex: hexMatch[2] };
+        }
+        // 구 형식 폴백: COLOR_NAME_TO_HEX 매핑
+        const name = item;
+        const hex = COLOR_NAME_TO_HEX[name] || COLOR_NAME_TO_HEX[name.replace(/ /g, "")] || "";
+        return { name, hex };
+    }).filter(c => c.hex);
+}
+
+// React children에서 텍스트만 추출하는 헬퍼
+function extractText(node: any): string {
+    if (typeof node === "string") return node;
+    if (Array.isArray(node)) return node.map(extractText).join("");
+    if (node?.props?.children) return extractText(node.props.children);
+    return "";
+}
+
+// 텍스트에서 "(#HEX)" 패턴을 제거하는 헬퍼 (퍼스널컬러 답변 표시용)
+function stripHexCodes(text: string): string {
+    return text.replace(/\s*\(#[0-9A-Fa-f]{3,6}\)/g, "");
+}
+
+// 퍼스널컬러 답변 감지 함수
+function parsePersonalColor(content: string): { typeName: string; seasonTag: string; colorHexList: string[] } | null {
+    // 🎨 **감성이름** 또는 🎨 감성이름 패턴으로 타입명 추출
+    const nameMatch = content.match(/🎨\s*\*?\*?(.+?)\*?\*?\s*\n/);
+    if (!nameMatch) return null;
+    const typeName = nameMatch[1].replace(/\*/g, "").trim();
+    if (!PC_CATCHPHRASES[typeName]) return null;
+
+    // 🏷️ 시즌 태그 추출 (예: "겨울 브라이트")
+    const seasonMatch = content.match(/🏷️\s*(.+?)[\n\r]/);
+    const seasonTag = seasonMatch ? seasonMatch[1].replace(/\*/g, "").trim() : "";
+
+    return { typeName, seasonTag, colorHexList: [] };
+}
+
+type AnalysisType = "default" | "simple" | "detailed" | "ingredient" | "personal";
 
 interface UploadSlot {
     id      : string;
@@ -47,12 +241,14 @@ const ANALYSIS_OPTIONS = [
     { value: "simple",      label: "빠른 분석" },
     { value: "detailed",    label: "정밀 분석" },
     { value: "ingredient",  label: "성분 분석" },
+    { value: "personal",  label: "퍼스널 컬러 분석" },
 ];
 
 const ANALYSIS_HINTS: Record<string, string> = {
     simple: "얼굴 정면 1장으로 빠른 피부 상태 분석",
     detailed: "정면·좌·우측 3장으로 정밀 피부 분석",
     ingredient: "화장품 성분표 1장으로 성분 안전성 분석",
+    personal: "나도 몰랐던 내 퍼스널 컬러는?",
 };
 
 const getUploadSlots = (type: AnalysisType): UploadSlot[] => {
@@ -67,6 +263,8 @@ const getUploadSlots = (type: AnalysisType): UploadSlot[] => {
             ];
         case "ingredient":
             return [{ id: "label", label: "전성분 표시면", preview: null, file: null }];
+        case "personal":
+            return [{ id: "front", label: "정면 얼굴", preview: null, file: null }];
         default:
             return [];
     }
@@ -189,22 +387,28 @@ function EmptyChatState() {
 }
 
 // ─── UploadSlotCard ──────────────────────────
-function UploadSlotCard({ slot, onUpload, onRemove }: {
+function UploadSlotCard({ slot, onUpload, onRemove, onOpenWebcam, showWebcam, }: {
     slot: UploadSlot;
     onUpload: (id: string, file: File) => void;
     onRemove: (id: string) => void;
+    onOpenWebcam: (id: string) => void;
+    showWebcam: boolean;
 }) {
     const inputRef = useRef<HTMLInputElement>(null);
 
     return (
         <div className="flex flex-col items-center gap-1.5 relative">
-            <div className="relative w-full" onClick={() => !slot.preview && inputRef.current?.click()}>
+            <div className="relative w-full">
                 {slot.preview ? (
                     <div className="relative w-full aspect-square rounded-lg overflow-hidden border-2 border-onyou cursor-pointer group">
                         <img src={slot.preview} alt={slot.label} className="w-full h-full object-cover" />
                         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
                             <button
-                                onClick={(e) => { e.stopPropagation(); onRemove(slot.id); }}
+                                type="button"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onRemove(slot.id);
+                                }}
                                 className="opacity-0 group-hover:opacity-100 w-7 h-7 bg-white rounded-full flex items-center justify-center shadow-md transition-all cursor-pointer"
                             >
                                 <X className="w-3.5 h-3.5 text-gray-600" />
@@ -213,28 +417,54 @@ function UploadSlotCard({ slot, onUpload, onRemove }: {
                     </div>
                 ) : (
                     <div
-                        className="w-full aspect-square rounded-xl border-2 border-dashed flex flex-col gap-0.5 items-center justify-center cursor-pointer transition-all hover:bg-[#F4FAE8]"
+                        className="w-full aspect-square rounded-xl border-2 border-dashed flex flex-col items-center justify-center transition-all"
                         style={{ borderColor: "#C5E89A" }}
                     >
-                        <ImagePlus className="w-6 h-6 mb-1 text-onyou" />
-                        <span className="text-xs font-medium text-onyou">업로드</span>
+                        <ImagePlus className="w-6 h-6 mb-2 text-onyou" />
+
+                        <div className="w-full px-3 flex flex-col gap-2">
+                            <button
+                                type="button"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    inputRef.current?.click();
+                                }}
+                                className="w-full rounded-xl border border-[#A7D46F] bg-white py-2 text-xs font-semibold text-onyou hover:bg-[#F4FAE8] cursor-pointer"
+                            >
+                                업로드
+                            </button>
+
+                            {showWebcam && (
+                                <button
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onOpenWebcam(slot.id);
+                                    }}
+                                    className="w-full rounded-xl border border-[#A7D46F] bg-white py-2 text-xs font-semibold text-onyou hover:bg-[#F4FAE8] cursor-pointer"
+                                >
+                                    웹캠
+                                </button>
+                            )}
+                        </div>
                     </div>
                 )}
+
                 <input
                     ref={inputRef}
                     type="file"
-                    accept="image/*"
+                    accept=".jpg,.jpeg,.png,.webp"
                     className="hidden"
                     onChange={(e) => {
                         const file = e.target.files?.[0];
-                        if (file) onUpload(slot.id, file);
+                        if (!file) return;
+                        onUpload(slot.id, file);
+                        e.currentTarget.value = "";
                     }}
                 />
             </div>
 
-            <div className="flex items-center gap-1">
-                <span className="text-xs font-medium text-gray-600">{slot.label}</span>
-            </div>
+            <span className="text-xs text-gray-600 text-center">{slot.label}</span>
         </div>
     );
 }
@@ -253,33 +483,66 @@ export function ChatPage() {
     const [input, setInput] = useState("");
     const [expandedImage, setExpandedImage] = useState<string | null>(null);
     const [isSending, setIsSending] = useState(false);
+    const [isTriviaOpen, setIsTriviaOpen] = useState(false);
     const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+    const [personaMessage, setPersonaMessage] = useState("");
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const [streamError, setStreamError] = useState<string | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const skipFetchRef = useRef(false); // 새 채팅방 생성 시 불필요한 fetchMessages 방지
-
+    const [isWebcamOpen, setIsWebcamOpen] = useState(false);
+    const [activeWebcamSlotId, setActiveWebcamSlotId] = useState<string | null>(null);
+    
     const isLoggedIn = !!localStorage.getItem("access_token");
 
     // 새 채팅 전용 state
     const [analysisType, setAnalysisType] = useState<AnalysisType>("default");
     const [uploadSlots, setUploadSlots] = useState<UploadSlot[]>([]);
+    const [uploadError, setUploadError] = useState<string | null>(null);
     const [analysisDropdownOpen, setAnalysisDropdownOpen] = useState(false);
     const [showAnalysisToast, setShowAnalysisToast] = useState(false);
     const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
+    const [showTipModal, setShowTipModal] = useState(false);
     const triggerAnalysisToast = () => {
         if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
         setShowAnalysisToast(true);
         toastTimerRef.current = setTimeout(() => setShowAnalysisToast(false), 3000);
     };
+    const [showLimitModal, setShowLimitModal] = useState(false);
+    const [limitModalMessage, setLimitModalMessage] = useState("");    
+    const openLimitModal = (message: string) => {setLimitModalMessage(message);setShowLimitModal(true);};
 
     // 위시리스트 state
     const [wishedUrls, setWishedUrls] = useState<Set<string>>(new Set());
+    const [wishIdByUrl, setWishIdByUrl] = useState<Record<string, number>>({});
     const [wishingUrls, setWishingUrls] = useState<Set<string>>(new Set());
     const [showWishlistToast, setShowWishlistToast] = useState(false);
     const [showDuplicateWishToast, setShowDuplicateWishToast] = useState(false);
     const wishToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const duplicateWishToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    // MBTI 결과 페이지에서 넘어온 메시지 자동 전송
+    const mbtiMessageHandled = useRef(false);
+    useEffect(() => {
+        if (state?.mbtiMessage && !mbtiMessageHandled.current && !isSending) {
+            mbtiMessageHandled.current = true;
+            // input에 설정 후 다음 tick에서 자동 전송
+            setInput(state.mbtiMessage);
+            window.history.replaceState({}, "");  // 새로고침 시 재전송 방지
+        }
+    }, [state]);
+
+    // input이 mbtiMessage로 설정되면 자동 전송
+    useEffect(() => {
+        if (state?.mbtiMessage && input === state.mbtiMessage && mbtiMessageHandled.current && !isSending) {
+            const timer = setTimeout(() => {
+                const sendBtn = document.querySelector("[data-send-btn]") as HTMLButtonElement;
+                if (sendBtn && !sendBtn.disabled) sendBtn.click();
+            }, 300);
+            return () => clearTimeout(timer);
+        }
+    }, [input, state, isSending]);
     const cachedUserIdRef = useRef<number | null>(null);
     const [userProfileUrl, setUserProfileUrl] = useState<string | null>(null);
 
@@ -308,50 +571,6 @@ export function ChatPage() {
         duplicateWishToastTimerRef.current = setTimeout(() => setShowDuplicateWishToast(false), 3000);
     };
 
-    const handleAddToWishlist = async (
-        link: { name: string; url: string },
-        msgId: number,
-    ) => {
-        if (!isLoggedIn) { triggerWishlistToast(); return; }
-        if (wishingUrls.has(link.url)) return;
-        if (wishedUrls.has(link.url)) { triggerDuplicateWishToast(); return; }
-
-        setWishingUrls((prev) => new Set(prev).add(link.url));
-
-        try {
-            if (cachedUserIdRef.current === null) {
-                const user = await fetchCurrentUser();
-                cachedUserIdRef.current = user.user_id;
-                setUserProfileUrl(user.profile_image_url ?? null);
-            }
-
-            const goodsNo = new URL(link.url).searchParams.get("goodsNo") ?? link.name.slice(0, 50);
-
-            await addToWishlist({
-                user_id             : cachedUserIdRef.current,
-                product_vector_id   : goodsNo,
-                product_name        : link.name,
-                message_id          : msgId,
-                product_description : link.url,
-            });
-
-            setWishedUrls((prev) => new Set(prev).add(link.url));
-        } catch (err: unknown) {
-            if ((err as { statusCode?: number }).statusCode === 400) {
-                setWishedUrls((prev) => new Set(prev).add(link.url));
-                triggerDuplicateWishToast();
-            } else {
-                console.error("위시리스트 추가 실패:", err);
-            }
-        } finally {
-            setWishingUrls((prev) => {
-                const next = new Set(prev);
-                next.delete(link.url);
-
-                return next;
-            });
-        }
-    };
 
     // 기존 채팅 전용 state
     const [isDragging, setIsDragging] = useState(false);
@@ -439,12 +658,155 @@ export function ChatPage() {
         setUploadSlots(getUploadSlots(analysisType));
     }, [analysisType]);
 
+    // 새로 고침시 db에 저장된 product_ur 기준으로 채팅방에서 하트 유지
+    useEffect(() => {
+    if (!isLoggedIn) return;
+
+        fetchWishlist()
+            .then((items) => {
+                const urls = items
+                    .map((item) => item.product_url)
+                    .filter((url): url is string => !!url);
+
+                const idMap: Record<string, number> = {};
+                items.forEach((item) => {
+                    if (item.product_url) {
+                        idMap[item.product_url] = item.wish_id;
+                    }
+                });
+
+                setWishedUrls(new Set(urls));
+                setWishIdByUrl(idMap);
+            })
+            .catch((err) => {
+                console.error("위시리스트 조회 실패:", err);
+            });
+    }, [isLoggedIn]);
+
+    useEffect(() => {
+        const userId = localStorage.getItem("user_id");
+        const shouldShow = localStorage.getItem("should_show_tip_modal");
+
+        if (!userId) return;
+
+        const seenKey = `has_seen_tip_modal_${userId}`;
+        const hasSeen = localStorage.getItem(seenKey) === "true";
+
+        if (shouldShow === "true" && !hasSeen) {
+            setShowTipModal(true);
+        }
+    }, []);
+    const handleToggleWishlist = async (
+        link: { name: string; url: string },
+        _msgId: number,
+    ) => {
+        if (!isLoggedIn) {
+            triggerWishlistToast();
+            return;
+        }
+
+        if (wishingUrls.has(link.url)) return;
+
+        setWishingUrls((prev) => new Set(prev).add(link.url));
+
+        try {
+            if (wishedUrls.has(link.url)) {
+                const wishId = wishIdByUrl[link.url];
+
+                if (!wishId) {
+                    console.error("삭제할 wish_id를 찾지 못했습니다.");
+                    return;
+                }
+
+                await removeFromWishlist(wishId);
+
+                setWishedUrls((prev) => {
+                    const next = new Set(prev);
+                    next.delete(link.url);
+                    return next;
+                });
+
+                setWishIdByUrl((prev) => {
+                    const next = { ...prev };
+                    delete next[link.url];
+                    return next;
+                });
+
+                return;
+            }
+
+            if (cachedUserIdRef.current === null) {
+                const user = await fetchCurrentUser();
+                cachedUserIdRef.current = user.user_id;
+                setUserProfileUrl(user.profile_image_url ?? null);
+            }
+
+            const added = await addToWishlist({
+                user_id: cachedUserIdRef.current,
+                product_name: link.name,
+                product_url: link.url,
+                message_id: null,
+            });
+
+            setWishedUrls((prev) => new Set(prev).add(link.url));
+            setWishIdByUrl((prev) => ({
+                ...prev,
+                [link.url]: added.wish_id,
+            }));
+        } catch (err: unknown) {
+            if ((err as { statusCode?: number }).statusCode === 400) {
+                triggerDuplicateWishToast();
+            } else {
+                console.error("위시리스트 토글 실패:", err);
+            }
+        } finally {
+            setWishingUrls((prev) => {
+                const next = new Set(prev);
+                next.delete(link.url);
+                return next;
+            });
+        }
+    };
+    
+    // 이미지 형식 및 크기 체크
+    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+    const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
+
+    const validateImageFile = (file: File): string | null => {
+        if (!ALLOWED_TYPES.includes(file.type)) {
+            return "JPG, JPEG, PNG, WEBP 형식의 이미지만 업로드할 수 있어요.";
+        }
+
+        if (file.size > MAX_FILE_SIZE) {
+            return "파일 크기는 10MB 이하만 업로드할 수 있어요.";
+        }
+
+        return null;
+    };
+    const showUploadError = (message: string) => {
+        setUploadError(message);
+
+        setTimeout(() => {
+            setUploadError(null);
+        }, 2500);
+    };
     // ── Handlers (새 채팅 - 이미지 업로드 슬롯) ──────────────────────────
     const handleUpload = (slotId: string, file: File) => {
+        const error = validateImageFile(file);
+
+        if (error) {
+            showUploadError(error);
+            return;
+        }
+
         const url = URL.createObjectURL(file);
 
         setUploadSlots((prev) =>
-            prev.map((s) => s.id === slotId ? { ...s, preview: url, file } : s)
+            prev.map((slot) =>
+                slot.id === slotId
+                    ? { ...slot, file, preview: url }
+                    : slot
+            )
         );
     };
 
@@ -455,11 +817,92 @@ export function ChatPage() {
     };
 
     const canSend = (input.trim().length > 0 || uploadSlots.some((s) => s.preview)) && !isSending;
+    const handleOpenWebcam = (slotId: string) => {
+        setActiveWebcamSlotId(slotId);
+        setIsWebcamOpen(true);
+    };
 
+    const handleCaptureFromWebcam = (file: File) => {
+        if (!activeWebcamSlotId) return;
+
+        handleUpload(activeWebcamSlotId, file);
+        setIsWebcamOpen(false);
+        setActiveWebcamSlotId(null);
+    };
+
+    const handleCloseWebcam = () => {
+        setIsWebcamOpen(false);
+        setActiveWebcamSlotId(null);
+    };
+
+    const LIMITED_ANALYSIS_TYPES = ["simple", "detailed", "ingredient", "personal"] as const;
+
+    const handleSelectAnalysisType = async (type: AnalysisType) => {
+        if (type === "default") {
+            setAnalysisType(type);
+            setAnalysisDropdownOpen(false);
+            return;
+        }
+
+        if (!isLoggedIn) {
+            triggerAnalysisToast();
+            setAnalysisDropdownOpen(false);
+            return;
+        }
+
+        if (!LIMITED_ANALYSIS_TYPES.includes(type as typeof LIMITED_ANALYSIS_TYPES[number])) {
+            setAnalysisType(type);
+            setAnalysisDropdownOpen(false);
+            return;
+        }
+
+        // try {
+        //     const result = await checkAnalysisLimit(
+        //         type as "simple" | "detailed" | "ingredient" | "personal"
+        //     );
+
+        //     if (!result.available) {
+        //         setAnalysisDropdownOpen(false);
+        //         openLimitModal(result.message || "오늘 사용 가능한 횟수를 초과했습니다.");
+        //         return;
+        //     }
+
+            setAnalysisType(type);
+            setAnalysisDropdownOpen(false);
+        // } catch (err) {
+        //     console.error("분석 가능 여부 확인 실패:", err);
+        //     setAnalysisDropdownOpen(false);
+        //     openLimitModal("분석 가능 여부를 확인하지 못했습니다.");
+        // }
+    };
+    
+    
     // ── 메시지 전송 ───────────────────────────────────────────────────────
     const handleSend = async () => {
         if (!canSend) return;
 
+    //     if (
+    // isLoggedIn &&
+    //     analysisType !== "default" &&
+    //     ["simple", "detailed", "ingredient", "personal"].includes(analysisType) &&
+    //     uploadSlots.some((s) => s.preview)
+    // ) {
+    //     try {
+    //         const result = await checkAnalysisLimit(
+    //             analysisType as "simple" | "detailed" | "ingredient" | "personal"
+    //         );
+
+    //         if (!result.available) {
+    //             openLimitModal(result.message || "오늘 사용 가능한 횟수를 초과했습니다.");
+    //             return;
+    //         }
+    //     } catch (err) {
+    //         console.error("분석 가능 여부 확인 실패:", err);
+    //         openLimitModal("분석 가능 여부를 확인하지 못했습니다.");
+    //         return;
+    //     }
+    // }
+        setPersonaMessage("");
         const trimmedInput      = input.trim();
         const previews          = uploadSlots.filter((s) => s.preview).map((s) => s.preview!);
         const slotFiles         = uploadSlots.filter((s) => s.file).map((s) => s.file!);
@@ -496,21 +939,47 @@ export function ChatPage() {
                     role: m.role === "bot" ? "assistant" : "user",
                     content: m.content,
                 }));
-                const result = await sendGuestMessage(trimmedInput, chatHistory);
-                const aiMsg: Message = {
-                    id     : Date.now() + 1,
-                    role   : "bot",
-                    content: result.content,
-                    time   : new Date().toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" }),
-                };
 
-                setMessages((prev) => [...prev, aiMsg]);
+                await sendGuestMessageStream(trimmedInput, chatHistory, (event) => {
+                    if (event.type === "loading") {
+                        setPersonaMessage(event.message);
+                        if (event.message.includes("근거를 찾고") || event.message.includes("답변을 작성")) {
+                            setIsTriviaOpen(true);
+                        }
+                        return;
+                    }
+
+                    if (event.type === "done") {
+                        setIsTriviaOpen(false);
+                        const aiMsg: Message = {
+                            id: Date.now() + 1,
+                            role: "bot",
+                            content: event.content,
+                            time: new Date().toLocaleTimeString("ko-KR", {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                            }),
+                        };
+
+                        setMessages((prev) => [...prev, aiMsg]);
+                        setPersonaMessage("");
+                        return;
+                    }
+
+                    if (event.type === "error") {
+                        setIsTriviaOpen(false);
+                        setPersonaMessage("");
+                        setStreamError(event.message);
+                    }
+                });
             } else {
                 // 1. 이미지 파일들을 S3에 업로드하여 실제 URL 획득
                 let s3Urls: string[] = [];
 
                 if (slotFiles.length > 0) {
-                    s3Urls = await Promise.all(slotFiles.map((file) => uploadImage(file, currentAnalysisType)));
+                    s3Urls = await Promise.all(
+                        slotFiles.map((file) => uploadImage(file, currentAnalysisType))
+                    );
                 }
 
                 // 2. 채팅방이 없으면 먼저 생성
@@ -520,36 +989,63 @@ export function ChatPage() {
                 if (roomId === null) {
                     const room = await createChatRoom();
                     roomId = room.chat_room_id;
-                    skipFetchRef.current = true; // fetchMessages useEffect 건너뜀
+                    skipFetchRef.current = true;
                     setChatRoomId(roomId);
                 }
 
-                // 3. 메시지 전송 (S3 URL 포함)
-                const result = await sendMessage(roomId, {
-                    content   : userMsg.content,
-                    model_type: currentAnalysisType !== "default" ? currentAnalysisType : undefined,
-                    image_url : s3Urls.length > 0 ? s3Urls : undefined,
-                });
+                // 3. 메시지 전송
+                await sendMemberMessageStream(
+                    roomId,
+                    {
+                        content: userMsg.content,
+                        model_type: currentAnalysisType !== "default" ? currentAnalysisType : undefined,
+                        image_url: s3Urls.length > 0 ? s3Urls : undefined,
+                    },
+                    async (event) => {
+                        if (event.type === "loading") {
+                            setPersonaMessage(event.message);
+                            if (event.message.includes("근거를 찾고") || event.message.includes("답변을 작성") || event.message.includes("분석하고") || event.message.includes("추출하고")) {
+                                setIsTriviaOpen(true);
+                            }
+                            return;
+                        }
+
+                        if (event.type === "done") {
+                            setIsTriviaOpen(false);
+                            setPersonaMessage("");
+
+                            try {
+                                const msgs = await fetchMessages(roomId!);
+                                setMessages(msgs.map(apiMsgToMessage));
+                            } catch (err) {
+                                console.error("스트리밍 후 메시지 재조회 실패:", err);
+                            }
+                            return;
+                        }
+
+                        if (event.type === "error") {
+                            setIsTriviaOpen(false);
+                            setPersonaMessage("");
+                            setStreamError(event.message);
+                        }
+                    }
+                );
 
                 if (isNewRoom) {
-                    // 새 채팅방: 낙관적 유저 메시지를 API 결과로 교체 (user + bot 모두 포함)
-                    setMessages((prev) => {
-                        const withoutOptimistic = prev.filter((m) => m.id !== userMsg.id);
-
-                        return [...withoutOptimistic, ...result.map(apiMsgToMessage)];
-                    });
-
-                    // 메시지 전송 완료 후 사이드바 갱신 (이 시점에 백엔드가 제목을 설정함)
                     window.dispatchEvent(new CustomEvent("chatRoomCreated"));
-                } else {
-                    // 기존 채팅방: 봇 메시지만 추가
-                    const aiMsg = result.find((m) => m.role === "assistant");
-
-                    if (aiMsg) setMessages((prev) => [...prev, apiMsgToMessage(aiMsg)]);
                 }
             }
-        } catch (err) {
+                } catch (err) {
             console.error("메시지 전송 실패:", err);
+
+            const errorMessage =
+                err instanceof Error
+                    ? err.message
+                    : "메시지 전송 중 오류가 발생했습니다.";
+
+            setStreamError(errorMessage);
+            setPersonaMessage("");
+            setIsTriviaOpen(false);
         } finally {
             setIsSending(false);
         }
@@ -581,48 +1077,46 @@ export function ChatPage() {
         e.preventDefault();
 
         dragCounterRef.current = 0;
-
         setIsDragging(false);
 
-        const file = e.dataTransfer.files[0];
+        const file = e.dataTransfer.files?.[0];
+        if (!file) return;
 
-        if (!file || !file.type.startsWith("image/")) return;
-
-        // 업로드 슬롯이 열려있으면 첫 번째 빈 슬롯에 채움
-        if (uploadSlots.length > 0) {
-            const emptySlot = uploadSlots.find((s) => !s.preview);
-
-            if (emptySlot) handleUpload(emptySlot.id, file);
-
+        const error = validateImageFile(file);
+        if (error) {
+            showUploadError(error);
             return;
         }
 
-        handleImageUpload(file);
+        const emptySlot = uploadSlots.find((slot) => !slot.preview);
+        if (emptySlot) {
+            handleUpload(emptySlot.id, file);
+        }
     };
 
-    const handleImageUpload = (file: File) => {
-        const url = URL.createObjectURL(file);
-        const userMsg: Message = {
-            id     : Date.now(),
-            role   : "user",
-            content: "피부 이미지를 분석해 주세요",
-            image  : url,
-            time   : new Date().toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" }),
-        };
+    // const handleImageUpload = (file: File) => {
+    //     const url = URL.createObjectURL(file);
+    //     const userMsg: Message = {
+    //         id     : Date.now(),
+    //         role   : "user",
+    //         content: "피부 이미지를 분석해 주세요",
+    //         image  : url,
+    //         time   : new Date().toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" }),
+    //     };
 
-        setMessages((prev) => [...prev, userMsg]);
-        setIsSending(true);
-        setTimeout(() => {
-            const botMsg: Message = {
-                id     : Date.now() + 1,
-                role   : "bot",
-                content: "이미지를 분석하고 있어요... ✨\n\n분석이 완료되면 피부 상태와 맞춤 제품을 추천해 드릴게요!",
-                time   : new Date().toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" }),
-            };
-            setMessages((prev) => [...prev, botMsg]);
-            setIsSending(false);
-        }, 2000);
-    };
+    //     setMessages((prev) => [...prev, userMsg]);
+    //     setIsSending(true);
+    //     setTimeout(() => {
+    //         const botMsg: Message = {
+    //             id     : Date.now() + 1,
+    //             role   : "bot",
+    //             content: "이미지를 분석하고 있어요... ✨\n\n분석이 완료되면 피부 상태와 맞춤 제품을 추천해 드릴게요!",
+    //             time   : new Date().toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" }),
+    //         };
+    //         setMessages((prev) => [...prev, botMsg]);
+    //         setIsSending(false);
+    //     }, 2000);
+    // };
 
     // ── 공통 Handlers ─────────────────────────────────────────────────────
     const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -643,6 +1137,16 @@ export function ChatPage() {
         }
     };
 
+    const handleCloseTipModal = () => {
+        const userId = localStorage.getItem("user_id");
+
+        if (userId) {
+            localStorage.setItem(`has_seen_tip_modal_${userId}`, "true");
+        }
+
+        localStorage.removeItem("should_show_tip_modal");
+        setShowTipModal(false);
+    };
 
     // ── Render ────────────────────────────────────────────────────────────
     return (
@@ -688,7 +1192,7 @@ export function ChatPage() {
                 ) : !chat_content && messages.length === 0 ? (
                     <EmptyChatState />
                 ) : (
-                    <div className="px-4 py-4 space-y-4">
+                    <div className="px-4 pt-4 pb-4 space-y-4">
                         <AnimatePresence initial={false}>
                             {messages.map((msg) => (
                                 <motion.div
@@ -699,11 +1203,13 @@ export function ChatPage() {
                                     className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"} gap-3`}
                                 >
                                     {msg.role === "bot" && (
-                                        <Bot className='-mt-[16px]' />
+                                        <Bot className='mt-0' />
                                     )}
-                                    <div className={`max-w-[75%] flex flex-col gap-1 ${msg.role === "user" ? "items-end" : "items-start"}`}>
+                                    <div className={`flex flex-col gap-1 ${msg.role === "user" ? "items-end" : "items-start"} ${
+                                        msg.role === "bot" && parsePersonalColor(msg.content) ? "w-[55%]" : "max-w-[75%]"
+                                    }`}>
                                         <div
-                                            className={`rounded-2xl text-sm leading-relaxed overflow-hidden ${
+                                            className={`rounded-2xl text-sm leading-relaxed overflow-hidden w-full ${
                                                 msg.role === "user"
                                                     ? "text-white rounded-tr-md shadow-sm bg-onyou"
                                                     : "text-gray-800 bg-white border border-gray-100 shadow-sm rounded-tl-md"
@@ -741,13 +1247,76 @@ export function ChatPage() {
                                             {/* 텍스트 */}
                                             {msg.role === "bot" ? (() => {
                                                 const { mainText, links } = parseOliveYoungLinks(msg.content);
+                                                const pcInfo = parsePersonalColor(msg.content);
 
                                                 return (
                                                     <>
+                                                        {/* 퍼스널컬러 카드 (퍼스널컬러 답변일 때만) */}
+                                                        {pcInfo && (
+                                                            <div className="bg-gradient-to-br from-gray-50 via-white to-gray-50 px-5 pt-5 pb-4">
+                                                                {/* 일러스트 (가로 넓게) */}
+                                                                {PC_ILLUSTRATIONS[pcInfo.typeName] && (
+                                                                    <div className="w-full rounded-2xl overflow-hidden shadow-md border border-gray-100 mb-4">
+                                                                        <img
+                                                                            src={PC_ILLUSTRATIONS[pcInfo.typeName]}
+                                                                            alt={pcInfo.typeName}
+                                                                            className="w-full h-auto object-cover"
+                                                                            style={{ aspectRatio: "800 / 360" }}
+                                                                        />
+                                                                    </div>
+                                                                )}
+                                                                {/* 감성 멘트 (아래) */}
+                                                                <div className="text-center">
+                                                                    <p className="text-xs text-gray-400 font-medium tracking-wide mb-2">나의 퍼스널컬러</p>
+                                                                    <p className="text-lg font-bold text-gray-800 mb-1">
+                                                                        🎨 {pcInfo.typeName}
+                                                                    </p>
+                                                                    {pcInfo.seasonTag && (
+                                                                        <p className="text-xs text-gray-500 font-medium mb-2">
+                                                                            🏷️ {pcInfo.seasonTag}
+                                                                        </p>
+                                                                    )}
+                                                                    <p className="text-sm text-gray-600 italic leading-relaxed">
+                                                                        "{PC_CATCHPHRASES[pcInfo.typeName]}"
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                        )}
                                                         <div className="px-4 py-3">
                                                             <ReactMarkdown
                                                                 components={{
-                                                                    p:      ({ children }) => <p className="mb-2 last:mb-0 leading-relaxed">{children}</p>,
+                                                                    p: ({ children }) => {
+                                                                        if (pcInfo) {
+                                                                            const text = extractText(children);
+                                                                            // 카드에 이미 표시된 🎨 타입명, 🏷️ 시즌 줄은 숨김
+                                                                            if (text.startsWith("🎨") && !text.includes("추천 컬러")) return null;
+                                                                            if (text.startsWith("🏷️")) return null;
+                                                                            // "🎨 추천 컬러 : ..." 줄 감지
+                                                                            if (text.includes("추천 컬러") && text.includes("🎨") && !text.includes("피해야") && !text.includes("뉴트럴")) {
+                                                                                const colors = parseColorNames(text);
+                                                                                if (colors.length > 0) {
+                                                                                    return (
+                                                                                        <>
+                                                                                            <div className="flex flex-wrap gap-1.5 mb-1.5">
+                                                                                                {colors.map((c, i) => (
+                                                                                                    <div key={i} className="flex flex-col items-center gap-0.5 w-12">
+                                                                                                        <div
+                                                                                                            className="w-8 h-8 rounded-md shadow-sm border border-gray-200"
+                                                                                                            style={{ backgroundColor: c.hex }}
+                                                                                                            title={c.name}
+                                                                                                        />
+                                                                                                        <span className="text-[8px] text-gray-400 leading-tight text-center truncate w-full">{c.name}</span>
+                                                                                                    </div>
+                                                                                                ))}
+                                                                                            </div>
+                                                                                            <p className="mb-2 last:mb-0 leading-relaxed">{children}</p>
+                                                                                        </>
+                                                                                    );
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                        return <p className="mb-2 last:mb-0 leading-relaxed">{children}</p>;
+                                                                    },
                                                                     strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
                                                                     em:     ({ children }) => <em className="italic">{children}</em>,
                                                                     ul:     ({ children }) => <ul className="list-disc list-outside mb-2 space-y-1 pl-5">{children}</ul>,
@@ -760,7 +1329,7 @@ export function ChatPage() {
                                                                     hr:     () => <hr className="my-2 border-gray-200" />,
                                                                 }}
                                                             >
-                                                                {normalizeMarkdown(mainText)}
+                                                                {normalizeMarkdown(pcInfo ? stripHexCodes(mainText) : mainText)}
                                                             </ReactMarkdown>
                                                         </div>
                                                         {links.length > 0 && (
@@ -773,7 +1342,7 @@ export function ChatPage() {
                                                                         return (
                                                                             <div key={i} className="flex items-center gap-1.5">
                                                                                 <button
-                                                                                    onClick={() => handleAddToWishlist(link, msg.id)}
+                                                                                    onClick={() => handleToggleWishlist(link, msg.id)}
                                                                                     disabled={isWishing}
                                                                                     title={isWished ? "위시리스트에 추가됨" : "위시리스트에 추가"}
                                                                                     className={`flex-shrink-0 w-8.5 h-8.5 rounded-full flex items-center justify-center border transition-all cursor-pointer disabled:cursor-default ${isWished ? "bg-[#E8F5D0] border-onyou" : "bg-[#F9FAFB] border-[#E5E7EB]"}`}
@@ -810,7 +1379,7 @@ export function ChatPage() {
                                         <span className="text-xxs text-gray-400 px-1">{msg.time}</span>
                                     </div>
                                     {msg.role === "user" && (
-                                        <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0 overflow-hidden -mt-[16px]">
+                                        <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0 overflow-hidden mt-0">
                                             <img src={userProfileUrl ?? DefaultProfile} className="w-full h-full object-cover" alt="User" />
                                         </div>
                                     )}
@@ -819,10 +1388,17 @@ export function ChatPage() {
                         </AnimatePresence>
 
                         {isSending && (
-                            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="py-4">
-                                <video src={ChatLoading} autoPlay loop muted playsInline className="w-25 h-auto" />
+                            <motion.div
+                                initial={{ opacity: 0, y: 8 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="py-4 flex items-center gap-3"
+                            >
+                                <video src={ChatLoading} autoPlay loop muted playsInline className="w-20 h-auto" />
+                                <p className="text-sm text-gray-500">
+                                {personaMessage || "답변을 준비 중이에요..."}
+                                </p>
                             </motion.div>
-                        )}
+                            )}
                         <div ref={messagesEndRef} />
                     </div>
                 )}
@@ -857,7 +1433,7 @@ export function ChatPage() {
                                 <div className="w-px self-stretch bg-gray-100 mx-4" />
                                 <div className={`basis-1/2 grid place-content-center gap-3 ${uploadSlots.length === 1 ? "grid-cols-1 max-w-[150px]" : uploadSlots.length === 3 ? "grid-cols-3 max-w-[450px]" : "grid-cols-2"}`}>
                                     {uploadSlots.map((slot) => (
-                                        <UploadSlotCard key={slot.id} slot={slot} onUpload={handleUpload} onRemove={handleRemove} />
+                                        <UploadSlotCard key={slot.id} slot={slot} onUpload={handleUpload} onRemove={handleRemove} onOpenWebcam={handleOpenWebcam} showWebcam={analysisType === "personal"} />
                                     ))}
                                 </div>
                             </div>
@@ -909,8 +1485,9 @@ export function ChatPage() {
                                             {ANALYSIS_OPTIONS.map((opt) => (
                                                 <button
                                                     key={opt.value}
-                                                    onClick={() => { setAnalysisType(opt.value as AnalysisType); setAnalysisDropdownOpen(false); }}
-                                                    className={`w-full text-left px-4 py-2.5 text-xs font-medium transition-colors cursor-pointer ${
+                                                    // onClick={() => { setAnalysisType(opt.value as AnalysisType); setAnalysisDropdownOpen(false); }}
+                                                        onClick={() => handleSelectAnalysisType(opt.value as AnalysisType)}
+                                                        className={`w-full text-left px-4 py-2.5 text-xs font-medium transition-colors cursor-pointer ${
                                                         analysisType === opt.value ? "bg-[#E8F5D0] text-[#4A7A1E]" : "text-gray-700 hover:bg-gray-50"
                                                     }`}
                                                 >
@@ -938,6 +1515,7 @@ export function ChatPage() {
                     {/* 전송 버튼 */}
                     <div className="flex items-center gap-2 flex-shrink-0">
                         <motion.button
+                            data-send-btn
                             onClick={handleSend}
                             disabled={!canSend}
                             whileTap={{ scale: 0.9 }}
@@ -951,6 +1529,46 @@ export function ChatPage() {
             </div>
 
             {/* 분석 기능 로그인 안내 토스트 */}
+            <AnimatePresence>
+                {showLimitModal && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 px-4"
+                        onClick={() => setShowLimitModal(false)}
+                    >
+                        <motion.div
+                            initial={{ opacity: 0, y: 20, scale: 0.96 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: 20, scale: 0.96 }}
+                            transition={{ duration: 0.2 }}
+                            className="w-full max-w-sm rounded-3xl bg-white shadow-2xl px-6 py-6"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="flex items-center justify-center w-12 h-12 mx-auto rounded-full bg-[#FFF4E5] mb-4">
+                                <Lock className="w-5 h-5 text-[#F59E0B]" />
+                            </div>
+
+                            <h3 className="text-base font-semibold text-center text-gray-900 mb-2">
+                                사용 횟수 초과
+                            </h3>
+
+                            <p className="text-sm text-gray-500 text-center leading-relaxed mb-5">
+                                {limitModalMessage}
+                            </p>
+
+                            <button
+                                type="button"
+                                onClick={() => setShowLimitModal(false)}
+                                className="w-full h-11 rounded-2xl bg-onyou text-white text-sm font-medium cursor-pointer"
+                            >
+                                확인
+                            </button>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
             <AnimatePresence>
                 {showAnalysisToast && (
                     <motion.div
@@ -1046,7 +1664,24 @@ export function ChatPage() {
                         />
                     </motion.div>
                 )}
+                {showTipModal && (
+                    <TipGuideModal onClose={handleCloseTipModal} />
+                )}
+                <WebcamCaptureModal
+                    open={isWebcamOpen}
+                    onClose={handleCloseWebcam}
+                    onCapture={handleCaptureFromWebcam}
+                />
+                <SkinTriviaModal
+                    open={isTriviaOpen}
+                    onClose={() => setIsTriviaOpen(false)}
+                />
             </AnimatePresence>
+        {uploadError && (
+            <div className="fixed bottom-24 left-1/2 z-[9999] -translate-x-1/2 rounded-xl bg-red-500 px-4 py-3 text-sm font-medium text-white shadow-lg">
+                {uploadError}
+            </div>
+        )}
         </div>
     );
 }
