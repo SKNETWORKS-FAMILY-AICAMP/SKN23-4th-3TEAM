@@ -397,9 +397,9 @@ export function AnalysisPage() {
     try {
         const share = await createAnalysisShareLink(currentAnalysis.analysis_id);
 
-        console.log("[share.data] =", share.data);
-        console.log("[share_url before kakao] =", share.data.share_url);
-        alert(share.data.share_url);
+        // console.log("[share.data] =", share.data);
+        // console.log("[share_url before kakao] =", share.data.share_url);
+        // alert(share.data.share_url);
 
         shareSkinAnalysisToKakao({
             resultUrl   : share.data.share_url,
@@ -424,7 +424,7 @@ export function AnalysisPage() {
                         <p className="text-sm text-gray-500 mt-0.5">AI가 분석한 나의 피부 상태</p>
                     </div>
 
-                    {activeTab === "current" && currentAnalysis && (
+                    {/* {activeTab === "current" && currentAnalysis && (
                         <button
                             type="button"
                             onClick={handleKakaoShare}
@@ -432,7 +432,7 @@ export function AnalysisPage() {
                         >
                             카카오톡 공유
                         </button>
-                    )}
+                    )} */}
                 </div>
 
                 {/* ── 탭 ──────────────────────────────────────────────── */}

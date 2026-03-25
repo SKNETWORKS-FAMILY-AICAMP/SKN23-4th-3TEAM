@@ -328,10 +328,10 @@ def send_message(
         raise HTTPException(status_code=403, detail="접근 권한이 없습니다.")
 
     # 2. 이미지 분석 일일 제한 체크
-    if body.model_type in ("simple", "detailed", "ingredient", "personal") and body.image_url:
-        available, message = chat_service.check_today_image_analysis_limit(user_id, body.model_type)
-        if not available:
-            raise HTTPException(status_code=400, detail=message)
+    # if body.model_type in ("simple", "detailed", "ingredient", "personal") and body.image_url:
+    #     available, message = chat_service.check_today_image_analysis_limit(user_id, body.model_type)
+    #     if not available:
+    #         raise HTTPException(status_code=400, detail=message)
 
     # 3. 사용자 메시지 DB 저장
     try:
@@ -498,11 +498,11 @@ async def send_message_stream(
         raise HTTPException(status_code=403, detail="접근 권한이 없습니다.")
 
     # 2. 이미지 분석 일일 제한 체크
-    if body.model_type in ("simple", "detailed", "ingredient", "personal") and body.image_url:
-        available, message = chat_service.check_today_image_analysis_limit(user_id, body.model_type)
+    # if body.model_type in ("simple", "detailed", "ingredient", "personal") and body.image_url:
+    #     available, message = chat_service.check_today_image_analysis_limit(user_id, body.model_type)
 
-        if not available:
-            raise HTTPException(status_code=400, detail=message)
+    #     if not available:
+    #         raise HTTPException(status_code=400, detail=message)
     
     # 3. 사용자 메시지 DB 저장
     try:

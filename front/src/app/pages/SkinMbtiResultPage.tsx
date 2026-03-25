@@ -126,13 +126,13 @@ export function SkinMbtiResultPage() {
                     style={{ backgroundColor: bgColor }}
                 >
                 <div className="absolute top-6 right-6 z-10 flex items-center gap-2">
-                    <button
+                    {/* <button
                         type="button"
                         onClick={handleKakaoShare}
                         className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-[#FEE500] text-[#191919] text-sm font-semibold shadow-sm hover:opacity-90 cursor-pointer"
                     >
                         카카오톡 공유
-                    </button>
+                    </button> */}
 
                     <button
                         type="button"
