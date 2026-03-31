@@ -200,9 +200,6 @@ front/dist/
 outputs/
 front_back.zip
 
-*.md
-*.ipynb
-
 # 100MB 넘는파일은 githumb에 업로드 불가 > ignore 처리
 ./back/vector/assets/vector_data/mfds_cosmetic_report.jsonl
 back/vector/assets/vector_data/mfds_cosmetic_report.jsonl
@@ -219,3 +216,5 @@ skin_ai/checkpoint/
 
 !front/src/shared/lib/
 !front/src/shared/lib/**
+!on_you/lib/
+!on_you/lib/**
