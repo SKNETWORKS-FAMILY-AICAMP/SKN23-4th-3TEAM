@@ -3765,51 +3765,105 @@ ERD 링크: https://www.erdcloud.com/d/2cjZbEpqqK92Mw6AZ
     <tbody>
       <tr>
         <td align="center"><strong>Front-End</strong></td>
-        <td align="left">![React](https://img.shields.io/badge/React-61DAFB?style=flat&logo=react&logoColor=black) ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat&logo=typescript&logoColor=black) ![vite](https://img.shields.io/badge/vite-9135FF?style=flat&logo=vite&logoColor=white) ![TailwindCSS](https://img.shields.io/badge/TailwindCSS-1572B6?style=flat&logo=tailwindcss&logoColor=white) ![RadixUI](https://img.shields.io/badge/RadixUI-161618?style=flat&logo=radixui&logoColor=white) ![shadcn/ui](https://img.shields.io/badge/shadcnui-000000?style=flat&logo=shadcnui&logoColor=white)</td>
+        <td align="left">
+          <img src="https://img.shields.io/badge/React-61DAFB?style=flat&logo=react&logoColor=black" alt="React">
+          <img src="https://img.shields.io/badge/TypeScript-3178C6?style=flat&logo=typescript&logoColor=white" alt="TypeScript">
+          <img src="https://img.shields.io/badge/Vite-9135FF?style=flat&logo=vite&logoColor=white" alt="Vite">
+          <img src="https://img.shields.io/badge/TailwindCSS-1572B6?style=flat&logo=tailwindcss&logoColor=white" alt="TailwindCSS">
+          <img src="https://img.shields.io/badge/RadixUI-161618?style=flat&logo=radixui&logoColor=white" alt="RadixUI">
+          <img src="https://img.shields.io/badge/shadcn%2Fui-000000?style=flat&logo=shadcnui&logoColor=white" alt="shadcn/ui">
+        </td>
       </tr>
       <tr>
         <td align="center"><strong>Mobile</strong></td>
-        <td align="left">![Flutter](https://img.shields.io/badge/Flutter-02569B?style=flat&logo=flutter&logoColor=white) ![Dart](https://img.shields.io/badge/Dart-0175C2?style=flat&logo=dart&logoColor=white) ![Google ML Kit](https://img.shields.io/badge/Google_ML_Kit-4285F4?style=flat&logo=google&logoColor=white)</td>
+        <td align="left">
+          <img src="https://img.shields.io/badge/Flutter-02569B?style=flat&logo=flutter&logoColor=white" alt="Flutter">
+          <img src="https://img.shields.io/badge/Dart-0175C2?style=flat&logo=dart&logoColor=white" alt="Dart">
+          <img src="https://img.shields.io/badge/Google_ML_Kit-4285F4?style=flat&logo=google&logoColor=white" alt="Google ML Kit">
+        </td>
       </tr>
       <tr>
         <td align="center"><strong>Back-End</strong></td>
-        <td align="left">![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat&logo=fastapi&logoColor=white) ![Python](https://img.shields.io/badge/Python-3776AB?style=flat&logo=python&logoColor=white) ![Uvicorn](https://img.shields.io/badge/Uvicorn-499848?style=flat&logoColor=white)</td>
+        <td align="left">
+          <img src="https://img.shields.io/badge/FastAPI-009688?style=flat&logo=fastapi&logoColor=white" alt="FastAPI">
+          <img src="https://img.shields.io/badge/Python-3776AB?style=flat&logo=python&logoColor=white" alt="Python">
+          <img src="https://img.shields.io/badge/Uvicorn-499848?style=flat&logoColor=white" alt="Uvicorn">
+        </td>
       </tr>
       <tr>
         <td align="center"><strong>인증 / 보안</strong></td>
-        <td align="left">![JWT](https://img.shields.io/badge/JWT-000000?style=flat&logo=jsonwebtokens&logoColor=white) ![bcrypt](https://img.shields.io/badge/bcrypt-338AF0?style=flat&logoColor=white) ![Google OAuth](https://img.shields.io/badge/Google_OAuth-4285F4?style=flat&logo=google&logoColor=white) ![Naver OAuth](https://img.shields.io/badge/Naver_OAuth-03C75A?style=flat&logo=naver&logoColor=white) ![Kakao OAuth](https://img.shields.io/badge/Kakao_OAuth-FFCD00?style=flat&logo=kakao&logoColor=black) ![SendGrid](https://img.shields.io/badge/SendGrid-1A82E2?style=flat&logo=sendgrid&logoColor=white)</td>
+        <td align="left">
+          <img src="https://img.shields.io/badge/JWT-000000?style=flat&logo=jsonwebtokens&logoColor=white" alt="JWT">
+          <img src="https://img.shields.io/badge/bcrypt-338AF0?style=flat&logoColor=white" alt="bcrypt">
+          <img src="https://img.shields.io/badge/Google_OAuth-4285F4?style=flat&logo=google&logoColor=white" alt="Google OAuth">
+          <img src="https://img.shields.io/badge/Naver_OAuth-03C75A?style=flat&logo=naver&logoColor=white" alt="Naver OAuth">
+          <img src="https://img.shields.io/badge/Kakao_OAuth-FFCD00?style=flat&logo=kakao&logoColor=black" alt="Kakao OAuth">
+          <img src="https://img.shields.io/badge/SendGrid-1A82E2?style=flat&logo=sendgrid&logoColor=white" alt="SendGrid">
+        </td>
       </tr>
       <tr>
         <td align="center"><strong>Database</strong></td>
-        <td align="left">![MariaDB](https://img.shields.io/badge/MariaDB-003545?style=flat&logo=mariadb&logoColor=white)</td>
+        <td align="left">
+          <img src="https://img.shields.io/badge/MariaDB-003545?style=flat&logo=mariadb&logoColor=white" alt="MariaDB">
+        </td>
       </tr>
       <tr>
         <td align="center"><strong>Vector DB</strong></td>
-        <td align="left">![ChromaDB](https://img.shields.io/badge/ChromaDB-FF6B00?style=flat&logoColor=white)</td>
+        <td align="left">
+          <img src="https://img.shields.io/badge/ChromaDB-FF6B00?style=flat&logoColor=white" alt="ChromaDB">
+        </td>
       </tr>
       <tr>
         <td align="center"><strong>AI / LLM</strong></td>
-        <td align="left">![OpenAI](https://img.shields.io/badge/GPT--4o-412991?style=flat&logo=openai&logoColor=white) ![OpenAI](https://img.shields.io/badge/GPT--4.1--mini-412991?style=flat&logo=openai&logoColor=white)</td>
+        <td align="left">
+          <img src="https://img.shields.io/badge/GPT--4o-412991?style=flat&logo=openai&logoColor=white" alt="GPT-4o">
+          <img src="https://img.shields.io/badge/GPT--4.1--mini-412991?style=flat&logo=openai&logoColor=white" alt="GPT-4.1-mini">
+        </td>
       </tr>
       <tr>
         <td align="center"><strong>ML / DL</strong></td>
-        <td align="left">![PyTorch](https://img.shields.io/badge/PyTorch-EE4C2C?style=flat&logo=pytorch&logoColor=white) ![ResNet50](https://img.shields.io/badge/ResNet50-FF6F00?style=flat&logoColor=white) ![Qwen2.5-VL](https://img.shields.io/badge/Qwen2.5--VL-7B-blueviolet?style=flat&logoColor=white) ![HuggingFace](https://img.shields.io/badge/HuggingFace-FFD21E?style=flat&logo=huggingface&logoColor=black)</td>
+        <td align="left">
+          <img src="https://img.shields.io/badge/PyTorch-EE4C2C?style=flat&logo=pytorch&logoColor=white" alt="PyTorch">
+          <img src="https://img.shields.io/badge/ResNet50-FF6F00?style=flat&logoColor=white" alt="ResNet50">
+          <img src="https://img.shields.io/badge/Qwen2.5--VL_7B-blueviolet?style=flat&logoColor=white" alt="Qwen2.5-VL 7B">
+          <img src="https://img.shields.io/badge/HuggingFace-FFD21E?style=flat&logo=huggingface&logoColor=black" alt="HuggingFace">
+        </td>
       </tr>
       <tr>
         <td align="center"><strong>RAG / Orchestration</strong></td>
-        <td align="left">![LangGraph](https://img.shields.io/badge/LangGraph-1C3C3C?style=flat&logo=langgraph&logoColor=white) ![Tavily](https://img.shields.io/badge/Tavily-0066FF?style=flat&logoColor=white) ![Sentence-Transformers](https://img.shields.io/badge/Sentence--Transformers-FF6B00?style=flat&logoColor=white) ![ko-sroberta](https://img.shields.io/badge/ko--sroberta--multitask-yellow?style=flat&logoColor=white)</td>
+        <td align="left">
+          <img src="https://img.shields.io/badge/LangGraph-1C3C3C?style=flat&logo=langgraph&logoColor=white" alt="LangGraph">
+          <img src="https://img.shields.io/badge/Tavily-0066FF?style=flat&logoColor=white" alt="Tavily">
+          <img src="https://img.shields.io/badge/Sentence--Transformers-FF6B00?style=flat&logoColor=white" alt="Sentence-Transformers">
+          <img src="https://img.shields.io/badge/ko--sroberta--multitask-yellow?style=flat&logoColor=white" alt="ko-sroberta-multitask">
+        </td>
       </tr>
       <tr>
         <td align="center"><strong>이미지 처리</strong></td>
-        <td align="left">![OpenCV](https://img.shields.io/badge/OpenCV-5C3EE8?style=flat&logo=opencv&logoColor=white) ![Pillow](https://img.shields.io/badge/Pillow-3776AB?style=flat&logo=python&logoColor=white) ![TensorFlow.js](https://img.shields.io/badge/TensorFlow.js-FF6F00?style=flat&logo=tensorflow&logoColor=white) ![MediaPipe](https://img.shields.io/badge/MediaPipe-0097A7?style=flat&logoColor=white)</td>
+        <td align="left">
+          <img src="https://img.shields.io/badge/OpenCV-5C3EE8?style=flat&logo=opencv&logoColor=white" alt="OpenCV">
+          <img src="https://img.shields.io/badge/Pillow-3776AB?style=flat&logo=python&logoColor=white" alt="Pillow">
+          <img src="https://img.shields.io/badge/TensorFlow.js-FF6F00?style=flat&logo=tensorflow&logoColor=white" alt="TensorFlow.js">
+          <img src="https://img.shields.io/badge/MediaPipe-0097A7?style=flat&logoColor=white" alt="MediaPipe">
+        </td>
       </tr>
       <tr>
         <td align="center"><strong>Infra</strong></td>
-        <td align="left">![AWS](https://img.shields.io/badge/AWS_EC2-FF9900?style=flat&logo=amazonec2&logoColor=white) ![S3](https://img.shields.io/badge/S3-FF9900?style=flat&logo=amazons3&logoColor=white) ![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat&logo=docker&logoColor=white) ![Nginx](https://img.shields.io/badge/Nginx-009639?style=flat&logo=nginx&logoColor=white)</td>
+        <td align="left">
+          <img src="https://img.shields.io/badge/AWS_EC2-FF9900?style=flat&logo=amazonec2&logoColor=white" alt="AWS EC2">
+          <img src="https://img.shields.io/badge/AWS_S3-FF9900?style=flat&logo=amazons3&logoColor=white" alt="AWS S3">
+          <img src="https://img.shields.io/badge/Docker-2496ED?style=flat&logo=docker&logoColor=white" alt="Docker">
+          <img src="https://img.shields.io/badge/Nginx-009639?style=flat&logo=nginx&logoColor=white" alt="Nginx">
+        </td>
       </tr>
       <tr>
         <td align="center"><strong>Tools</strong></td>
-        <td align="left">![Figma](https://img.shields.io/badge/Figma-F05032?style=flat&logo=Figma&logoColor=white) ![Git](https://img.shields.io/badge/Git-F05032?style=flat&logo=git&logoColor=white) ![VS Code](https://img.shields.io/badge/VS_Code-007ACC?style=flat&logo=visual-studio-code&logoColor=white) ![RunPod](https://img.shields.io/badge/RunPod-673AB7?style=flat&logoColor=white)</td>
+        <td align="left">
+          <img src="https://img.shields.io/badge/Figma-F24E1E?style=flat&logo=figma&logoColor=white" alt="Figma">
+          <img src="https://img.shields.io/badge/Git-F05032?style=flat&logo=git&logoColor=white" alt="Git">
+          <img src="https://img.shields.io/badge/VS_Code-007ACC?style=flat&logo=visual-studio-code&logoColor=white" alt="VS Code">
+          <img src="https://img.shields.io/badge/RunPod-673AB7?style=flat&logoColor=white" alt="RunPod">
+        </td>
       </tr>
     </tbody>
   </table>
