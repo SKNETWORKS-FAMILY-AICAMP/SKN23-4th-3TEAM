@@ -58,13 +58,40 @@
   </table>
 </div>
 
-| 이름 | 담당 업무 |
-| :-: | :-- |
-| 강승원<br />(PM/LLM/BACK) | ResNet50 기반 피부 정량 분석 모델 학습(Fast/Deep), OCR 모델 비교 평가 및 전환, LangGraph 파이프라인 설계 및 프롬프트 엔지니어링, 웹캠 실시간 얼굴 감지,  FastAPI → Django 전환, 이용약관·개인정보처리방침 작성 |
-| 정석원<br />(LLM/FRONT/BACK) | LLM 응답 생성기 구현 및 LLM 라우터, 올리브영 제품 검증 파이프라인, RAG 기반 답변 보강, 프론트엔드 개발, FastAPI 백엔드 개발 |
-| 정유선<br />(FRONT/BACK) | React 프론트엔드 개발, FastAPI 백엔드 API 설계 및 개발, ChromaDB 기반 벡터 DB 구축 및 관리, ko-sroberta 임베딩 모델 연동, RAG 기반 검색 파이프라인 구현, 데이터 구조 개선 및 이미지 매핑 처리, 화면 설계, API 문서화, Google PlayStore 앱 배포 |
-| 송민채<br />(AWS/BACK/DB) | AWS 인프라(EC2·S3·RDS) 구축 및 운영, MySQL 데이터베이스 설계(ERD) 및 사용자·분석·위시리스트 테이블 구조 설계, FastAPI 백엔드 API 설계 및 개발, 분석 이력 저장 로직 구현 |
-| 이승연<br />(AWS/UI/FLUTTER) | 브랜드 아이덴티티 기획, AWS 인프라(EC2·S3·MariaDB) 구축 및 운영, 모바일 앱 UI/UX 디자인 및 API 연동, 피부 MBTI·퍼스널컬러 테스트 콘텐츠 구조 설계, 로고·디자인 이미지·인포그래픽 제작, 플러터 카메라 비전 구현 |
+<table>
+  <colgroup>
+    <col style="width: 20%;">
+    <col style="width: 80%;">
+  </colgroup>
+  <thead>
+    <tr>
+      <th align="center">이름</th>
+      <th align="left">담당 업무</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="center">강승원<br />(PM/LLM/BACK)</td>
+      <td align="left">ResNet50 기반 피부 정량 분석 모델 학습(Fast/Deep), OCR 모델 비교 평가 및 전환, LangGraph 파이프라인 설계 및 프롬프트 엔지니어링, 웹캠 실시간 얼굴 감지,  FastAPI → Django 전환, 이용약관·개인정보처리방침 작성</td>
+    </tr>
+    <tr>
+      <td align="center">정석원<br />(LLM/FRONT/BACK)</td>
+      <td align="left">LLM 응답 생성기 구현 및 LLM 라우터, 올리브영 제품 검증 파이프라인, RAG 기반 답변 보강, 프론트엔드 개발, FastAPI 백엔드 개발</td>
+    </tr>
+    <tr>
+      <td align="center">정유선<br />(FRONT/BACK)</td>
+      <td align="left">React 프론트엔드 개발, FastAPI 백엔드 API 설계 및 개발, ChromaDB 기반 벡터 DB 구축 및 관리, ko-sroberta 임베딩 모델 연동, RAG 기반 검색 파이프라인 구현, 데이터 구조 개선 및 이미지 매핑 처리, 화면 설계, API 문서화, Google PlayStore 앱 배포</td>
+    </tr>
+    <tr>
+      <td align="center">송민채<br />(AWS/BACK/DB)</td>
+      <td align="left">AWS 인프라(EC2·S3·RDS) 구축 및 운영, MySQL 데이터베이스 설계(ERD) 및 사용자·분석·위시리스트 테이블 구조 설계, FastAPI 백엔드 API 설계 및 개발, 분석 이력 저장 로직 구현</td>
+    </tr>
+    <tr>
+      <td align="center">이승연<br />(AWS/UI/FLUTTER)</td>
+      <td align="left">브랜드 아이덴티티 기획, AWS 인프라(EC2·S3·MariaDB) 구축 및 운영, 모바일 앱 UI/UX 디자인 및 API 연동, 피부 MBTI·퍼스널컬러 테스트 콘텐츠 구조 설계, 로고·디자인 이미지·인포그래픽 제작, 플러터 카메라 비전 구현</td>
+    </tr>
+  </tbody>
+</table>
 
 ---
 
@@ -90,9 +117,8 @@
 - [16. 트러블 슈팅](#16-트러블-슈팅)
 - [17. 비즈니스 전략](#17-비즈니스-전략)
 - [18. 한 줄 회고](#18-한-줄-회고)
-  
----
 
+---
 
 ---
 
@@ -161,16 +187,17 @@ graph LR
 
 ### 2.4. N년 후 예상 시장 규모
 
-CJ올리브영의 매출은 2021년 2조 원, 2022년 2조 7,774억 원, 2023년 3조 8,611억 원, 2024년 4조 7,899억 원, 2025년 5조 8,335억 원으로 성장했습니다. 2025년 매출은 전년 대비 21.8% 증가했으며, 2021년부터 2025년까지의 연평균 성장률(CAGR)은 약 30.7% 수준입니다. 
+CJ올리브영의 매출은 2021년 2조 원, 2022년 2조 7,774억 원, 2023년 3조 8,611억 원, 2024년 4조 7,899억 원, 2025년 5조 8,335억 원으로 성장했습니다. 2025년 매출은 전년 대비 21.8% 증가했으며, 2021년부터 2025년까지의 연평균 성장률(CAGR)은 약 30.7% 수준입니다.
 
 이 흐름을 바탕으로 2025년 매출 5조 8,335억 원을 기준 삼아 3년 뒤 규모를 계산하면,
+
 - **최근 1년 성장률(21.8%)을 기준으로 한 보수적 추정**: 약 **10조 5,000억 원**
-- **2021~2025년 연평균 성장률(약 30.7%)을 기준으로 한 확장 추정**: 약 **13조 원**
-수준까지 확대될 것으로 예측됩니다.
+- **2021~2025년 연평균 성장률(약 30.7%)을 기준으로 한 확장 추정**: 약 **13조 원** 수준까지 확대될 것으로 예측됩니다.
 
 온유는 이처럼 빠르게 성장하는 뷰티 커머스 환경에서 피부 분석, 전성분 분석, 제품 추천, 퍼스널컬러, 피부 MBTI를 하나의 흐름으로 연결해 **개인화된 뷰티 경험**을 제공하는 AI 서비스로 기획되었습니다.
 
 ### 2.5. 기대효과
+
 - 피부 분석, 전성분 분석, 퍼스널컬러, 피부 MBTI를 하나의 사용자 흐름으로 통합
 - 단순 추천을 넘어 재방문, 저장, 공유까지 이어지는 서비스 구조 설계
 - 올리브영 기반 실사용 제품 추천으로 구매 연결 가능성 강화
@@ -184,35 +211,41 @@ CJ올리브영의 매출은 2021년 2조 원, 2022년 2조 7,774억 원, 2023년
 ### 3.1. 아이컬러(iColor)
 
 #### 주요 기능 및 특징
+
 - 사진 촬영 기반 퍼스널컬러 진단
 - 어울리는 색상 탐색 및 스타일링 추천
 - 퍼스널컬러 중심의 뷰티 콘텐츠 제공
-- 컬러 진단 결과를 바탕으로 관련 상품/콘텐츠 탐색 지원 
+- 컬러 진단 결과를 바탕으로 관련 상품/콘텐츠 탐색 지원
 
 #### 강점
+
 - 퍼스널컬러 진단에 집중된 서비스라 사용 목적이 명확함
 - 촬영 기반 진단 구조로 진입 장벽이 낮음
 
 #### 한계점
+
 - 서비스 중심축이 퍼스널컬러에 맞춰져 있어, 피부 정량 분석이나 전성분 분석까지 한 번에 연결되는 구조는 상대적으로 약함
-- 스킨케어 상담, 피부 분석 이력 관리, 결과 공유형 리포트 등 확장형 흐름보다는 퍼스널 컬러 진단 중심 경험에 강점이 있음 
+- 스킨케어 상담, 피부 분석 이력 관리, 결과 공유형 리포트 등 확장형 흐름보다는 퍼스널 컬러 진단 중심 경험에 강점이 있음
 
 ---
 
 ### 3.2. 잼페이스(Zamface)
 
 #### 주요 기능 및 특징
+
 - AI 피부 진단 및 피부 타입/피부 고민 분석
 - 퍼스널컬러 진단
 - 화장품 매칭 기능
 - 사용자 리뷰 및 유튜버 리뷰 기반 제품 탐색
 
 #### 강점
+
 - 피부 진단과 퍼스널컬러를 함께 제공해 뷰티 앱으로서의 범용성이 높음
 - 사용자 리뷰, 유튜버 리뷰, 제품 탐색을 자연스럽게 연결함
 - 앱 서비스 운영 경험이 축적되어 있어 콘텐츠 소비와 탐색 흐름이 강함
 
 #### 한계점
+
 - 피부 분석 결과를 날짜별로 누적 비교하거나, 성분표 이미지를 직접 해석하는 흐름은 공개된 소개 기준으로는 상대적으로 덜 강조됨
 
 ---
@@ -221,24 +254,70 @@ CJ올리브영의 매출은 2021년 2조 원, 2022년 2조 7,774억 원, 2023년
 
 온유는 퍼스널컬러나 피부 진단 중 한 영역에만 집중하기보다, **피부 분석 → 전성분 분석 → 제품 추천 → 퍼스널컬러 진단**까지 이어지는 통합 흐름을 설계한 것이 가장 큰 차별점입니다. 아이컬러가 퍼스널컬러 특화 경험에 강점이 있고, 잼페이스가 진단과 콘텐츠 소비를 함께 제공하는 앱형 경험에 강점이 있다면, 온유는 여기에 **전성분 OCR, 챗봇 기반 상담, 날짜별 분석 이력, 피부 MBTI**까지 결합해 보다 연결된 사용자 경험을 제공하는 방향을 지향합니다.
 
-| 비교 항목 | 온유 | 아이컬러 | 잼페이스 |
-|---|---|---|---|
-| 핵심 초점 | 피부 분석 + 성분 해석 + 추천 통합 | 퍼스널컬러 특화 | 퍼스널컬러 + 피부 진단 + 콘텐츠 탐색 |
-| 피부 분석 리포트 | 빠른/정밀 분석, 이력 기반 확장 | 컬러 진단 중심 | AI 피부 진단 중심 |
-| 성분 해석 | OCR/VLM 기반 성분 분석 제공 | 공개 소개 기준 주요 기능 아님 | 공개 소개 기준 주요 기능 아님 |
-| 제품 연결 방식 | 챗봇 기반 추천 + 올리브영 연계 | 컬러 기반 탐색 중심 | 매칭 + 리뷰/콘텐츠 탐색 중심 |
-| 사용자 경험 확장 | 피부 MBTI, 공유 링크, 날짜별 조회 | 퍼스널컬러 경험 집중 | 앱형 콘텐츠 소비와 탐색 경험 강점 |
-| 서비스 포지션 | 통합형 뷰티 AI 어시스턴트 | 컬러 특화형 서비스 | 뷰티 탐색형 앱 서비스 |
+<table>
+  <colgroup>
+    <col style="width: 20%;">
+    <col style="width: 27%;">
+    <col style="width: 27%;">
+    <col style="width: 26%;">
+  </colgroup>
+  <thead>
+    <tr>
+      <th align="left">비교 항목</th>
+      <th align="left">온유</th>
+      <th align="left">아이컬러</th>
+      <th align="left">잼페이스</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="left">핵심 초점</td>
+      <td align="left">피부 분석 + 성분 해석 + 추천 통합</td>
+      <td align="left">퍼스널컬러 특화</td>
+      <td align="left">퍼스널컬러 + 피부 진단 + 콘텐츠 탐색</td>
+    </tr>
+    <tr>
+      <td align="left">피부 분석 리포트</td>
+      <td align="left">빠른/정밀 분석, 이력 기반 확장</td>
+      <td align="left">컬러 진단 중심</td>
+      <td align="left">AI 피부 진단 중심</td>
+    </tr>
+    <tr>
+      <td align="left">성분 해석</td>
+      <td align="left">OCR/VLM 기반 성분 분석 제공</td>
+      <td align="left">공개 소개 기준 주요 기능 아님</td>
+      <td align="left">공개 소개 기준 주요 기능 아님</td>
+    </tr>
+    <tr>
+      <td align="left">제품 연결 방식</td>
+      <td align="left">챗봇 기반 추천 + 올리브영 연계</td>
+      <td align="left">컬러 기반 탐색 중심</td>
+      <td align="left">매칭 + 리뷰/콘텐츠 탐색 중심</td>
+    </tr>
+    <tr>
+      <td align="left">사용자 경험 확장</td>
+      <td align="left">피부 MBTI, 공유 링크, 날짜별 조회</td>
+      <td align="left">퍼스널컬러 경험 집중</td>
+      <td align="left">앱형 콘텐츠 소비와 탐색 경험 강점</td>
+    </tr>
+    <tr>
+      <td align="left">서비스 포지션</td>
+      <td align="left">통합형 뷰티 AI 어시스턴트</td>
+      <td align="left">컬러 특화형 서비스</td>
+      <td align="left">뷰티 탐색형 앱 서비스</td>
+    </tr>
+  </tbody>
+</table>
 
 #### 정리
+
 - **아이컬러**: 퍼스널컬러 진단에 집중한 특화형 서비스
 - **잼페이스**: 퍼스널컬러, 피부 진단, 리뷰 탐색을 결합한 앱형 서비스
-- **온유**: 피부 분석, 성분 해석, 추천, 상담, 공유까지 하나의 흐름으로 묶은 통합형 뷰티 AI 서비스 
+- **온유**: 피부 분석, 성분 해석, 추천, 상담, 공유까지 하나의 흐름으로 묶은 통합형 뷰티 AI 서비스
 
 ---
 
 ## 4. 정책 및 신뢰성 설계
-
 
 ### 4.1. 개요
 
@@ -250,13 +329,47 @@ CJ올리브영의 매출은 2021년 2조 원, 2022년 2조 7,774억 원, 2023년
 
 ### 4.2. 주요 법적 쟁점 및 대응
 
-| 쟁점 | 관련 법령 | 판단 및 대응 |
-|------|----------|-------------|
-| **얼굴 사진의 법적 성격** | 개인정보보호법 제23조, 시행령 제18조 제3호 | 피부 분석 목적으로 "특정 개인을 알아볼 목적"이 아니므로 민감정보(생체인식정보) 비해당. 단, 법적 리스크를 위해 **별도 동의** 획득 구조 설계 |
-| **OpenAI API 국외 이전** | 개인정보보호법 제28조의8 | 이전 국가(미국), 이전받는 자(OpenAI, L.L.C.), 이전 목적, 이전 항목, 보유기간을 **처리방침에 구체적 명시** 및 별도 동의 |
-| **AI 자동화된 결정** | 개인정보보호법 제37조의2 | ResNet50·GPT-4.1-mini에 의한 완전 자동 분석 → 분석 기준·절차·처리방식 **공개**, 설명 요구권 안내 |
-| **의료행위 해당 여부** | 의료법 | AI 분석 결과는 의료 진단이 아닌 **스킨케어 정보 제공 목적**임을 이용약관에 명시, 면책 조항 포함 |
-| **카메라 실시간 얼굴 감지** | 생체정보 보호 가이드라인 | Google ML Kit 온디바이스 처리 → **서버 미전송**, 식별/인증 목적 아님을 처리방침에 명시 |
+<table>
+  <colgroup>
+    <col style="width: 22%;">
+    <col style="width: 28%;">
+    <col style="width: 50%;">
+  </colgroup>
+  <thead>
+    <tr>
+      <th align="left">쟁점</th>
+      <th align="left">관련 법령</th>
+      <th align="left">판단 및 대응</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="left"><strong>얼굴 사진의 법적 성격</strong></td>
+      <td align="left">개인정보보호법 제23조, 시행령 제18조 제3호</td>
+      <td align="left">피부 분석 목적으로 "특정 개인을 알아볼 목적"이 아니므로 민감정보(생체인식정보) 비해당. 단, 법적 리스크를 위해 <strong>별도 동의</strong> 획득 구조 설계</td>
+    </tr>
+    <tr>
+      <td align="left"><strong>OpenAI API 국외 이전</strong></td>
+      <td align="left">개인정보보호법 제28조의8</td>
+      <td align="left">이전 국가(미국), 이전받는 자(OpenAI, L.L.C.), 이전 목적, 이전 항목, 보유기간을 <strong>처리방침에 구체적 명시</strong> 및 별도 동의</td>
+    </tr>
+    <tr>
+      <td align="left"><strong>AI 자동화된 결정</strong></td>
+      <td align="left">개인정보보호법 제37조의2</td>
+      <td align="left">ResNet50·GPT-4.1-mini에 의한 완전 자동 분석 → 분석 기준·절차·처리방식 <strong>공개</strong>, 설명 요구권 안내</td>
+    </tr>
+    <tr>
+      <td align="left"><strong>의료행위 해당 여부</strong></td>
+      <td align="left">의료법</td>
+      <td align="left">AI 분석 결과는 의료 진단이 아닌 <strong>스킨케어 정보 제공 목적</strong>임을 이용약관에 명시, 면책 조항 포함</td>
+    </tr>
+    <tr>
+      <td align="left"><strong>카메라 실시간 얼굴 감지</strong></td>
+      <td align="left">생체정보 보호 가이드라인</td>
+      <td align="left">Google ML Kit 온디바이스 처리 → <strong>서버 미전송</strong>, 식별/인증 목적 아님을 처리방침에 명시</td>
+    </tr>
+  </tbody>
+</table>
 
 ---
 
@@ -281,54 +394,188 @@ CJ올리브영의 매출은 2021년 2조 원, 2022년 2조 7,774억 원, 2023년
 
 #### 📄 개인정보처리방침 (전 33조)
 
-| 구분 | 조항 | 내용 |
-|------|------|------|
-| 수집 정보 | 제5~7조 | 필수/선택/AI분석용 수집 항목 및 별도 동의 근거 |
-| 수집 방법 | 제8조 | 직접 입력, 사진 업로드, 소셜로그인(Google·Kakao·Naver), 카메라 실시간 촬영, 자동 수집(로그·쿠키) |
-| 제3자 제공 | 제10조 | OpenAI, L.L.C.(미국) — 얼굴 검증, 피부 상담, 퍼스널컬러 분석 |
-| 처리 위탁 | 제11조 | Amazon Web Services, Inc.(서울 리전) — 인프라 운영 |
-| 보유기간 | 제12조 | 항목별 구체적 명시 (얼굴 사진·성분 사진: 사용자 삭제 시까지, 접속 로그: 1년 등) |
-| 국외 이전 | 제28조 | 제28조의8 요건 충족 (이전 항목·국가·방법·수령자·목적·보유기간 명시) |
-| 자동화된 결정 | 제29조 | 빠른 분석·정밀 분석·퍼스널컬러 분석의 기준·절차 공개, 설명 요구권 |
-| 안전성 확보 | 제21조 | bcrypt 암호화, HTTPS/TLS, JWT 인증, 접속 기록 보관 |
+<table>
+  <colgroup>
+    <col style="width: 18%;">
+    <col style="width: 12%;">
+    <col style="width: 70%;">
+  </colgroup>
+  <thead>
+    <tr>
+      <th align="left">구분</th>
+      <th align="left">조항</th>
+      <th align="left">내용</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="left">수집 정보</td>
+      <td align="left">제5~7조</td>
+      <td align="left">필수/선택/AI분석용 수집 항목 및 별도 동의 근거</td>
+    </tr>
+    <tr>
+      <td align="left">수집 방법</td>
+      <td align="left">제8조</td>
+      <td align="left">직접 입력, 사진 업로드, 소셜로그인(Google·Kakao·Naver), 카메라 실시간 촬영, 자동 수집(로그·쿠키)</td>
+    </tr>
+    <tr>
+      <td align="left">제3자 제공</td>
+      <td align="left">제10조</td>
+      <td align="left">OpenAI, L.L.C.(미국) — 얼굴 검증, 피부 상담, 퍼스널컬러 분석</td>
+    </tr>
+    <tr>
+      <td align="left">처리 위탁</td>
+      <td align="left">제11조</td>
+      <td align="left">Amazon Web Services, Inc.(서울 리전) — 인프라 운영</td>
+    </tr>
+    <tr>
+      <td align="left">보유기간</td>
+      <td align="left">제12조</td>
+      <td align="left">항목별 구체적 명시 (얼굴 사진·성분 사진: 사용자 삭제 시까지, 접속 로그: 1년 등)</td>
+    </tr>
+    <tr>
+      <td align="left">국외 이전</td>
+      <td align="left">제28조</td>
+      <td align="left">제28조의8 요건 충족 (이전 항목·국가·방법·수령자·목적·보유기간 명시)</td>
+    </tr>
+    <tr>
+      <td align="left">자동화된 결정</td>
+      <td align="left">제29조</td>
+      <td align="left">빠른 분석·정밀 분석·퍼스널컬러 분석의 기준·절차 공개, 설명 요구권</td>
+    </tr>
+    <tr>
+      <td align="left">안전성 확보</td>
+      <td align="left">제21조</td>
+      <td align="left">bcrypt 암호화, HTTPS/TLS, JWT 인증, 접속 기록 보관</td>
+    </tr>
+  </tbody>
+</table>
 
 #### 📄 서비스 이용약관 (전 22조)
 
-| 구분 | 조항 | 내용 |
-|------|------|------|
-| AI 분석 한계 및 의료 면책 | 제14조 | 의료행위 아님, 정확성 미보장, 퍼스널컬러는 전문 컬러리스트 대체 불가 |
-| 얼굴 사진 처리 특칙 | 제15조 | 본인 사진만 업로드, 타인 사진 금지, 식별 목적 미사용, 카메라 온디바이스 처리 명시 |
-| 자동화된 결정 안내 | 제16조 | AI 완전 자동 분석 고지, 설명 요구권·이의 제기권 안내 |
-| 면책사항 | 제20조 | AI 분석 결과 오류에 대한 면책, 제품 추천 정보 변경 가능성 |
+<table>
+  <colgroup>
+    <col style="width: 25%;">
+    <col style="width: 10%;">
+    <col style="width: 65%;">
+  </colgroup>
+  <thead>
+    <tr>
+      <th align="left">구분</th>
+      <th align="left">조항</th>
+      <th align="left">내용</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="left">AI 분석 한계 및 의료 면책</td>
+      <td align="left">제14조</td>
+      <td align="left">의료행위 아님, 정확성 미보장, 퍼스널컬러는 전문 컬러리스트 대체 불가</td>
+    </tr>
+    <tr>
+      <td align="left">얼굴 사진 처리 특칙</td>
+      <td align="left">제15조</td>
+      <td align="left">본인 사진만 업로드, 타인 사진 금지, 식별 목적 미사용, 카메라 온디바이스 처리 명시</td>
+    </tr>
+    <tr>
+      <td align="left">자동화된 결정 안내</td>
+      <td align="left">제16조</td>
+      <td align="left">AI 완전 자동 분석 고지, 설명 요구권·이의 제기권 안내</td>
+    </tr>
+    <tr>
+      <td align="left">면책사항</td>
+      <td align="left">제20조</td>
+      <td align="left">AI 분석 결과 오류에 대한 면책, 제품 추천 정보 변경 가능성</td>
+    </tr>
+  </tbody>
+</table>
 
 ---
 
 ### 4.5. 법적 검증 과정
 
-| 단계 | 내용 |
-|------|------|
-| **1단계: 법령 조사** | 개인정보보호법, 시행령, 2025년 4월 처리방침 작성지침, 생체정보 보호 가이드라인, 자동화된 결정 안내서 등 관련 법령·가이드라인 조사 |
-| **2단계: 변호사 자문** | 로톡(LawTalk) 플랫폼에서 6명의 변호사로부터 무료 답변 수령 — 얼굴 사진의 법적 성격, 동의 분리 구조, 국외 이전, 의료 면책 등 핵심 쟁점 검증 |
-| **3단계: 초안 생성** | 로폼(LawForm) 자동작성 서비스로 표준 약관 틀 생성 |
-| **4단계: 맞춤 조항 추가** | AI 의료 면책, 자동화된 결정 공개(제37조의2), 국외 이전 상세(제28조의8), 얼굴 사진 처리 특칙, 카메라 온디바이스 처리 명시 등 직접 추가 |
-| **5단계: 실제 기능 대조 검증** | 서비스의 모든 기능(피부 분석, 퍼스널컬러, 성분 OCR, 챗봇, 위시리스트 등)과 문서 내용의 1:1 대조 검증 수행 |
+<table>
+  <colgroup>
+    <col style="width: 25%;">
+    <col style="width: 75%;">
+  </colgroup>
+  <thead>
+    <tr>
+      <th align="left">단계</th>
+      <th align="left">내용</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="left"><strong>1단계: 법령 조사</strong></td>
+      <td align="left">개인정보보호법, 시행령, 2025년 4월 처리방침 작성지침, 생체정보 보호 가이드라인, 자동화된 결정 안내서 등 관련 법령·가이드라인 조사</td>
+    </tr>
+    <tr>
+      <td align="left"><strong>2단계: 변호사 자문</strong></td>
+      <td align="left">로톡(LawTalk) 플랫폼에서 6명의 변호사로부터 무료 답변 수령 — 얼굴 사진의 법적 성격, 동의 분리 구조, 국외 이전, 의료 면책 등 핵심 쟁점 검증</td>
+    </tr>
+    <tr>
+      <td align="left"><strong>3단계: 초안 생성</strong></td>
+      <td align="left">로폼(LawForm) 자동작성 서비스로 표준 약관 틀 생성</td>
+    </tr>
+    <tr>
+      <td align="left"><strong>4단계: 맞춤 조항 추가</strong></td>
+      <td align="left">AI 의료 면책, 자동화된 결정 공개(제37조의2), 국외 이전 상세(제28조의8), 얼굴 사진 처리 특칙, 카메라 온디바이스 처리 명시 등 직접 추가</td>
+    </tr>
+    <tr>
+      <td align="left"><strong>5단계: 실제 기능 대조 검증</strong></td>
+      <td align="left">서비스의 모든 기능(피부 분석, 퍼스널컬러, 성분 OCR, 챗봇, 위시리스트 등)과 문서 내용의 1:1 대조 검증 수행</td>
+    </tr>
+  </tbody>
+</table>
 
 4차 프로젝트에서 챗봇의 분석 기능 확장, 개인화 강화, 응답 UX 개선, 입력 품질 보장, 인프라 개선을 수행했습니다.
-
-
-
 
 ## 5. 수집된 데이터 및 데이터 전처리
 
 ### 5.1. 데이터 출처 및 수집 방식
 
-| 데이터 유형 | 출처 및 수집 방식 | 활용 목적 |
-| --- | --- | --- |
-| 기능성 화장품 보고품목 | 공공 API (기능성화장품 보고품목 정보, 식약처) | 기능성화장품의 제품 목록 및 상세 정보 수집, 성분 안전성 판단 및 피부 교차 필터링 |
-| 화장품 원료 성분 정보 | 공공 API (식약처 화장품 원료성분 정보) | 주의 및 제한 성분 조회 |
-| 피부 질병 정보 | 대한피부과학회 웹크롤링 (비회원 공개 페이지) | 피부 질환별 상세 정보 수집 및 상담 근거 확보 |
-| 피부 관련 리뷰 논문 | PubMed E-utilities API (논문 요약본) | 피부 장벽, 보습, 항노화 관련 최신 학술 근거 제공 |
-| 피부 관리 가이드 | AAD(미국피부과학회) 웹 크롤링 | 피부 상태별 관리 단계 및 루틴 구성 |
+<table>
+  <colgroup>
+    <col style="width: 22%;">
+    <col style="width: 38%;">
+    <col style="width: 40%;">
+  </colgroup>
+  <thead>
+    <tr>
+      <th align="left">데이터 유형</th>
+      <th align="left">출처 및 수집 방식</th>
+      <th align="left">활용 목적</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="left">기능성 화장품 보고품목</td>
+      <td align="left">공공 API (기능성화장품 보고품목 정보, 식약처)</td>
+      <td align="left">기능성화장품의 제품 목록 및 상세 정보 수집, 성분 안전성 판단 및 피부 교차 필터링</td>
+    </tr>
+    <tr>
+      <td align="left">화장품 원료 성분 정보</td>
+      <td align="left">공공 API (식약처 화장품 원료성분 정보)</td>
+      <td align="left">주의 및 제한 성분 조회</td>
+    </tr>
+    <tr>
+      <td align="left">피부 질병 정보</td>
+      <td align="left">대한피부과학회 웹크롤링 (비회원 공개 페이지)</td>
+      <td align="left">피부 질환별 상세 정보 수집 및 상담 근거 확보</td>
+    </tr>
+    <tr>
+      <td align="left">피부 관련 리뷰 논문</td>
+      <td align="left">PubMed E-utilities API (논문 요약본)</td>
+      <td align="left">피부 장벽, 보습, 항노화 관련 최신 학술 근거 제공</td>
+    </tr>
+    <tr>
+      <td align="left">피부 관리 가이드</td>
+      <td align="left">AAD(미국피부과학회) 웹 크롤링</td>
+      <td align="left">피부 상태별 관리 단계 및 루틴 구성</td>
+    </tr>
+  </tbody>
+</table>
 
 ※ 수집 제외 항목: 학회 회원 전용 콘텐츠, 라이선스 문제 있는 외부 사이트, 과도한 수집 부담 항목
 
@@ -415,6 +662,8 @@ CJ올리브영의 매출은 2021년 2조 원, 2022년 2조 7,774억 원, 2023년
         </table>
       </td>
     </tr>
+  </table>
+  <table>
     <tr>
       <td valign="top">
         <h4 align="center">피부 질병 정보 (disease)</h4>
@@ -447,24 +696,102 @@ CJ올리브영의 매출은 2021년 2조 원, 2022년 2조 7,774억 원, 2023년
 
 ### 6.1. 핵심 기능 요약
 
-| 기능 | 설명 | 사용 모델/기술 |
-| :-: | :-- | :-- |
-| 🔬 빠른 분석 | 정면 사진 1장 → 수분/탄력/주름/모공/색소 5개 항목 정량 분석 | ResNet50 (Fast Model) |
-| 🔬 정밀 분석 | 정면+좌+우 3장 → 부위별(이마/볼/턱/눈가) 13개 지표 정밀 분석 | ResNet50 + AttentionFusion (Deep Model) |
-| 📸 얼굴 검증 | 업로드 이미지가 사람 얼굴인지 + 3장 순서 검증 | GPT-4.1-mini (Vision) |
-| 🏷️ 성분 분석 | 화장품 전성분 라벨 사진 → vlm 추출 → 피부타입 맞춤 성분 해석 | Qwen2.5-VL 7B |
-| 🎨 퍼스널컬러 분석 | 정면 얼굴 사진 1장 → 14타입 퍼스널컬러 판정 + 컬러 팔레트 생성 | GPT-4o Vision + GPT-4.1-mini |
-| 💬 피부 상담 | 자연어 질문 → RAG 기반 근거 답변 (루틴/성분/고민) | GPT-4.1-mini + ChromaDB |
-| 🛒 제품 추천 | 키워드 추출 → 올리브영 실상품 URL 검증 → 검증된 제품만 추천 | GPT-4.1-mini + Tavily |
-| 🤖 intent 라우팅 | 사용자 입력을 14개 intent로 분류 (비로그인/회원 분기) | GPT-4.1-mini |
-| 📷 웹캠 얼굴 감지 | 브라우저에서 실시간 얼굴 감지 후 자동 촬영 | TensorFlow.js + MediaPipe FaceDetector |
-| 🧬 피부 MBTI 연동 | MBTI 결과를 챗봇 프롬프트에 자동 주입하여 맞춤 답변 생성 | DB Context Builder + GPT-4.1-mini |
-| ⏳ 로딩 UX | 파이프라인 단계별 SSE 진행 메시지 + 피부 상식 모달 | SSE + React Modal |
-| 💾 위시리스트 | 추천 제품 저장/조회/삭제 | MySQL/MariaDB |
-| 📊 분석 이력/비교 | 날짜별 피부 분석 결과 조회 및 2개 시점 비교 | FastAPI + MySQL/MariaDB |
-| 🚪 온보딩 UX | 회원가입 후 튜토리얼 모달로 핵심 기능 안내 | React Modal + Router |
-| 👤 마이페이지/계정 관리 | QnA, 관리자 문의 관리, 회원탈퇴, 닉네임 중복 확인/랜덤 생성 | FastAPI + MySQL/MariaDB |
-| 🐶 챗봇 페르소나 | ‘옹글이’ 페르소나 기반 공감형·설명형 대화 경험 제공 | Persona Prompting + SSE |
+<table>
+  <colgroup>
+    <col style="width: 20%;">
+    <col style="width: 50%;">
+    <col style="width: 30%;">
+  </colgroup>
+  <thead>
+    <tr>
+      <th align="center">기능</th>
+      <th align="left">설명</th>
+      <th align="left">사용 모델/기술</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="center">🔬 빠른 분석</td>
+      <td align="left">정면 사진 1장 → 수분/탄력/주름/모공/색소 5개 항목 정량 분석</td>
+      <td align="left">ResNet50 (Fast Model)</td>
+    </tr>
+    <tr>
+      <td align="center">🔬 정밀 분석</td>
+      <td align="left">정면+좌+우 3장 → 부위별(이마/볼/턱/눈가) 13개 지표 정밀 분석</td>
+      <td align="left">ResNet50 + AttentionFusion (Deep Model)</td>
+    </tr>
+    <tr>
+      <td align="center">📸 얼굴 검증</td>
+      <td align="left">업로드 이미지가 사람 얼굴인지 + 3장 순서 검증</td>
+      <td align="left">GPT-4.1-mini (Vision)</td>
+    </tr>
+    <tr>
+      <td align="center">🏷️ 성분 분석</td>
+      <td align="left">화장품 전성분 라벨 사진 → vlm 추출 → 피부타입 맞춤 성분 해석</td>
+      <td align="left">Qwen2.5-VL 7B</td>
+    </tr>
+    <tr>
+      <td align="center">🎨 퍼스널컬러 분석</td>
+      <td align="left">정면 얼굴 사진 1장 → 14타입 퍼스널컬러 판정 + 컬러 팔레트 생성</td>
+      <td align="left">GPT-4o Vision + GPT-4.1-mini</td>
+    </tr>
+    <tr>
+      <td align="center">💬 피부 상담</td>
+      <td align="left">자연어 질문 → RAG 기반 근거 답변 (루틴/성분/고민)</td>
+      <td align="left">GPT-4.1-mini + ChromaDB</td>
+    </tr>
+    <tr>
+      <td align="center">🛒 제품 추천</td>
+      <td align="left">키워드 추출 → 올리브영 실상품 URL 검증 → 검증된 제품만 추천</td>
+      <td align="left">GPT-4.1-mini + Tavily</td>
+    </tr>
+    <tr>
+      <td align="center">🤖 intent 라우팅</td>
+      <td align="left">사용자 입력을 14개 intent로 분류 (비로그인/회원 분기)</td>
+      <td align="left">GPT-4.1-mini</td>
+    </tr>
+    <tr>
+      <td align="center">📷 웹캠 얼굴 감지</td>
+      <td align="left">브라우저에서 실시간 얼굴 감지 후 자동 촬영</td>
+      <td align="left">TensorFlow.js + MediaPipe FaceDetector</td>
+    </tr>
+    <tr>
+      <td align="center">🧬 피부 MBTI 연동</td>
+      <td align="left">MBTI 결과를 챗봇 프롬프트에 자동 주입하여 맞춤 답변 생성</td>
+      <td align="left">DB Context Builder + GPT-4.1-mini</td>
+    </tr>
+    <tr>
+      <td align="center">⏳ 로딩 UX</td>
+      <td align="left">파이프라인 단계별 SSE 진행 메시지 + 피부 상식 모달</td>
+      <td align="left">SSE + React Modal</td>
+    </tr>
+    <tr>
+      <td align="center">💾 위시리스트</td>
+      <td align="left">추천 제품 저장/조회/삭제</td>
+      <td align="left">MariaDB</td>
+    </tr>
+    <tr>
+      <td align="center">📊 분석 이력/비교</td>
+      <td align="left">날짜별 피부 분석 결과 조회 및 2개 시점 비교</td>
+      <td align="left">FastAPI + MariaDB</td>
+    </tr>
+    <tr>
+      <td align="center">🚪 온보딩 UX</td>
+      <td align="left">회원가입 후 튜토리얼 모달로 핵심 기능 안내</td>
+      <td align="left">React Modal + Router</td>
+    </tr>
+    <tr>
+      <td align="center">👤 마이페이지/계정 관리</td>
+      <td align="left">QnA, 관리자 문의 관리, 회원탈퇴, 닉네임 중복 확인/랜덤 생성</td>
+      <td align="left">FastAPI + MariaDB</td>
+    </tr>
+    <tr>
+      <td align="center">🐶 챗봇 페르소나</td>
+      <td align="left">’옹글이’ 페르소나 기반 공감형·설명형 대화 경험 제공</td>
+      <td align="left">Persona Prompting + SSE</td>
+    </tr>
+  </tbody>
+</table>
 
 <br />
 
@@ -498,18 +825,54 @@ CJ올리브영의 매출은 2021년 2조 원, 2022년 2조 7,774억 원, 2023년
 
 **■ 학습 환경**
 
-|    항목     |           Fast Model           |       Deep Model        |
-| :---------: | :----------------------------: | :---------------------: |
-|     GPU     |      RunPod RTX 5090 × 5       |   RunPod RTX 5090 × 5   |
-|   병렬화    | DataParallel + GPU별 Area 분산 | GPU별 Area 분산 (spawn) |
-| 이미지 크기 |           128 × 128            |        256 × 256        |
-| Batch Size  |    32 × GPU수 (자동 스케일)    |           32            |
-|   Epochs    |      100 (Early Stop 30)       |   100 (Early Stop 30)   |
-|  Precision  |     FP16 (Mixed Precision)     | FP16 (Mixed Precision)  |
+<table>
+  <colgroup>
+    <col style="width: 20%;">
+    <col style="width: 40%;">
+    <col style="width: 40%;">
+  </colgroup>
+  <thead>
+    <tr>
+      <th align="center">항목</th>
+      <th align="center">Fast Model</th>
+      <th align="center">Deep Model</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="center">GPU</td>
+      <td align="center">RunPod RTX 5090 × 5</td>
+      <td align="center">RunPod RTX 5090 × 5</td>
+    </tr>
+    <tr>
+      <td align="center">병렬화</td>
+      <td align="center">DataParallel + GPU별 Area 분산</td>
+      <td align="center">GPU별 Area 분산 (spawn)</td>
+    </tr>
+    <tr>
+      <td align="center">이미지 크기</td>
+      <td align="center">128 × 128</td>
+      <td align="center">256 × 256</td>
+    </tr>
+    <tr>
+      <td align="center">Batch Size</td>
+      <td align="center">32 × GPU수 (자동 스케일)</td>
+      <td align="center">32</td>
+    </tr>
+    <tr>
+      <td align="center">Epochs</td>
+      <td align="center">100 (Early Stop 30)</td>
+      <td align="center">100 (Early Stop 30)</td>
+    </tr>
+    <tr>
+      <td align="center">Precision</td>
+      <td align="center">FP16 (Mixed Precision)</td>
+      <td align="center">FP16 (Mixed Precision)</td>
+    </tr>
+  </tbody>
+</table>
 
 <br />
-
----
 
 #### 6.2.1. Fast Model (빠른 분석)
 
@@ -554,41 +917,161 @@ Area별 수치 → 항목별 평균 집계
 
 **■ Area별 출력 매핑**
 
-| Area | 부위     | Regression 출력                     | Classification 출력                           |
-| :--: | :------- | :---------------------------------- | :-------------------------------------------- |
-|  0   | 색소침착 | pigmentation_count (1개)            | —                                             |
-|  1   | 이마     | moisture, elasticity_R2 (2개)       | forehead_wrinkle(7), forehead_pigmentation(6) |
-|  2   | 미간     | —                                   | glabellus_wrinkle (7)                         |
-|  3   | 왼눈가   | l_perocular_wrinkle_Ra (1개)        | l_perocular_wrinkle (7)                       |
-|  4   | 오른눈가 | r_perocular_wrinkle_Ra (1개)        | r_perocular_wrinkle (7)                       |
-|  5   | 왼볼     | moisture, elasticity_R2, pore (3개) | l_cheek_pore(6), l_cheek_pigmentation(6)      |
-|  6   | 오른볼   | moisture, elasticity_R2, pore (3개) | r_cheek_pore(6), r_cheek_pigmentation(6)      |
-|  8   | 턱       | moisture, elasticity_R2 (2개)       | chin_wrinkle (7)                              |
+<table>
+  <colgroup>
+    <col style="width: 8%;">
+    <col style="width: 12%;">
+    <col style="width: 40%;">
+    <col style="width: 40%;">
+  </colgroup>
+  <thead>
+    <tr>
+      <th align="center">Area</th>
+      <th align="left">부위</th>
+      <th align="left">Regression 출력</th>
+      <th align="left">Classification 출력</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="center">0</td>
+      <td align="left">색소침착</td>
+      <td align="left">pigmentation_count (1개)</td>
+      <td align="left">—</td>
+    </tr>
+    <tr>
+      <td align="center">1</td>
+      <td align="left">이마</td>
+      <td align="left">moisture, elasticity_R2 (2개)</td>
+      <td align="left">forehead_wrinkle(7), forehead_pigmentation(6)</td>
+    </tr>
+    <tr>
+      <td align="center">2</td>
+      <td align="left">미간</td>
+      <td align="left">—</td>
+      <td align="left">glabellus_wrinkle (7)</td>
+    </tr>
+    <tr>
+      <td align="center">3</td>
+      <td align="left">왼눈가</td>
+      <td align="left">l_perocular_wrinkle_Ra (1개)</td>
+      <td align="left">l_perocular_wrinkle (7)</td>
+    </tr>
+    <tr>
+      <td align="center">4</td>
+      <td align="left">오른눈가</td>
+      <td align="left">r_perocular_wrinkle_Ra (1개)</td>
+      <td align="left">r_perocular_wrinkle (7)</td>
+    </tr>
+    <tr>
+      <td align="center">5</td>
+      <td align="left">왼볼</td>
+      <td align="left">moisture, elasticity_R2, pore (3개)</td>
+      <td align="left">l_cheek_pore(6), l_cheek_pigmentation(6)</td>
+    </tr>
+    <tr>
+      <td align="center">6</td>
+      <td align="left">오른볼</td>
+      <td align="left">moisture, elasticity_R2, pore (3개)</td>
+      <td align="left">r_cheek_pore(6), r_cheek_pigmentation(6)</td>
+    </tr>
+    <tr>
+      <td align="center">8</td>
+      <td align="left">턱</td>
+      <td align="left">moisture, elasticity_R2 (2개)</td>
+      <td align="left">chin_wrinkle (7)</td>
+    </tr>
+  </tbody>
+</table>
 
 <br />
 
 **■ 최종 5개 항목 집계 방식**
 
-|        항목         | 사용 Area                                  |  집계  |
-| :-----------------: | :----------------------------------------- | :----: |
-|   moisture (수분)   | Area 1(이마) + 5(왼볼) + 6(오른볼) + 8(턱) |  평균  |
-|  elasticity (탄력)  | Area 1(이마) + 5(왼볼) + 6(오른볼) + 8(턱) |  평균  |
-|   wrinkle (주름)    | Area 3(왼눈가) + 4(오른눈가)               |  평균  |
-|     pore (모공)     | Area 5(왼볼) + 6(오른볼)                   |  평균  |
-| pigmentation (색소) | Area 0                                     | 단일값 |
+<table>
+  <colgroup>
+    <col style="width: 25%;">
+    <col style="width: 55%;">
+    <col style="width: 20%;">
+  </colgroup>
+  <thead>
+    <tr>
+      <th align="center">항목</th>
+      <th align="left">사용 Area</th>
+      <th align="center">집계</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="center">moisture (수분)</td>
+      <td align="left">Area 1(이마) + 5(왼볼) + 6(오른볼) + 8(턱)</td>
+      <td align="center">평균</td>
+    </tr>
+    <tr>
+      <td align="center">elasticity (탄력)</td>
+      <td align="left">Area 1(이마) + 5(왼볼) + 6(오른볼) + 8(턱)</td>
+      <td align="center">평균</td>
+    </tr>
+    <tr>
+      <td align="center">wrinkle (주름)</td>
+      <td align="left">Area 3(왼눈가) + 4(오른눈가)</td>
+      <td align="center">평균</td>
+    </tr>
+    <tr>
+      <td align="center">pore (모공)</td>
+      <td align="left">Area 5(왼볼) + 6(오른볼)</td>
+      <td align="center">평균</td>
+    </tr>
+    <tr>
+      <td align="center">pigmentation (색소)</td>
+      <td align="left">Area 0</td>
+      <td align="center">단일값</td>
+    </tr>
+  </tbody>
+</table>
 
 <br />
 
 **■ 학습 설정**
 
-|         항목          | 설정                                                                                      |
-| :-------------------: | :---------------------------------------------------------------------------------------- |
-|       Optimizer       | Adam (lr=1e-4 × GPU수, Linear Scaling Rule)                                               |
-|     Weight Decay      | 1e-4                                                                                      |
-|   Loss (Regression)   | L1Loss (NaN 마스킹)                                                                       |
-| Loss (Classification) | CrossEntropyLoss × 0.5 가중치                                                             |
-|     Augmentation      | RandomHorizontalFlip(0.3), ColorJitter(brightness=0.3, contrast=0.3), RandomRotation(10°) |
-|    Early Stopping     | 30 epochs patience                                                                        |
+<table>
+  <colgroup>
+    <col style="width: 30%;">
+    <col style="width: 70%;">
+  </colgroup>
+  <thead>
+    <tr>
+      <th align="center">항목</th>
+      <th align="left">설정</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="center">Optimizer</td>
+      <td align="left">Adam (lr=1e-4 × GPU수, Linear Scaling Rule)</td>
+    </tr>
+    <tr>
+      <td align="center">Weight Decay</td>
+      <td align="left">1e-4</td>
+    </tr>
+    <tr>
+      <td align="center">Loss (Regression)</td>
+      <td align="left">L1Loss (NaN 마스킹)</td>
+    </tr>
+    <tr>
+      <td align="center">Loss (Classification)</td>
+      <td align="left">CrossEntropyLoss × 0.5 가중치</td>
+    </tr>
+    <tr>
+      <td align="center">Augmentation</td>
+      <td align="left">RandomHorizontalFlip(0.3), ColorJitter(brightness=0.3, contrast=0.3), RandomRotation(10°)</td>
+    </tr>
+    <tr>
+      <td align="center">Early Stopping</td>
+      <td align="left">30 epochs patience</td>
+    </tr>
+  </tbody>
+</table>
 
 <br />
 
@@ -598,16 +1081,62 @@ Area별 수치 → 항목별 평균 집계
 
 > MAE 0.07 = 예측값이 실제값에서 평균 ±7% 오차 (예: 수분 60 → 53~67 예측)
 
-| Area | 부위          | Best val_MAE |
-| :--: | :------------ | :----------: |
-|  0   | 색소침착      |  **0.0615**  |
-|  1   | 이마          |  **0.0744**  |
-|  3   | 왼눈가        |  **0.0361**  |
-|  4   | 오른눈가      |  **0.0343**  |
-|  5   | 왼볼          |  **0.0734**  |
-|  6   | 오른볼        |  **0.0730**  |
-|  8   | 턱            |  **0.0857**  |
-|      | **전체 평균** |  **0.0626**  |
+<table>
+  <colgroup>
+    <col style="width: 15%;">
+    <col style="width: 50%;">
+    <col style="width: 35%;">
+  </colgroup>
+  <thead>
+    <tr>
+      <th align="center">Area</th>
+      <th align="left">부위</th>
+      <th align="center">Best val_MAE</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="center">0</td>
+      <td align="left">색소침착</td>
+      <td align="center"><strong>0.0615</strong></td>
+    </tr>
+    <tr>
+      <td align="center">1</td>
+      <td align="left">이마</td>
+      <td align="center"><strong>0.0744</strong></td>
+    </tr>
+    <tr>
+      <td align="center">3</td>
+      <td align="left">왼눈가</td>
+      <td align="center"><strong>0.0361</strong></td>
+    </tr>
+    <tr>
+      <td align="center">4</td>
+      <td align="left">오른눈가</td>
+      <td align="center"><strong>0.0343</strong></td>
+    </tr>
+    <tr>
+      <td align="center">5</td>
+      <td align="left">왼볼</td>
+      <td align="center"><strong>0.0734</strong></td>
+    </tr>
+    <tr>
+      <td align="center">6</td>
+      <td align="left">오른볼</td>
+      <td align="center"><strong>0.0730</strong></td>
+    </tr>
+    <tr>
+      <td align="center">8</td>
+      <td align="left">턱</td>
+      <td align="center"><strong>0.0857</strong></td>
+    </tr>
+    <tr>
+      <td align="center"></td>
+      <td align="left"><strong>전체 평균</strong></td>
+      <td align="center"><strong>0.0626</strong></td>
+    </tr>
+  </tbody>
+</table>
 
 <br />
 
@@ -616,6 +1145,7 @@ Area별 수치 → 항목별 평균 집계
 ```python
 def value_to_grade(value, n_grades=5):
     return min(int(value * n_grades) + 1, n_grades)
+
  0.0~0.2 → 1등급 | 0.2~0.4 → 2등급 | 0.4~0.6 → 3등급 | 0.6~0.8 → 4등급 | 0.8~1.0 → 5등급
 ```
 
@@ -641,8 +1171,6 @@ def value_to_grade(value, n_grades=5):
 
 <br />
 
----
-
 #### 6.2.2. Deep Model (정밀 분석)
 
 **■ 개요**
@@ -663,29 +1191,29 @@ Area별 Bbox Crop
 │                                                              │
 │  ┌─ Regression Branch (F만) ──────────────────────────────┐  │
 │  │  ResNet50 Encoder (F)                                  │  │
-│  │      ↓ Feature (2048-d)                               │  │
-│  │  Linear(2048,512) → BN → ReLU → Dropout(0.4)         │  │
-│  │  → Linear(512,256) → ReLU → Dropout(0.4)             │  │
-│  │  → Linear(256, reg_out)                               │  │
-│  │  출력: 0~1 정규화 수치                                 │  │
+│  │      ↓ Feature (2048-d)                                │  │
+│  │  Linear(2048,512) → BN → ReLU → Dropout(0.4)           │  │
+│  │  → Linear(512,256) → ReLU → Dropout(0.4)               │  │
+│  │  → Linear(256, reg_out)                                │  │
+│  │  출력: 0~1 정규화 수치                                  │  │
 │  └────────────────────────────────────────────────────────┘  │
 │                                                              │
 │  ┌─ Classification Branch (F+L+R Attention Fusion) ───────┐  │
 │  │  ResNet50 Shared Encoder                               │  │
-│  │      F → feat_F (2048-d)                              │  │
-│  │      L → feat_L (2048-d)                              │  │
-│  │      R → feat_R (2048-d)                              │  │
-│  │          ↓                                            │  │
-│  │  ┌─ AttentionFusion ─────────────────────────────┐    │  │
-│  │  │  concat(F,L,R) → Linear(6144,3) → Softmax    │    │  │
-│  │  │  = 가중치 w_F, w_L, w_R                       │    │  │
-│  │  │  fused = w_F·F + w_L·L + w_R·R               │    │  │
-│  │  │  → Linear(2048,512) → BN → ReLU → Drop(0.4)  │    │  │
-│  │  └───────────────────────────────────────────────┘    │  │
-│  │          ↓ (512-d)                                    │  │
-│  │  Linear(512,256) → ReLU → Dropout(0.4)               │  │
-│  │  → Linear(256, cls_out)                               │  │
-│  │  출력: 0~6 등급 logits                                │  │
+│  │      F → feat_F (2048-d)                               │  │
+│  │      L → feat_L (2048-d)                               │  │
+│  │      R → feat_R (2048-d)                               │  │
+│  │          ↓                                             │  │
+│  │  ┌─ AttentionFusion ─────────────────────────────┐     │  │
+│  │  │  concat(F,L,R) → Linear(6144,3) → Softmax     │     │  │
+│  │  │  = 가중치 w_F, w_L, w_R                       │     │  │
+│  │  │  fused = w_F·F + w_L·L + w_R·R                │     │  │
+│  │  │  → Linear(2048,512) → BN → ReLU → Drop(0.4)   │     │  │
+│  │  └───────────────────────────────────────────────┘     │  │
+│  │          ↓ (512-d)                                     │  │
+│  │  Linear(512,256) → ReLU → Dropout(0.4)                 │  │
+│  │  → Linear(256, cls_out)                                │  │
+│  │  출력: 0~6 등급 logits                                 │  │
 │  └────────────────────────────────────────────────────────┘  │
 └──────────────────────────────────────────────────────────────┘
 ```
@@ -694,27 +1222,87 @@ Area별 Bbox Crop
 
 **■ v4 핵심 설계 의도:**
 
-| 설계 결정                           | 이유                                                                    |
-| :---------------------------------- | :---------------------------------------------------------------------- |
-| Regression은 F(정면)만 사용         | 전문 장비 측정값(수분, 탄력 등)이 정면 bbox 기반이므로 동일 앵글이 최적 |
-| Classification은 F+L+R Fusion       | 등급 판정은 여러 각도에서 본 종합 정보가 더 정확                        |
-| Attention 방식 가중 합산            | 단순 concat/평균 대비 각 각도의 기여도를 학습, 품질 낮은 사진 자동 감쇠 |
-| 인코더 가중치 공유 (Classification) | F/L/R에 동일 ResNet50을 적용하여 파라미터 효율 + 일관된 피처 공간       |
+<table>
+  <colgroup>
+    <col style="width: 40%;">
+    <col style="width: 60%;">
+  </colgroup>
+  <thead>
+    <tr>
+      <th align="left">설계 결정</th>
+      <th align="left">이유</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="left">Regression은 F(정면)만 사용</td>
+      <td align="left">전문 장비 측정값(수분, 탄력 등)이 정면 bbox 기반이므로 동일 앵글이 최적</td>
+    </tr>
+    <tr>
+      <td align="left">Classification은 F+L+R Fusion</td>
+      <td align="left">등급 판정은 여러 각도에서 본 종합 정보가 더 정확</td>
+    </tr>
+    <tr>
+      <td align="left">Attention 방식 가중 합산</td>
+      <td align="left">단순 concat/평균 대비 각 각도의 기여도를 학습, 품질 낮은 사진 자동 감쇠</td>
+    </tr>
+    <tr>
+      <td align="left">인코더 가중치 공유 (Classification)</td>
+      <td align="left">F/L/R에 동일 ResNet50을 적용하여 파라미터 효율 + 일관된 피처 공간</td>
+    </tr>
+  </tbody>
+</table>
 
 <br />
 
 **■ 학습 설정**
 
-|         항목          | 설정                                                                                       |
-| :-------------------: | :----------------------------------------------------------------------------------------- |
-|       Optimizer       | Adam (lr=1e-4, betas=(0.9, 0.999), weight_decay=0)                                         |
-|      LR Schedule      | Warmup 5 epochs → Cosine Annealing (min_factor=0.01)                                       |
-|   Loss (Regression)   | **CharbonnierLoss** (ε=1e-6) — L1보다 이상치에 강건하고 L2보다 스파이크에 둔감             |
-| Loss (Classification) | **FocalLoss** (α=1, γ=3) × 0.5 가중치 — 클래스 불균형(등급 0~6) 대응                       |
-|   Gradient Clipping   | max_norm=1.0                                                                               |
-|        Sampler        | **WeightedRandomSampler** — 소수 등급 과소대표 방지                                        |
-|     Augmentation      | RandomHorizontalFlip(0.3), ColorJitter(0.15/0.15/0.1/0.05), RandomAffine(5°, translate=2%) |
-|    Early Stopping     | 30 epochs patience                                                                         |
+<table>
+  <colgroup>
+    <col style="width: 30%;">
+    <col style="width: 70%;">
+  </colgroup>
+  <thead>
+    <tr>
+      <th align="center">항목</th>
+      <th align="left">설정</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="center">Optimizer</td>
+      <td align="left">Adam (lr=1e-4, betas=(0.9, 0.999), weight_decay=0)</td>
+    </tr>
+    <tr>
+      <td align="center">LR Schedule</td>
+      <td align="left">Warmup 5 epochs → Cosine Annealing (min_factor=0.01)</td>
+    </tr>
+    <tr>
+      <td align="center">Loss (Regression)</td>
+      <td align="left"><strong>CharbonnierLoss</strong> (ε=1e-6) — L1보다 이상치에 강건하고 L2보다 스파이크에 둔감</td>
+    </tr>
+    <tr>
+      <td align="center">Loss (Classification)</td>
+      <td align="left"><strong>FocalLoss</strong> (α=1, γ=3) × 0.5 가중치 — 클래스 불균형(등급 0~6) 대응</td>
+    </tr>
+    <tr>
+      <td align="center">Gradient Clipping</td>
+      <td align="left">max_norm=1.0</td>
+    </tr>
+    <tr>
+      <td align="center">Sampler</td>
+      <td align="left"><strong>WeightedRandomSampler</strong> — 소수 등급 과소대표 방지</td>
+    </tr>
+    <tr>
+      <td align="center">Augmentation</td>
+      <td align="left">RandomHorizontalFlip(0.3), ColorJitter(0.15/0.15/0.1/0.05), RandomAffine(5°, translate=2%)</td>
+    </tr>
+    <tr>
+      <td align="center">Early Stopping</td>
+      <td align="left">30 epochs patience</td>
+    </tr>
+  </tbody>
+</table>
 
 <br />
 
@@ -748,23 +1336,83 @@ Deep Model은 수치(수분, 탄력, 주름Ra 등)와 등급(주름, 모공, 색
 
 > MAE 0.05 = 예측값이 실제값에서 평균 ±5% 오차 (예: 수분 65 → 60~70 예측)
 
-| Area | 부위     | Best val_MAE |
-| :--: | :------- | :----------: |
-|  0   | 색소침착 |  **0.0904**  |
-|  1   | 이마     |  **0.0799**  |
-|  3   | 왼눈가   |  **0.1055**  |
-|  4   | 오른눈가 |  **0.0826**  |
+<table>
+  <colgroup>
+    <col style="width: 15%;">
+    <col style="width: 50%;">
+    <col style="width: 35%;">
+  </colgroup>
+  <thead>
+    <tr>
+      <th align="center">Area</th>
+      <th align="left">부위</th>
+      <th align="center">Best val_MAE</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="center">0</td>
+      <td align="left">색소침착</td>
+      <td align="center"><strong>0.0904</strong></td>
+    </tr>
+    <tr>
+      <td align="center">1</td>
+      <td align="left">이마</td>
+      <td align="center"><strong>0.0799</strong></td>
+    </tr>
+    <tr>
+      <td align="center">3</td>
+      <td align="left">왼눈가</td>
+      <td align="center"><strong>0.1055</strong></td>
+    </tr>
+    <tr>
+      <td align="center">4</td>
+      <td align="left">오른눈가</td>
+      <td align="center"><strong>0.0826</strong></td>
+    </tr>
+  </tbody>
+</table>
 
 **► Classification — ±1 정확도** (예측 등급이 실제 등급과 1단계 이내일 확률)
 
 > ±1 정확도 90% = 100명 중 90명은 실제 등급 ±1 이내로 예측
 
-| Area | 부위     | ±1 정확도 |
-| :--: | :------- | :-------: |
-|  1   | 이마     | **93.5%** |
-|  2   | 미간     | **79.4%** |
-|  3   | 왼눈가   | **90.0%** |
-|  4   | 오른눈가 | **69.2%** |
+<table>
+  <colgroup>
+    <col style="width: 15%;">
+    <col style="width: 50%;">
+    <col style="width: 35%;">
+  </colgroup>
+  <thead>
+    <tr>
+      <th align="center">Area</th>
+      <th align="left">부위</th>
+      <th align="center">±1 정확도</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="center">1</td>
+      <td align="left">이마</td>
+      <td align="center"><strong>93.5%</strong></td>
+    </tr>
+    <tr>
+      <td align="center">2</td>
+      <td align="left">미간</td>
+      <td align="center"><strong>79.4%</strong></td>
+    </tr>
+    <tr>
+      <td align="center">3</td>
+      <td align="left">왼눈가</td>
+      <td align="center"><strong>90.0%</strong></td>
+    </tr>
+    <tr>
+      <td align="center">4</td>
+      <td align="left">오른눈가</td>
+      <td align="center"><strong>69.2%</strong></td>
+    </tr>
+  </tbody>
+</table>
 
 <br />
 
@@ -772,11 +1420,37 @@ Deep Model은 수치(수분, 탄력, 주름Ra 등)와 등급(주름, 모공, 색
 
 Deep Model은 3가지 정보를 반환합니다:
 
-| 필드           | 설명                             | 예시                                                       |
-| :------------- | :------------------------------- | :--------------------------------------------------------- |
-| `measurements` | 실제 단위로 역정규화된 수치 13개 | 수분 0~100, 탄력 0~1, 주름Ra 0~50, 모공 0~2600, 색소 0~350 |
-| `grades`       | 전문가 등급 기준 분류 10개       | 0~6등급 (0=최저)                                           |
-| `reliability`  | 항목별 예측 신뢰도               | high / medium / low / very_low                             |
+<table>
+  <colgroup>
+    <col style="width: 20%;">
+    <col style="width: 35%;">
+    <col style="width: 45%;">
+  </colgroup>
+  <thead>
+    <tr>
+      <th align="left">필드</th>
+      <th align="left">설명</th>
+      <th align="left">예시</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="left"><code>measurements</code></td>
+      <td align="left">실제 단위로 역정규화된 수치 13개</td>
+      <td align="left">수분 0~100, 탄력 0~1, 주름Ra 0~50, 모공 0~2600, 색소 0~350</td>
+    </tr>
+    <tr>
+      <td align="left"><code>grades</code></td>
+      <td align="left">전문가 등급 기준 분류 10개</td>
+      <td align="left">0~6등급 (0=최저)</td>
+    </tr>
+    <tr>
+      <td align="left"><code>reliability</code></td>
+      <td align="left">항목별 예측 신뢰도</td>
+      <td align="left">high / medium / low / very_low</td>
+    </tr>
+  </tbody>
+</table>
 
 <br />
 
@@ -822,23 +1496,79 @@ Deep Model은 3가지 정보를 반환합니다:
 
 <br />
 
----
-
 #### 6.2.3. Fast vs Deep 비교 요약
 
-|                    |            Fast Model            |                     Deep Model                     |
-| :----------------: | :------------------------------: | :------------------------------------------------: |
-|      **입력**      |             정면 1장             |               정면 + 좌측 + 우측 3장               |
-|  **이미지 크기**   |            128 × 128             |                     256 × 256                      |
-|    **아키텍처**    | Area별 ResNet50 (Single Encoder) | Area별 ResNet50 + AttentionFusion (Triple Encoder) |
-|   **Regression**   |      L1Loss + Sigmoid 출력       |           CharbonnierLoss + Linear 출력            |
-| **Classification** |         CrossEntropyLoss         |            FocalLoss + WeightedSampler             |
-|   **출력 수치**    |       5개 항목 (영역 평균)       |                 13개 부위별 측정값                 |
-|   **출력 등급**    |        1~5등급 (5개 항목)        |                0~6등급 (10개 부위)                 |
-|     **신뢰도**     |               없음               |          항목별 high/medium/low/very_low           |
-|   **추론 속도**    |              ~0.5초              |                        ~2초                        |
-|    **평균 MAE**    |              0.0626              |                       0.0896                       |
-|      **용도**      |     빠른 피부 상태 스크리닝      |            부위별 정밀 분석 + 좌우 비교            |
+<table>
+  <colgroup>
+    <col style="width: 22%;">
+    <col style="width: 39%;">
+    <col style="width: 39%;">
+  </colgroup>
+  <thead>
+    <tr>
+      <th align="center"></th>
+      <th align="center">Fast Model</th>
+      <th align="center">Deep Model</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="center"><strong>입력</strong></td>
+      <td align="center">정면 1장</td>
+      <td align="center">정면 + 좌측 + 우측 3장</td>
+    </tr>
+    <tr>
+      <td align="center"><strong>이미지 크기</strong></td>
+      <td align="center">128 × 128</td>
+      <td align="center">256 × 256</td>
+    </tr>
+    <tr>
+      <td align="center"><strong>아키텍처</strong></td>
+      <td align="center">Area별 ResNet50 (Single Encoder)</td>
+      <td align="center">Area별 ResNet50 + AttentionFusion (Triple Encoder)</td>
+    </tr>
+    <tr>
+      <td align="center"><strong>Regression</strong></td>
+      <td align="center">L1Loss + Sigmoid 출력</td>
+      <td align="center">CharbonnierLoss + Linear 출력</td>
+    </tr>
+    <tr>
+      <td align="center"><strong>Classification</strong></td>
+      <td align="center">CrossEntropyLoss</td>
+      <td align="center">FocalLoss + WeightedSampler</td>
+    </tr>
+    <tr>
+      <td align="center"><strong>출력 수치</strong></td>
+      <td align="center">5개 항목 (영역 평균)</td>
+      <td align="center">13개 부위별 측정값</td>
+    </tr>
+    <tr>
+      <td align="center"><strong>출력 등급</strong></td>
+      <td align="center">1~5등급 (5개 항목)</td>
+      <td align="center">0~6등급 (10개 부위)</td>
+    </tr>
+    <tr>
+      <td align="center"><strong>신뢰도</strong></td>
+      <td align="center">없음</td>
+      <td align="center">항목별 high/medium/low/very_low</td>
+    </tr>
+    <tr>
+      <td align="center"><strong>추론 속도</strong></td>
+      <td align="center">~0.5초</td>
+      <td align="center">~2초</td>
+    </tr>
+    <tr>
+      <td align="center"><strong>평균 MAE</strong></td>
+      <td align="center">0.0626</td>
+      <td align="center">0.0896</td>
+    </tr>
+    <tr>
+      <td align="center"><strong>용도</strong></td>
+      <td align="center">빠른 피부 상태 스크리닝</td>
+      <td align="center">부위별 정밀 분석 + 좌우 비교</td>
+    </tr>
+  </tbody>
+</table>
 
 <br />
 
@@ -850,39 +1580,128 @@ Deep Model은 3가지 정보를 반환합니다:
 
 **► Fast Model 판정 기준 (0~1 Sigmoid 수치 기반):**
 
-| 피부타입 | 판정 조건                                                    |
-| :------: | :----------------------------------------------------------- |
-|  민감성  | elasticity ≤ 0.46 AND pigmentation ≥ 0.50 AND wrinkle ≥ 0.50 |
-|   건성   | moisture ≤ 0.46 AND pore ≤ 0.48                              |
-|   지성   | pore ≥ 0.48 AND pigmentation ≥ 0.50 AND moisture > 0.46      |
-|  복합성  | moisture ≤ 0.48 AND pore ≥ 0.46 (건조+지성 공존)             |
-|   중성   | 전반적 양호, 극단 항목 없음                                  |
+<table>
+  <colgroup>
+    <col style="width: 15%;">
+    <col style="width: 85%;">
+  </colgroup>
+  <thead>
+    <tr>
+      <th align="center">피부타입</th>
+      <th align="left">판정 조건</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="center">민감성</td>
+      <td align="left">elasticity ≤ 0.46 AND pigmentation ≥ 0.50 AND wrinkle ≥ 0.50</td>
+    </tr>
+    <tr>
+      <td align="center">건성</td>
+      <td align="left">moisture ≤ 0.46 AND pore ≤ 0.48</td>
+    </tr>
+    <tr>
+      <td align="center">지성</td>
+      <td align="left">pore ≥ 0.48 AND pigmentation ≥ 0.50 AND moisture > 0.46</td>
+    </tr>
+    <tr>
+      <td align="center">복합성</td>
+      <td align="left">moisture ≤ 0.48 AND pore ≥ 0.46 (건조+지성 공존)</td>
+    </tr>
+    <tr>
+      <td align="center">중성</td>
+      <td align="left">전반적 양호, 극단 항목 없음</td>
+    </tr>
+  </tbody>
+</table>
 
 **► Deep Model 판정 기준 (실제 측정값 기반):**
 
-| 피부타입 | 판정 조건                                                       |
-| :------: | :-------------------------------------------------------------- |
-|  민감성  | 평균 탄력 ≤ 0.48 AND (평균 주름Ra ≥ 22 OR 색소 ≥ 120)           |
-|   건성   | 건조 부위 3곳 이상 AND 평균 탄력 ≤ 0.50, 또는 평균 수분 ≤ 53    |
-|   지성   | 평균 모공 ≥ 900 AND 평균 수분 ≥ 62                              |
-|  복합성  | 좌우 볼 수분 차이 ≥ 12, 또는 최대 모공 ≥ 900 AND 최소 수분 ≤ 52 |
-|   중성   | 평균 수분 ≥ 60 AND 평균 탄력 ≥ 0.50 AND 평균 모공 ≤ 800         |
+<table>
+  <colgroup>
+    <col style="width: 15%;">
+    <col style="width: 85%;">
+  </colgroup>
+  <thead>
+    <tr>
+      <th align="center">피부타입</th>
+      <th align="left">판정 조건</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="center">민감성</td>
+      <td align="left">평균 탄력 ≤ 0.48 AND (평균 주름Ra ≥ 22 OR 색소 ≥ 120)</td>
+    </tr>
+    <tr>
+      <td align="center">건성</td>
+      <td align="left">건조 부위 3곳 이상 AND 평균 탄력 ≤ 0.50, 또는 평균 수분 ≤ 53</td>
+    </tr>
+    <tr>
+      <td align="center">지성</td>
+      <td align="left">평균 모공 ≥ 900 AND 평균 수분 ≥ 62</td>
+    </tr>
+    <tr>
+      <td align="center">복합성</td>
+      <td align="left">좌우 볼 수분 차이 ≥ 12, 또는 최대 모공 ≥ 900 AND 최소 수분 ≤ 52</td>
+    </tr>
+    <tr>
+      <td align="center">중성</td>
+      <td align="left">평균 수분 ≥ 60 AND 평균 탄력 ≥ 0.50 AND 평균 모공 ≤ 800</td>
+    </tr>
+  </tbody>
+</table>
 
 <br />
+
+---
 
 ### 6.3. 성분 OCR & 성분 분석
 
 #### 6.3.1. 모델 정보
 
-|    항목     | 내용                                                  |
-| :---------: | :---------------------------------------------------- |
-| 베이스 모델 | Qwen/Qwen2.5-VL-7B-Instruct                           |
-|  모델 유형  | Vision-Language Model (VLM)                           |
-|  파라미터   | 7B                                                    |
-|   정밀도    | float16 + Flash Attention 2                           |
-|    VRAM     | ~15GB _(입력 해상도/visual token budget에 따라 변동)_ |
-|  추론 환경  | NVIDIA RTX 5090 (RunPod)                              |
-|  라이선스   | Apache-2.0 _(상업적 사용 가능)_                       |
+<table>
+  <colgroup>
+    <col style="width: 25%;">
+    <col style="width: 75%;">
+  </colgroup>
+  <thead>
+    <tr>
+      <th align="center">항목</th>
+      <th align="left">내용</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="center">베이스 모델</td>
+      <td align="left">Qwen/Qwen2.5-VL-7B-Instruct</td>
+    </tr>
+    <tr>
+      <td align="center">모델 유형</td>
+      <td align="left">Vision-Language Model (VLM)</td>
+    </tr>
+    <tr>
+      <td align="center">파라미터</td>
+      <td align="left">7B</td>
+    </tr>
+    <tr>
+      <td align="center">정밀도</td>
+      <td align="left">float16 + Flash Attention 2</td>
+    </tr>
+    <tr>
+      <td align="center">VRAM</td>
+      <td align="left">~15GB <em>(입력 해상도/visual token budget에 따라 변동)</em></td>
+    </tr>
+    <tr>
+      <td align="center">추론 환경</td>
+      <td align="left">NVIDIA RTX 5090 (RunPod)</td>
+    </tr>
+    <tr>
+      <td align="center">라이선스</td>
+      <td align="left">Apache-2.0 <em>(상업적 사용 가능)</em></td>
+    </tr>
+  </tbody>
+</table>
 
 <br />
 
@@ -908,28 +1727,85 @@ Deep Model은 3가지 정보를 반환합니다:
 
 <br />
 
-
-<br />
-
 #### 6.3.5. 성능 비교 (vs 기존 OCR)
 
-|     평가 항목      | Tesseract OCR | PaddleOCR + 후처리 | **본 모델 (VLM)** |
-| :----------------: | :-----------: | :----------------: | :---------------: |
-|  곡면 텍스트 처리  |       ✗       |         △          |       **✓**       |
-| 마케팅 문구 필터링 |       ✗       |   △ (규칙 기반)    | **✓ (의미 이해)** |
-|  성분 분리 정확도  |       ✗       |  △ (오분리 발생)   |       **✓**       |
-|   평균 처리 속도   |     0.5초     |      0.5~1초       |     **2~5초**     |
+<table>
+  <colgroup>
+    <col style="width: 25%;">
+    <col style="width: 25%;">
+    <col style="width: 25%;">
+    <col style="width: 25%;">
+  </colgroup>
+  <thead>
+    <tr>
+      <th align="center">평가 항목</th>
+      <th align="center">Tesseract OCR</th>
+      <th align="center">PaddleOCR + 후처리</th>
+      <th align="center"><strong>본 모델 (VLM)</strong></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="center">곡면 텍스트 처리</td>
+      <td align="center">✗</td>
+      <td align="center">△</td>
+      <td align="center"><strong>✓</strong></td>
+    </tr>
+    <tr>
+      <td align="center">마케팅 문구 필터링</td>
+      <td align="center">✗</td>
+      <td align="center">△ (규칙 기반)</td>
+      <td align="center"><strong>✓ (의미 이해)</strong></td>
+    </tr>
+    <tr>
+      <td align="center">성분 분리 정확도</td>
+      <td align="center">✗</td>
+      <td align="center">△ (오분리 발생)</td>
+      <td align="center"><strong>✓</strong></td>
+    </tr>
+    <tr>
+      <td align="center">평균 처리 속도</td>
+      <td align="center">0.5초</td>
+      <td align="center">0.5~1초</td>
+      <td align="center"><strong>2~5초</strong></td>
+    </tr>
+  </tbody>
+</table>
 
 <br />
 
 #### 6.3.6. 정확도 (3종 테스트 이미지 기반)
 
-|         지표         |   결과   |
-| :------------------: | :------: |
-| 성분 검출률 (Recall) | **~95%** |
-|  정밀도 (Precision)  | **~98%** |
-|  마케팅 문구 필터율  | **~99%** |
-|   성분 분리 정확도   | **~93%** |
+<table>
+  <colgroup>
+    <col style="width: 60%;">
+    <col style="width: 40%;">
+  </colgroup>
+  <thead>
+    <tr>
+      <th align="center">지표</th>
+      <th align="center">결과</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="center">성분 검출률 (Recall)</td>
+      <td align="center"><strong>~95%</strong></td>
+    </tr>
+    <tr>
+      <td align="center">정밀도 (Precision)</td>
+      <td align="center"><strong>~98%</strong></td>
+    </tr>
+    <tr>
+      <td align="center">마케팅 문구 필터율</td>
+      <td align="center"><strong>~99%</strong></td>
+    </tr>
+    <tr>
+      <td align="center">성분 분리 정확도</td>
+      <td align="center"><strong>~93%</strong></td>
+    </tr>
+  </tbody>
+</table>
 
 > ⚠️ 3종 테스트 이미지 기반 추정치이며, 이미지 품질(해상도, 조명, 초점)에 따라 달라질 수 있습니다.
 
@@ -1015,7 +1891,7 @@ Deep Model은 3가지 정보를 반환합니다:
                         "instant"                  "continue"
                             │                          │
                            END                 ┌───────┴───────┐
-                    (맥락 부족 역질문)           │  vision_node  │  Fast/Deep 모델 추론
+                    (맥락 부족 역질문)          │  vision_node  │  Fast/Deep 모델 추론
                                                └───────┬───────┘
                                                        │
                                                ┌───────┴───────┐
@@ -1037,34 +1913,137 @@ Deep Model은 3가지 정보를 반환합니다:
 
 **■ route_node — Intent 분류 (1~3초)**
 
-| 항목     | 내용                                                                                 |
-| :------- | :----------------------------------------------------------------------------------- |
-| **역할** | 사용자 메시지를 14개 intent 중 하나로 분류                                           |
-| **모델** | GPT-4.1-mini (temperature=0.0, JSON mode)                                            |
-| **분기** | 비로그인(`_llm_decide_guest`) / 회원(`_llm_decide_member`) 별도 프롬프트             |
-| **폴백** | LLM 실패 시 키워드 기반 규칙 라우터로 자동 전환                                      |
-| **출력** | `RouteDecision(intent, needs_vision, needs_rag, needs_product, needs_context_check)` |
+<table>
+  <colgroup>
+    <col style="width: 15%;">
+    <col style="width: 85%;">
+  </colgroup>
+  <thead>
+    <tr>
+      <th align="left">항목</th>
+      <th align="left">내용</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="left"><strong>역할</strong></td>
+      <td align="left">사용자 메시지를 14개 intent 중 하나로 분류</td>
+    </tr>
+    <tr>
+      <td align="left"><strong>모델</strong></td>
+      <td align="left">GPT-4.1-mini (temperature=0.0, JSON mode)</td>
+    </tr>
+    <tr>
+      <td align="left"><strong>분기</strong></td>
+      <td align="left">비로그인(<code>_llm_decide_guest</code>) / 회원(<code>_llm_decide_member</code>) 별도 프롬프트</td>
+    </tr>
+    <tr>
+      <td align="left"><strong>폴백</strong></td>
+      <td align="left">LLM 실패 시 키워드 기반 규칙 라우터로 자동 전환</td>
+    </tr>
+    <tr>
+      <td align="left"><strong>출력</strong></td>
+      <td align="left"><code>RouteDecision(intent, needs_vision, needs_rag, needs_product, needs_context_check)</code></td>
+    </tr>
+  </tbody>
+</table>
 
 <br />
 
 **■ Intent 분류 체계 (14개)**
 
-| 분류      | Intent                | 설명                      | 실행 노드                               |
-| :-------- | :-------------------- | :------------------------ | :-------------------------------------- |
-| 즉시 응답 | `greeting`            | 인사/잡담                 | route_node에서 END                      |
-|           | `out_of_domain`       | 피부 무관 질문            | route_node에서 END                      |
-|           | `login_required`      | 비회원 분석 요청          | route_node에서 END                      |
-|           | `ask_for_context`     | 피부 정보 부족 → 역질문   | route_node에서 END                      |
-|           | `ask_for_category`    | 제품 종류 미특정 → 역질문 | route_node에서 END                      |
-|           | `ask_for_skin_info`   | 피부타입 미수집 → 역질문  | route_node에서 END                      |
-| 일반 상담 | `general_advice`      | 피부 관리법/일반 지식     | context → search(RAG) → llm             |
-|           | `routine_advice`      | 스킨케어 루틴 추천        | context → search(RAG) → llm             |
-|           | `medical_advice`      | 피부과 상담 권고          | context → search(RAG) → llm             |
-|           | `ingredient_question` | 화장품 성분 질문          | context → search(RAG) → llm             |
-| 제품 추천 | `product_recommend`   | 올리브영 제품 추천        | context → search(Tavily) → llm          |
-|           | `routine_and_product` | 루틴 + 제품 동시          | context → search(RAG+Tavily 병렬) → llm |
-| 피부 분석 | `skin_analysis_fast`  | 빠른 분석 (1장)           | context → vision → search(RAG) → llm    |
-|           | `skin_analysis_deep`  | 정밀 분석 (3장)           | context → vision → search(RAG) → llm    |
+<table>
+  <colgroup>
+    <col style="width: 15%;">
+    <col style="width: 25%;">
+    <col style="width: 25%;">
+    <col style="width: 35%;">
+  </colgroup>
+  <thead>
+    <tr>
+      <th align="left">분류</th>
+      <th align="left">Intent</th>
+      <th align="left">설명</th>
+      <th align="left">실행 노드</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="left" rowspan="6">즉시 응답</td>
+      <td align="left"><code>greeting</code></td>
+      <td align="left">인사/잡담</td>
+      <td align="left">route_node에서 END</td>
+    </tr>
+    <tr>
+      <td align="left"><code>out_of_domain</code></td>
+      <td align="left">피부 무관 질문</td>
+      <td align="left">route_node에서 END</td>
+    </tr>
+    <tr>
+      <td align="left"><code>login_required</code></td>
+      <td align="left">비회원 분석 요청</td>
+      <td align="left">route_node에서 END</td>
+    </tr>
+    <tr>
+      <td align="left"><code>ask_for_context</code></td>
+      <td align="left">피부 정보 부족 → 역질문</td>
+      <td align="left">route_node에서 END</td>
+    </tr>
+    <tr>
+      <td align="left"><code>ask_for_category</code></td>
+      <td align="left">제품 종류 미특정 → 역질문</td>
+      <td align="left">route_node에서 END</td>
+    </tr>
+    <tr>
+      <td align="left"><code>ask_for_skin_info</code></td>
+      <td align="left">피부타입 미수집 → 역질문</td>
+      <td align="left">route_node에서 END</td>
+    </tr>
+    <tr>
+      <td align="left" rowspan="4">일반 상담</td>
+      <td align="left"><code>general_advice</code></td>
+      <td align="left">피부 관리법/일반 지식</td>
+      <td align="left">context → search(RAG) → llm</td>
+    </tr>
+    <tr>
+      <td align="left"><code>routine_advice</code></td>
+      <td align="left">스킨케어 루틴 추천</td>
+      <td align="left">context → search(RAG) → llm</td>
+    </tr>
+    <tr>
+      <td align="left"><code>medical_advice</code></td>
+      <td align="left">피부과 상담 권고</td>
+      <td align="left">context → search(RAG) → llm</td>
+    </tr>
+    <tr>
+      <td align="left"><code>ingredient_question</code></td>
+      <td align="left">화장품 성분 질문</td>
+      <td align="left">context → search(RAG) → llm</td>
+    </tr>
+    <tr>
+      <td align="left" rowspan="2">제품 추천</td>
+      <td align="left"><code>product_recommend</code></td>
+      <td align="left">올리브영 제품 추천</td>
+      <td align="left">context → search(Tavily) → llm</td>
+    </tr>
+    <tr>
+      <td align="left"><code>routine_and_product</code></td>
+      <td align="left">루틴 + 제품 동시</td>
+      <td align="left">context → search(RAG+Tavily 병렬) → llm</td>
+    </tr>
+    <tr>
+      <td align="left" rowspan="2">피부 분석</td>
+      <td align="left"><code>skin_analysis_fast</code></td>
+      <td align="left">빠른 분석 (1장)</td>
+      <td align="left">context → vision → search(RAG) → llm</td>
+    </tr>
+    <tr>
+      <td align="left"><code>skin_analysis_deep</code></td>
+      <td align="left">정밀 분석 (3장)</td>
+      <td align="left">context → vision → search(RAG) → llm</td>
+    </tr>
+  </tbody>
+</table>
 
 <br />
 
@@ -1079,16 +2058,38 @@ LLM이 intent를 반환한 후, 규칙 기반 후처리로 일관성을 보장�
 
 <br />
 
----
-
 **■ context_node — 프로필 로드 + 맥락 판단 (~0초)**
 
-| 항목       | 내용                                                                                |
-| :--------- | :---------------------------------------------------------------------------------- |
-| **역할**   | DB에서 사용자 프로필 로드, 맥락 부족 시 역질문 반환                                 |
-| **회원**   | DB에서 skin_type, concern, age, gender, 최근 분석 이력 조회                         |
-| **비회원** | chat_history에서 임시 프로필 구성 (피부타입/고민 추출)                              |
-| **출력**   | `user_profile`, `instant_response`(역질문 시), `guest_upsell`(회원가입 유도 플래그) |
+<table>
+  <colgroup>
+    <col style="width: 15%;">
+    <col style="width: 85%;">
+  </colgroup>
+  <thead>
+    <tr>
+      <th align="left">항목</th>
+      <th align="left">내용</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="left"><strong>역할</strong></td>
+      <td align="left">DB에서 사용자 프로필 로드, 맥락 부족 시 역질문 반환</td>
+    </tr>
+    <tr>
+      <td align="left"><strong>회원</strong></td>
+      <td align="left">DB에서 skin_type, concern, age, gender, 최근 분석 이력 조회</td>
+    </tr>
+    <tr>
+      <td align="left"><strong>비회원</strong></td>
+      <td align="left">chat_history에서 임시 프로필 구성 (피부타입/고민 추출)</td>
+    </tr>
+    <tr>
+      <td align="left"><strong>출력</strong></td>
+      <td align="left"><code>user_profile</code>, <code>instant_response</code>(역질문 시), <code>guest_upsell</code>(회원가입 유도 플래그)</td>
+    </tr>
+  </tbody>
+</table>
 
 <br />
 
@@ -1106,49 +2107,148 @@ LLM이 intent를 반환한 후, 규칙 기반 후처리로 일관성을 보장�
 
 비로그인 사용자가 개인화가 필요한 질문을 하면 역질문 후 END로 분기하고, 답변이 제공된 경우에는 `guest_upsell=True` 플래그를 설정하여 validate_node에서 회원가입 유도 문구를 자동 추가합니다.
 
----
-
 <br />
 
 **■ vision_node — 피부 분석 모델 추론**
 
-| 항목          | 내용                                                                                         |
-| :------------ | :------------------------------------------------------------------------------------------- |
-| **역할**      | Fast/Deep 모델 추론 또는 성분 OCR(VLM) 실행                                                  |
-| **실행 조건** | `needs_vision=True`인 intent만 (skin_analysis_fast, skin_analysis_deep, ingredient_analysis) |
-| **Fast**      | 정면 1장 → Area별 ResNet50 → 5개 항목 수치 + 등급 (~0.5초)                                   |
-| **Deep**      | 정면+좌+우 3장 → Area별 ResNet50 + AttentionFusion → 13개 수치 + 10개 등급 + 신뢰도 (~2초)   |
-| **성분 OCR**  | Qwen2.5-VL-7B로 전성분 이미지에서 성분명 추출                                                |
-| **출력**      | `vision_result` (skin_metrics / measurements+grades+reliability / ingredients)               |
+<table>
+  <colgroup>
+    <col style="width: 18%;">
+    <col style="width: 82%;">
+  </colgroup>
+  <thead>
+    <tr>
+      <th align="left">항목</th>
+      <th align="left">내용</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="left"><strong>역할</strong></td>
+      <td align="left">Fast/Deep 모델 추론 또는 성분 OCR(VLM) 실행</td>
+    </tr>
+    <tr>
+      <td align="left"><strong>실행 조건</strong></td>
+      <td align="left"><code>needs_vision=True</code>인 intent만 (skin_analysis_fast, skin_analysis_deep, ingredient_analysis)</td>
+    </tr>
+    <tr>
+      <td align="left"><strong>Fast</strong></td>
+      <td align="left">정면 1장 → Area별 ResNet50 → 5개 항목 수치 + 등급 (~0.5초)</td>
+    </tr>
+    <tr>
+      <td align="left"><strong>Deep</strong></td>
+      <td align="left">정면+좌+우 3장 → Area별 ResNet50 + AttentionFusion → 13개 수치 + 10개 등급 + 신뢰도 (~2초)</td>
+    </tr>
+    <tr>
+      <td align="left"><strong>성분 OCR</strong></td>
+      <td align="left">Qwen2.5-VL-7B로 전성분 이미지에서 성분명 추출</td>
+    </tr>
+    <tr>
+      <td align="left"><strong>출력</strong></td>
+      <td align="left"><code>vision_result</code> (skin_metrics / measurements+grades+reliability / ingredients)</td>
+    </tr>
+  </tbody>
+</table>
 
 `needs_vision=False`인 일반 상담/제품 추천 intent에서는 이 노드를 통과(pass-through)합니다.
-
----
 
 <br />
 
 **■ search_node — RAG + Tavily 검색 (0.3~5초)**
 
-| 항목       | 내용                                                                   |
-| :--------- | :--------------------------------------------------------------------- |
-| **역할**   | intent별 필요한 검색을 실행하여 LLM에 전달할 근거 자료 수집            |
-| **RAG**    | ChromaDB 벡터 검색 — 피부 가이드, 성분 DB, 질환 정보, 화장품 데이터    |
-| **Tavily** | 올리브영 실시간 제품 검색 (이름, 가격, URL, 성분)                      |
-| **병렬**   | `needs_rag + needs_product` 동시 True → ThreadPoolExecutor로 병렬 실행 |
-| **출력**   | `rag_passages`, `oliveyoung_products`                                  |
+<table>
+  <colgroup>
+    <col style="width: 15%;">
+    <col style="width: 85%;">
+  </colgroup>
+  <thead>
+    <tr>
+      <th align="left">항목</th>
+      <th align="left">내용</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="left"><strong>역할</strong></td>
+      <td align="left">intent별 필요한 검색을 실행하여 LLM에 전달할 근거 자료 수집</td>
+    </tr>
+    <tr>
+      <td align="left"><strong>RAG</strong></td>
+      <td align="left">ChromaDB 벡터 검색 — 피부 가이드, 성분 DB, 질환 정보, 화장품 데이터</td>
+    </tr>
+    <tr>
+      <td align="left"><strong>Tavily</strong></td>
+      <td align="left">올리브영 실시간 제품 검색 (이름, 가격, URL, 성분)</td>
+    </tr>
+    <tr>
+      <td align="left"><strong>병렬</strong></td>
+      <td align="left"><code>needs_rag + needs_product</code> 동시 True → ThreadPoolExecutor로 병렬 실행</td>
+    </tr>
+    <tr>
+      <td align="left"><strong>출력</strong></td>
+      <td align="left"><code>rag_passages</code>, <code>oliveyoung_products</code></td>
+    </tr>
+  </tbody>
+</table>
 
 <br />
 
 **■ intent별 검색 조합**
 
-| Intent                         | RAG | Tavily | 비고                                    |
-| :----------------------------- | :-: | :----: | :-------------------------------------- |
-| general_advice, routine_advice | ✔️  |   —    | 가이드/질환 문서 검색                   |
-| medical_advice                 | ✔️  |   —    | 질환 문서 중심                          |
-| ingredient_question            | ✔️  |   —    | 성분/화장품 문서 검색                   |
-| product_recommend              |  —  |   ✔️   | 올리브영 실시간 검색                    |
-| routine_and_product            | ✔️  |   ✔️   | **병렬 실행**                           |
-| skin_analysis_fast/deep        | ✔️  |   —    | 수치 기반 피부타입 → RAG 쿼리 자동 생성 |
+<table>
+  <colgroup>
+    <col style="width: 40%;">
+    <col style="width: 10%;">
+    <col style="width: 10%;">
+    <col style="width: 40%;">
+  </colgroup>
+  <thead>
+    <tr>
+      <th align="left">Intent</th>
+      <th align="center">RAG</th>
+      <th align="center">Tavily</th>
+      <th align="left">비고</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="left">general_advice, routine_advice</td>
+      <td align="center">✔️</td>
+      <td align="center">—</td>
+      <td align="left">가이드/질환 문서 검색</td>
+    </tr>
+    <tr>
+      <td align="left">medical_advice</td>
+      <td align="center">✔️</td>
+      <td align="center">—</td>
+      <td align="left">질환 문서 중심</td>
+    </tr>
+    <tr>
+      <td align="left">ingredient_question</td>
+      <td align="center">✔️</td>
+      <td align="center">—</td>
+      <td align="left">성분/화장품 문서 검색</td>
+    </tr>
+    <tr>
+      <td align="left">product_recommend</td>
+      <td align="center">—</td>
+      <td align="center">✔️</td>
+      <td align="left">올리브영 실시간 검색</td>
+    </tr>
+    <tr>
+      <td align="left">routine_and_product</td>
+      <td align="center">✔️</td>
+      <td align="center">✔️</td>
+      <td align="left"><strong>병렬 실행</strong></td>
+    </tr>
+    <tr>
+      <td align="left">skin_analysis_fast/deep</td>
+      <td align="center">✔️</td>
+      <td align="center">—</td>
+      <td align="left">수치 기반 피부타입 → RAG 쿼리 자동 생성</td>
+    </tr>
+  </tbody>
+</table>
 
 <br />
 
@@ -1164,35 +2264,91 @@ vision_result["determined_skin_type"] = "복합성"
 
 <br />
 
----
-
 **■ llm_node — LLM 답변 생성 (5~15초)**
 
-| 항목         | 내용                                                                                            |
-| :----------- | :---------------------------------------------------------------------------------------------- |
-| **역할**     | 확정된 피부타입 + 수치 + RAG/Tavily 결과를 종합하여 최종 답변 생성                              |
-| **모델**     | GPT-4.1-mini                                                                                    |
-| **입력**     | intent, user_text, user_profile, vision_result, rag_passages, oliveyoung_products, chat_history |
-| **프롬프트** | intent별 전문 프롬프트 (general_chat.py, product_recommend.py, skin_analysis.py 등)             |
-| **출력**     | `llm_output` (chat_answer, summary, observations, recommendations, products, skin_type 등)      |
+<table>
+  <colgroup>
+    <col style="width: 15%;">
+    <col style="width: 85%;">
+  </colgroup>
+  <thead>
+    <tr>
+      <th align="left">항목</th>
+      <th align="left">내용</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="left"><strong>역할</strong></td>
+      <td align="left">확정된 피부타입 + 수치 + RAG/Tavily 결과를 종합하여 최종 답변 생성</td>
+    </tr>
+    <tr>
+      <td align="left"><strong>모델</strong></td>
+      <td align="left">GPT-4.1-mini</td>
+    </tr>
+    <tr>
+      <td align="left"><strong>입력</strong></td>
+      <td align="left">intent, user_text, user_profile, vision_result, rag_passages, oliveyoung_products, chat_history</td>
+    </tr>
+    <tr>
+      <td align="left"><strong>프롬프트</strong></td>
+      <td align="left">intent별 전문 프롬프트 (general_chat.py, product_recommend.py, skin_analysis.py 등)</td>
+    </tr>
+    <tr>
+      <td align="left"><strong>출력</strong></td>
+      <td align="left"><code>llm_output</code> (chat_answer, summary, observations, recommendations, products, skin_type 등)</td>
+    </tr>
+  </tbody>
+</table>
 
 intent에 따라 다른 시스템 프롬프트가 적용되며, 피부 분석 시에는 vision_result의 수치와 등급이 프롬프트에 직접 주입되어 LLM이 수치를 해석하고 조언을 생성합니다.
 
 <br />
 
----
-
 **■ validate_node — 검증 + 후처리 + DB 저장 (~0초)**
 
-| 항목              | 내용                                                                         |
-| :---------------- | :--------------------------------------------------------------------------- |
-| **역할**          | LLM 출력 검증, 올리브영 링크 반영, 분석 결과 DB 저장                         |
-| **스키마 검증**   | Pydantic `validate_report()`로 JSON 구조 검증 + 자동 복구                    |
-| **올리브영 링크** | Tavily 검색 결과와 LLM 추천 제품을 fuzzy 매칭하여 구매 URL 반영              |
-| **수치 정규화**   | Fast/Deep 원시 수치 → 0~100 통합 스코어 + 5단계 라벨(매우 양호~개선 필요)    |
-| **DB 저장**       | 분석 intent이고 vision_result 있을 때 → analysis 테이블에 정규화된 결과 저장 |
-| **회원가입 유도** | `guest_upsell=True`이면 답변 끝에 회원가입 유도 문구 자동 추가               |
-| **출력**          | `report` (최종 응답 JSON)                                                    |
+<table>
+  <colgroup>
+    <col style="width: 20%;">
+    <col style="width: 80%;">
+  </colgroup>
+  <thead>
+    <tr>
+      <th align="left">항목</th>
+      <th align="left">내용</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="left"><strong>역할</strong></td>
+      <td align="left">LLM 출력 검증, 올리브영 링크 반영, 분석 결과 DB 저장</td>
+    </tr>
+    <tr>
+      <td align="left"><strong>스키마 검증</strong></td>
+      <td align="left">Pydantic <code>validate_report()</code>로 JSON 구조 검증 + 자동 복구</td>
+    </tr>
+    <tr>
+      <td align="left"><strong>올리브영 링크</strong></td>
+      <td align="left">Tavily 검색 결과와 LLM 추천 제품을 fuzzy 매칭하여 구매 URL 반영</td>
+    </tr>
+    <tr>
+      <td align="left"><strong>수치 정규화</strong></td>
+      <td align="left">Fast/Deep 원시 수치 → 0~100 통합 스코어 + 5단계 라벨(매우 양호~개선 필요)</td>
+    </tr>
+    <tr>
+      <td align="left"><strong>DB 저장</strong></td>
+      <td align="left">분석 intent이고 vision_result 있을 때 → analysis 테이블에 정규화된 결과 저장</td>
+    </tr>
+    <tr>
+      <td align="left"><strong>회원가입 유도</strong></td>
+      <td align="left"><code>guest_upsell=True</code>이면 답변 끝에 회원가입 유도 문구 자동 추가</td>
+    </tr>
+    <tr>
+      <td align="left"><strong>출력</strong></td>
+      <td align="left"><code>report</code> (최종 응답 JSON)</td>
+    </tr>
+  </tbody>
+</table>
 
 <br />
 
@@ -1206,8 +2362,6 @@ intent에 따라 다른 시스템 프롬프트가 적용되며, 피부 분석 �
 ```
 
 <br />
-
----
 
 #### 6.5.4. 상태 관리 (GraphState)
 
@@ -1242,10 +2396,36 @@ class GraphState(TypedDict):
 
 그래프에는 2개의 조건부 분기점이 있어, 불필요한 노드 실행을 최소화합니다:
 
-| 분기점 | 조건 | "instant" (→ END) | "continue" (→ 다음 노드) |
-| :-- | :-- | :-- | :-- |
-| **route_condition** | `intent ∈ {greeting, out_of_domain, login_required, ask_for_context}` | 즉시 응답 반환 | context_node로 이동 |
-| **context_condition** | `instant_response ≠ None` | 역질문 반환 | vision_node로 이동 |
+<table>
+  <colgroup>
+    <col style="width: 20%;">
+    <col style="width: 35%;">
+    <col style="width: 20%;">
+    <col style="width: 25%;">
+  </colgroup>
+  <thead>
+    <tr>
+      <th align="left">분기점</th>
+      <th align="left">조건</th>
+      <th align="left">"instant" (→ END)</th>
+      <th align="left">"continue" (→ 다음 노드)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="left"><strong>route_condition</strong></td>
+      <td align="left"><code>intent ∈ {greeting, out_of_domain, login_required, ask_for_context}</code></td>
+      <td align="left">즉시 응답 반환</td>
+      <td align="left">context_node로 이동</td>
+    </tr>
+    <tr>
+      <td align="left"><strong>context_condition</strong></td>
+      <td align="left"><code>instant_response ≠ None</code></td>
+      <td align="left">역질문 반환</td>
+      <td align="left">vision_node로 이동</td>
+    </tr>
+  </tbody>
+</table>
 
 이를 통해 인사/도메인 외 질문은 **1개 노드만 실행**(route_node)하고, 맥락 부족 시 **2개 노드**(route + context)만 실행하여 응답 속도를 최적화합니다.
 
@@ -1253,53 +2433,205 @@ class GraphState(TypedDict):
 
 #### 6.5.6. 전체 응답 시간 (예시)
 
-| 시나리오                       | 실행 노드                                                     | 총 소요 시간 |
-| :----------------------------- | :------------------------------------------------------------ | :----------: |
-| "안녕" (인사)                  | route_node                                                    |    ~1.5초    |
-| "추천해줘" (맥락 부족)         | route → context                                               |    ~1.5초    |
-| "건성 피부 관리법" (일반 상담) | route → context → search(RAG) → llm → validate                |    ~12초     |
-| "지성 세럼 추천" (제품 추천)   | route → context → search(Tavily) → llm → validate             |    ~15초     |
-| "루틴이랑 세럼 추천" (복합)    | route → context → search(RAG+Tavily 병렬) → llm → validate    |    ~15초     |
-| 빠른 분석 (사진 1장)           | route → context → vision(0.5s) → search(RAG) → llm → validate |    ~13초     |
-| 정밀 분석 (사진 3장)           | route → context → vision(2s) → search(RAG) → llm → validate   |    ~15초     |
+<table>
+  <colgroup>
+    <col style="width: 28%;">
+    <col style="width: 52%;">
+    <col style="width: 20%;">
+  </colgroup>
+  <thead>
+    <tr>
+      <th align="left">시나리오</th>
+      <th align="left">실행 노드</th>
+      <th align="center">총 소요 시간</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="left">"안녕" (인사)</td>
+      <td align="left">route_node</td>
+      <td align="center">~1.5초</td>
+    </tr>
+    <tr>
+      <td align="left">"추천해줘" (맥락 부족)</td>
+      <td align="left">route → context</td>
+      <td align="center">~1.5초</td>
+    </tr>
+    <tr>
+      <td align="left">"건성 피부 관리법" (일반 상담)</td>
+      <td align="left">route → context → search(RAG) → llm → validate</td>
+      <td align="center">~12초</td>
+    </tr>
+    <tr>
+      <td align="left">"지성 세럼 추천" (제품 추천)</td>
+      <td align="left">route → context → search(Tavily) → llm → validate</td>
+      <td align="center">~15초</td>
+    </tr>
+    <tr>
+      <td align="left">"루틴이랑 세럼 추천" (복합)</td>
+      <td align="left">route → context → search(RAG+Tavily 병렬) → llm → validate</td>
+      <td align="center">~15초</td>
+    </tr>
+    <tr>
+      <td align="left">빠른 분석 (사진 1장)</td>
+      <td align="left">route → context → vision(0.5s) → search(RAG) → llm → validate</td>
+      <td align="center">~13초</td>
+    </tr>
+    <tr>
+      <td align="left">정밀 분석 (사진 3장)</td>
+      <td align="left">route → context → vision(2s) → search(RAG) → llm → validate</td>
+      <td align="center">~15초</td>
+    </tr>
+  </tbody>
+</table>
 
 <br />
 
-#### 퍼스널컬러 분류체계
-6.6.3. 분류 체계
-퍼스널컬러는 8개 기본 타입 + 6개 브릿지 조합 = 총 14타입으로 구성됩니다.
+#### 6.6.3. 퍼스널컬러 분류체계
 
-- 기본 타입: 봄 라이트, 봄 브라이트, 여름 라이트, 여름 뮤트, 가을 뮤트, 가을 딥, 겨울 브라이트, 겨울 딥
-- 브릿지 타입: 인접 시즌/톤 조합형 6개 타입
+분류 체계 퍼스널컬러는 8개 기본 타입 + 6개 브릿지 조합 = 총 14타입으로 구성됩니다.
+
+<br />
+
+<div>
+  <b>► 기본 타입</b>
+  <table>
+    <colgroup>
+      <col style="width: 76px;">
+      <col style="width: 76px;">
+      <col style="width: 76px;">
+      <col style="width: 76px;">
+      <col style="width: 76px;">
+      <col style="width: 76px;">
+      <col style="width: 76px;">
+      <col style="width: 76px;">
+    </colgroup>
+    <tr>
+      <td align="center" colspan="2">봄</td>
+      <td align="center" colspan="2">여름</td>
+      <td align="center" colspan="2">가을</td>
+      <td align="center" colspan="2">겨울</td>
+    </tr>
+    <tr>
+      <td align="center">라이트</td>
+      <td align="center">브라이트</td>
+      <td align="center">라이트</td>
+      <td align="center">뮤트</td>
+      <td align="center">뮤트</td>
+      <td align="center">딥</td>
+      <td align="center">브라이트</td>
+      <td align="center">딥</td>
+    </tr>
+  </table>
+
+  <br />
+
+<b>► 브릿지 타입</b>
+
+  <table>
+    <colgroup>
+      <col style="width: 76px;">
+      <col style="width: 76px;">
+      <col style="width: 76px;">
+      <col style="width: 76px;">
+      <col style="width: 76px;">
+      <col style="width: 76px;">
+    </colgroup>
+    <tr>
+      <td align="center" colspan="2">봄-여름</td>
+      <td align="center" colspan="2">여름-겨울</td>
+      <td align="center" colspan="2">가을-겨울</td>
+    </tr>
+    <tr>
+      <td align="center" colspan="2">봄-가을</td>
+      <td align="center" colspan="2">브라이트</td>
+      <td align="center" colspan="2">뮤트</td>
+    </tr>
+  </table>
+</div>
+
 <br />
 
 #### 6.6.4. 결과 구성
-|   항목   | 설명                |
-| :----: | :---------------- |
-|   타입명  | 최종 판정된 퍼스널컬러 타입   |
-|   시즌   | 봄/여름/가을/겨울        |
-|  감성 멘트 | 사용자 이해를 돕는 직관적 표현 |
-| 컬러 팔레트 | HEX 기반 추천 컬러 세트   |
-| 스타일 추천 | 메이크업 / 헤어 / 의상 추천 |
+
+<table>
+  <colgroup>
+    <col style="width: 30%;">
+    <col style="width: 70%;">
+  </colgroup>
+  <thead>
+    <tr>
+      <th align="center">항목</th>
+      <th align="left">설명</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="center">타입명</td>
+      <td align="left">최종 판정된 퍼스널컬러 타입</td>
+    </tr>
+    <tr>
+      <td align="center">시즌</td>
+      <td align="left">봄/여름/가을/겨울</td>
+    </tr>
+    <tr>
+      <td align="center">감성 멘트</td>
+      <td align="left">사용자 이해를 돕는 직관적 표현</td>
+    </tr>
+    <tr>
+      <td align="center">컬러 팔레트</td>
+      <td align="left">HEX 기반 추천 컬러 세트</td>
+    </tr>
+    <tr>
+      <td align="center">스타일 추천</td>
+      <td align="left">메이크업 / 헤어 / 의상 추천</td>
+    </tr>
+  </tbody>
+</table>
 
 <br />
 
+---
+
 ### 6.7. 웹캠 실시간 얼굴 감지
 
-사용자는 별도의 앱 설치 없이 웹캠을 실행할 수 있고, 시스템은 촬영 전 단계에서 얼굴 위치와 크기,  
-가이드 영역 충족 여부를 먼저 확인한 뒤 조건이 만족될 때만 촬영을 진행합니다.  
+사용자는 별도의 앱 설치 없이 웹캠을 실행할 수 있고, 시스템은 촬영 전 단계에서 얼굴 위치와 크기, 가이드 영역 충족 여부를 먼저 확인한 뒤 조건이 만족될 때만 촬영을 진행합니다.  
 이를 통해 잘못된 입력 이미지를 사전에 걸러내고, 퍼스널컬러 분석에 적합한 사진을 보다 안정적으로 확보할 수 있도록 했습니다.
 
 <br />
 
 #### 6.7.1. 적용 기술
 
-| 항목 | 내용 |
-| :--: | :-- |
-| 프론트엔드 처리 | TensorFlow.js |
-| 얼굴 검출 | MediaPipe Face Detector |
-| 실행 환경 | 브라우저 온디바이스 |
-| 처리 방식 | 실시간 얼굴 감지 후 조건 충족 시 자동 촬영 |
+<table>
+  <colgroup>
+    <col style="width: 30%;">
+    <col style="width: 70%;">
+  </colgroup>
+  <thead>
+    <tr>
+      <th align="center">항목</th>
+      <th align="left">내용</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="center">프론트엔드 처리</td>
+      <td align="left">TensorFlow.js</td>
+    </tr>
+    <tr>
+      <td align="center">얼굴 검출</td>
+      <td align="left">MediaPipe Face Detector</td>
+    </tr>
+    <tr>
+      <td align="center">실행 환경</td>
+      <td align="left">브라우저 온디바이스</td>
+    </tr>
+    <tr>
+      <td align="center">처리 방식</td>
+      <td align="left">실시간 얼굴 감지 후 조건 충족 시 자동 촬영</td>
+    </tr>
+  </tbody>
+</table>
 
 <br />
 
@@ -1308,11 +2640,37 @@ class GraphState(TypedDict):
 웹캠 촬영은 단순히 얼굴이 보이는지만 확인하는 것이 아니라,  
 분석 가능한 품질의 사진인지 판단하기 위해 아래 기준을 순차적으로 검사하도록 설계했습니다.
 
-| 검증 항목 | 기준 | 목적 |
-| :--: | :-- | :-- |
-| 특징점 유효성 확인 | 주요 얼굴 특징점 값이 정상적으로 검출되어야 함 | 얼굴 오탐 방지 |
-| 얼굴 크기 확인 | 얼굴 영역이 화면 내 최소 기준 이상이어야 함 | 너무 멀리 찍힌 사진 방지 |
-| 가이드 영역 포함 여부 | 얼굴 박스가 촬영 가이드 안에 완전히 들어와야 함 | 잘린 얼굴, 치우친 구도 방지 |
+<table>
+  <colgroup>
+    <col style="width: 25%;">
+    <col style="width: 45%;">
+    <col style="width: 30%;">
+  </colgroup>
+  <thead>
+    <tr>
+      <th align="center">검증 항목</th>
+      <th align="left">기준</th>
+      <th align="left">목적</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="center">특징점 유효성 확인</td>
+      <td align="left">주요 얼굴 특징점 값이 정상적으로 검출되어야 함</td>
+      <td align="left">얼굴 오탐 방지</td>
+    </tr>
+    <tr>
+      <td align="center">얼굴 크기 확인</td>
+      <td align="left">얼굴 영역이 화면 내 최소 기준 이상이어야 함</td>
+      <td align="left">너무 멀리 찍힌 사진 방지</td>
+    </tr>
+    <tr>
+      <td align="center">가이드 영역 포함 여부</td>
+      <td align="left">얼굴 박스가 촬영 가이드 안에 완전히 들어와야 함</td>
+      <td align="left">잘린 얼굴, 치우친 구도 방지</td>
+    </tr>
+  </tbody>
+</table>
 
 <br />
 
@@ -1320,15 +2678,17 @@ class GraphState(TypedDict):
 
 웹캠 촬영은 다음과 같은 순서로 동작합니다.
 
-1. 사용자가 웹캠 촬영 기능을 실행합니다.  
-2. 브라우저에서 실시간으로 얼굴을 감지합니다.  
-3. 얼굴 특징점, 크기, 가이드 영역 충족 여부를 검사합니다.  
-4. 모든 조건이 만족되면 자동 촬영 카운트다운을 시작합니다.  
-5. 카운트다운 도중 얼굴이 이탈하거나 조건이 깨지면 카운트다운을 초기화합니다.  
-6. 일정 시간 동안 조건이 유지되면 자동으로 이미지를 촬영합니다.  
+1. 사용자가 웹캠 촬영 기능을 실행합니다.
+2. 브라우저에서 실시간으로 얼굴을 감지합니다.
+3. 얼굴 특징점, 크기, 가이드 영역 충족 여부를 검사합니다.
+4. 모든 조건이 만족되면 자동 촬영 카운트다운을 시작합니다.
+5. 카운트다운 도중 얼굴이 이탈하거나 조건이 깨지면 카운트다운을 초기화합니다.
+6. 일정 시간 동안 조건이 유지되면 자동으로 이미지를 촬영합니다.
 7. 자동 촬영이 어려운 상황에서는 수동 촬영도 가능하도록 예외 흐름을 함께 제공했습니다.
 
 <br />
+
+---
 
 ### 6.8. 피부 MBTI 연동 파이프라인
 
@@ -1356,22 +2716,46 @@ class GraphState(TypedDict):
 피부 MBTI 연동은 프론트에서 복잡한 데이터를 직접 넘기기보다,  
 백엔드가 사용자 결과를 조회하여 필요한 정보를 프롬프트에 주입하는 방식으로 구현했습니다.
 
-1. 사용자가 피부 MBTI 결과 페이지에서 챗봇 진입 버튼을 클릭합니다.  
-2. 프론트는 챗봇 페이지로 이동하며 시작 메시지 또는 진입 상태를 전달합니다.  
-3. 백엔드는 사용자 식별 정보를 바탕으로 저장된 MBTI 결과를 조회합니다.  
-4. 조회된 MBTI 타입명, 설명, 추천 포인트를 챗봇 프롬프트에 주입합니다.  
+1. 사용자가 피부 MBTI 결과 페이지에서 챗봇 진입 버튼을 클릭합니다.
+2. 프론트는 챗봇 페이지로 이동하며 시작 메시지 또는 진입 상태를 전달합니다.
+3. 백엔드는 사용자 식별 정보를 바탕으로 저장된 MBTI 결과를 조회합니다.
+4. 조회된 MBTI 타입명, 설명, 추천 포인트를 챗봇 프롬프트에 주입합니다.
 5. LLM은 해당 피부 성향을 반영하여 맞춤형 답변을 생성합니다.
 
 <br />
 
 #### 6.8.3. 설계 방식
 
-| 항목 | 내용 |
-| :--: | :-- |
-| 데이터 조회 위치 | 백엔드 |
-| 활용 데이터 | 피부 MBTI 타입, 설명, 추천 방향 |
-| 반영 방식 | LLM 프롬프트 자동 주입 |
-| 기대 효과 | 결과 페이지 → 챗봇 상담 흐름 자연스럽게 연결 |
+<table>
+  <colgroup>
+    <col style="width: 30%;">
+    <col style="width: 70%;">
+  </colgroup>
+  <thead>
+    <tr>
+      <th align="center">항목</th>
+      <th align="left">내용</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="center">데이터 조회 위치</td>
+      <td align="left">백엔드</td>
+    </tr>
+    <tr>
+      <td align="center">활용 데이터</td>
+      <td align="left">피부 MBTI 타입, 설명, 추천 방향</td>
+    </tr>
+    <tr>
+      <td align="center">반영 방식</td>
+      <td align="left">LLM 프롬프트 자동 주입</td>
+    </tr>
+    <tr>
+      <td align="center">기대 효과</td>
+      <td align="left">결과 페이지 → 챗봇 상담 흐름 자연스럽게 연결</td>
+    </tr>
+  </tbody>
+</table>
 
 <br />
 
@@ -1383,6 +2767,8 @@ class GraphState(TypedDict):
 바로 자신의 성향에 맞춘 상담 흐름으로 이어질 수 있어 서비스 몰입도를 높일 수 있었습니다.
 
 <br />
+
+---
 
 ### 6.9. 응답 UX 최적화
 
@@ -1408,13 +2794,40 @@ class GraphState(TypedDict):
 현재 수행 중인 작업을 문구로 분리하여 제공함으로써  
 사용자가 대기 과정을 보다 이해할 수 있도록 했습니다.
 
-| 실행 단계 | 안내 예시 |
-| :--: | :-- |
-| 이미지 확인 | 업로드한 이미지를 확인하고 있어요 |
-| 피부 분석 | AI가 피부 상태를 분석하고 있어요 |
-| 성분 분석 | 전성분을 추출하고 있어요 |
-| 퍼스널컬러 분석 | 퍼스널컬러를 분석하고 있어요 |
-| 일반 상담 | 피부 데이터에서 근거를 찾고 있어요 |
+<table>
+  <colgroup>
+    <col style="width: 30%;">
+    <col style="width: 70%;">
+  </colgroup>
+  <thead>
+    <tr>
+      <th align="center">실행 단계</th>
+      <th align="left">안내 예시</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="center">이미지 확인</td>
+      <td align="left">업로드한 이미지를 확인하고 있어요</td>
+    </tr>
+    <tr>
+      <td align="center">피부 분석</td>
+      <td align="left">AI가 피부 상태를 분석하고 있어요</td>
+    </tr>
+    <tr>
+      <td align="center">성분 분석</td>
+      <td align="left">전성분을 추출하고 있어요</td>
+    </tr>
+    <tr>
+      <td align="center">퍼스널컬러 분석</td>
+      <td align="left">퍼스널컬러를 분석하고 있어요</td>
+    </tr>
+    <tr>
+      <td align="center">일반 상담</td>
+      <td align="left">피부 데이터에서 근거를 찾고 있어요</td>
+    </tr>
+  </tbody>
+</table>
 
 <br />
 
@@ -1428,12 +2841,36 @@ class GraphState(TypedDict):
 이를 통해 단순 대기 시간을 정보 소비 시간으로 전환하고,  
 서비스에 대한 흥미와 체감 품질을 함께 높이고자 했습니다.
 
-| 항목 | 내용 |
-| :--: | :-- |
-| 콘텐츠 성격 | 피부 관리 팁 / 짧은 상식 |
-| 노출 방식 | 로딩 중 모달 표시 |
-| 구성 방식 | 랜덤 선택 후 순차 노출 |
-| 목적 | 체감 대기 시간 완화, 사용자 몰입도 향상 |
+<table>
+  <colgroup>
+    <col style="width: 30%;">
+    <col style="width: 70%;">
+  </colgroup>
+  <thead>
+    <tr>
+      <th align="center">항목</th>
+      <th align="left">내용</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="center">콘텐츠 성격</td>
+      <td align="left">피부 관리 팁 / 짧은 상식</td>
+    </tr>
+    <tr>
+      <td align="center">노출 방식</td>
+      <td align="left">로딩 중 모달 표시</td>
+    </tr>
+    <tr>
+      <td align="center">구성 방식</td>
+      <td align="left">랜덤 선택 후 순차 노출</td>
+    </tr>
+    <tr>
+      <td align="center">목적</td>
+      <td align="left">체감 대기 시간 완화, 사용자 몰입도 향상</td>
+    </tr>
+  </tbody>
+</table>
 
 <br />
 
@@ -1449,12 +2886,36 @@ class GraphState(TypedDict):
 퍼스널컬러, 빠른 분석, 정밀 분석, 성분 분석 각각에 대해  
 필요한 사진 조건과 재촬영 가이드를 다르게 제시하여 사용자가 바로 다시 시도할 수 있도록 했습니다.
 
-| 분석 유형 | 안내 방향 |
-| :--: | :-- |
-| 퍼스널컬러 분석 | 실제 사람의 정면 얼굴 사진 필요 |
-| 빠른 피부 분석 | 정면 얼굴 사진 1장 필요 |
-| 정밀 피부 분석 | 정면, 좌측, 우측 3장 필요 |
-| 성분 분석 | 전성분표가 선명한 사진 필요 |
+<table>
+  <colgroup>
+    <col style="width: 30%;">
+    <col style="width: 70%;">
+  </colgroup>
+  <thead>
+    <tr>
+      <th align="center">분석 유형</th>
+      <th align="left">안내 방향</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="center">퍼스널컬러 분석</td>
+      <td align="left">실제 사람의 정면 얼굴 사진 필요</td>
+    </tr>
+    <tr>
+      <td align="center">빠른 피부 분석</td>
+      <td align="left">정면 얼굴 사진 1장 필요</td>
+    </tr>
+    <tr>
+      <td align="center">정밀 피부 분석</td>
+      <td align="left">정면, 좌측, 우측 3장 필요</td>
+    </tr>
+    <tr>
+      <td align="center">성분 분석</td>
+      <td align="left">전성분표가 선명한 사진 필요</td>
+    </tr>
+  </tbody>
+</table>
 
 <br />
 
@@ -1467,6 +2928,8 @@ class GraphState(TypedDict):
 서비스 전체가 더 친절하고 살아 있는 인터랙션처럼 느껴지도록 개선했습니다.
 
 <br />
+
+---
 
 ### 6.10. 퍼스널컬러 결과 후처리 및 HEX 파싱 전략
 
@@ -1500,7 +2963,7 @@ LLM이 생성한 색상 정보가 프론트엔드에서 일관되게 해석될 �
 
 이 문제를 해결하기 위해 두 단계의 보완 구조를 적용했습니다.
 
-1. 프롬프트 단계에서 모든 추천 색상을 `컬러명(#HEX)` 형식으로 출력하도록 강제했습니다.  
+1. 프롬프트 단계에서 모든 추천 색상을 `컬러명(#HEX)` 형식으로 출력하도록 강제했습니다.
 2. 프론트엔드에서는 HEX 코드가 누락되거나 형식이 맞지 않는 경우를 대비해  
    기존 컬러명-HEX 매핑 테이블을 활용한 폴백 처리를 추가했습니다.
 
@@ -1516,9 +2979,9 @@ LLM이 생성한 색상 정보가 프론트엔드에서 일관되게 해석될 �
 또한 사용자에게는 HEX 코드 자체를 노출하지 않고  
 직관적인 컬러칩 중심 UI를 제공하여 결과 이해도를 높일 수 있었습니다.
 
----
-
 <br />
+
+---
 
 ### 6.11. 챗봇 페르소나 설계
 
@@ -1526,15 +2989,45 @@ LLM이 생성한 색상 정보가 프론트엔드에서 일관되게 해석될 �
 
 기존의 피부/성분 정보를 전달하는 기능 중심 챗봇에서 확장하여, 사용자의 피부 고민에 공감하고 부드럽게 설명하는 **서비스형 캐릭터 페르소나**를 설계했습니다. 이를 통해 답변 품질뿐 아니라 서비스의 인상과 일관된 말투 경험까지 함께 강화했습니다.
 
-| 항목 | 내용 |
-| :--: | :-- |
-| 이름 | 옹글이 |
-| 역할 | 피부 코치형 · 성분 큐레이터형 챗봇 |
-| 대화 방향 | 피부 고민 공감 + 이해하기 쉬운 설명 + 친절한 추천 |
-| 말투 원칙 | 밝고 발랄하지만 가볍지 않음 |
-| 핵심 성격 | 발랄함, 친절함, 공감성, 긍정성, 다정함, 쉬운 설명력 |
+<table>
+  <colgroup>
+    <col style="width: 25%;">
+    <col style="width: 75%;">
+  </colgroup>
+  <thead>
+    <tr>
+      <th align="center">항목</th>
+      <th align="left">내용</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="center">이름</td>
+      <td align="left">옹글이</td>
+    </tr>
+    <tr>
+      <td align="center">역할</td>
+      <td align="left">피부 코치형 · 성분 큐레이터형 챗봇</td>
+    </tr>
+    <tr>
+      <td align="center">대화 방향</td>
+      <td align="left">피부 고민 공감 + 이해하기 쉬운 설명 + 친절한 추천</td>
+    </tr>
+    <tr>
+      <td align="center">말투 원칙</td>
+      <td align="left">밝고 발랄하지만 가볍지 않음</td>
+    </tr>
+    <tr>
+      <td align="center">핵심 성격</td>
+      <td align="left">발랄함, 친절함, 공감성, 긍정성, 다정함, 쉬운 설명력</td>
+    </tr>
+  </tbody>
+</table>
+
+<br />
 
 **■ 페르소나 기획 문서**
+
 - https://www.notion.so/321614937e7a80799db9d355aed64753?source=copy_link
 
 <br />
@@ -1547,19 +3040,44 @@ LLM이 생성한 색상 정보가 프론트엔드에서 일관되게 해석될 �
 
 <br />
 
+---
+
 ### 6.12. 분석 이력 및 비교 기능
 
 **■ 개요**
 
 피부 분석 결과를 단발성으로 확인하는 데 그치지 않고, 날짜별로 저장된 결과를 다시 조회하고 서로 비교할 수 있도록 분석 이력 기능을 확장했습니다.
 
-| 항목 | 내용 |
-| :--: | :-- |
-| 분석 이력 조회 | 날짜별 피부 분석 결과 조회 |
-| 비교 기능 | 선택한 2개 날짜 결과 비교 |
-| 활용 목적 | 피부 변화 추적 및 이전/현재 상태 확인 |
+<table>
+  <colgroup>
+    <col style="width: 30%;">
+    <col style="width: 70%;">
+  </colgroup>
+  <thead>
+    <tr>
+      <th align="center">항목</th>
+      <th align="left">내용</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="center">분석 이력 조회</td>
+      <td align="left">날짜별 피부 분석 결과 조회</td>
+    </tr>
+    <tr>
+      <td align="center">비교 기능</td>
+      <td align="left">선택한 2개 날짜 결과 비교</td>
+    </tr>
+    <tr>
+      <td align="center">활용 목적</td>
+      <td align="left">피부 변화 추적 및 이전/현재 상태 확인</td>
+    </tr>
+  </tbody>
+</table>
 
 <br />
+
+---
 
 ### 6.13. 회원가입 이후 온보딩 UX
 
@@ -1567,13 +3085,36 @@ LLM이 생성한 색상 정보가 프론트엔드에서 일관되게 해석될 �
 
 신규 사용자가 서비스의 주요 기능을 빠르게 이해할 수 있도록 회원가입 이후 온보딩 튜토리얼 모달과 핵심 기능 안내 흐름을 추가했습니다.
 
-| 항목 | 내용 |
-| :--: | :-- |
-| 온보딩 | 첫 회원가입 후 튜토리얼 모달 제공 |
-| 안내 내용 | 피부 분석, 피부 MBTI, 위시리스트, 퍼스널컬러 등 핵심 기능 소개 |
-| 목적 | 초기 진입 장벽 완화 및 서비스 기능 이해도 향상 |
+<table>
+  <colgroup>
+    <col style="width: 25%;">
+    <col style="width: 75%;">
+  </colgroup>
+  <thead>
+    <tr>
+      <th align="center">항목</th>
+      <th align="left">내용</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="center">온보딩</td>
+      <td align="left">첫 회원가입 후 튜토리얼 모달 제공</td>
+    </tr>
+    <tr>
+      <td align="center">안내 내용</td>
+      <td align="left">피부 분석, 피부 MBTI, 위시리스트, 퍼스널컬러 등 핵심 기능 소개</td>
+    </tr>
+    <tr>
+      <td align="center">목적</td>
+      <td align="left">초기 진입 장벽 완화 및 서비스 기능 이해도 향상</td>
+    </tr>
+  </tbody>
+</table>
 
 <br />
+
+---
 
 ### 6.14. 마이페이지 및 계정 관리 기능
 
@@ -1581,13 +3122,44 @@ LLM이 생성한 색상 정보가 프론트엔드에서 일관되게 해석될 �
 
 단순 사용자 정보 조회 수준을 넘어, 계정 관리와 운영 기능까지 수행할 수 있도록 마이페이지를 확장했습니다.
 
-| 항목 | 내용 |
-| :--: | :-- |
-| QnA | 사용자 문의 등록 / 조회 기능 |
-| 관리자 기능 | 전체 문의 관리 기능 |
-| 권한 분리 | 사용자 / 관리자 권한에 따른 기능 분리 |
-| 회원탈퇴 | 마이페이지에서 직접 탈퇴 가능 |
-| 닉네임 기능 | 닉네임 중복 확인 + 랜덤 닉네임 생성 |
+<table>
+  <colgroup>
+    <col style="width: 25%;">
+    <col style="width: 75%;">
+  </colgroup>
+  <thead>
+    <tr>
+      <th align="center">항목</th>
+      <th align="left">내용</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="center">QnA</td>
+      <td align="left">사용자 문의 등록 / 조회 기능</td>
+    </tr>
+    <tr>
+      <td align="center">관리자 기능</td>
+      <td align="left">전체 문의 관리 기능</td>
+    </tr>
+    <tr>
+      <td align="center">권한 분리</td>
+      <td align="left">사용자 / 관리자 권한에 따른 기능 분리</td>
+    </tr>
+    <tr>
+      <td align="center">회원탈퇴</td>
+      <td align="left">마이페이지에서 직접 탈퇴 가능</td>
+    </tr>
+    <tr>
+      <td align="center">닉네임 기능</td>
+      <td align="left">닉네임 중복 확인 + 랜덤 닉네임 생성</td>
+    </tr>
+  </tbody>
+</table>
+
+<br />
+
+---
 
 ### 6.15. Flutter 앱
 
@@ -1595,72 +3167,285 @@ LLM이 생성한 색상 정보가 프론트엔드에서 일관되게 해석될 �
 
 웹 서비스의 모든 기능을 모바일 환경에서도 동일하게 사용할 수 있도록 **Flutter 기반 Android 앱**을 개발했습니다. 단순 웹뷰 래핑이 아닌 Flutter 네이티브로 모바일에 최적화된 UI를 별도 구현하였으며, 기존 백엔드 API를 그대로 호출하여 웹과 동일한 기능을 제공합니다.
 
+<br />
+
 #### 6.15.2. 기술 스택
 
-| 항목 | 내용 |
-| --- | --- |
-| 프레임워크 | Flutter (Dart SDK ^3.11.1) |
-| 개발 환경 | Android Studio |
-| 타겟 플랫폼 | Android |
-| 백엔드 연동 | 웹과 동일한 REST API 호출 (HTTPS) |
+<table>
+  <colgroup>
+    <col style="width: 30%;">
+    <col style="width: 70%;">
+  </colgroup>
+  <thead>
+    <tr>
+      <th align="left">항목</th>
+      <th align="left">내용</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="left">프레임워크</td>
+      <td align="left">Flutter (Dart SDK ^3.11.1)</td>
+    </tr>
+    <tr>
+      <td align="left">개발 환경</td>
+      <td align="left">Android Studio</td>
+    </tr>
+    <tr>
+      <td align="left">타겟 플랫폼</td>
+      <td align="left">Android</td>
+    </tr>
+    <tr>
+      <td align="left">백엔드 연동</td>
+      <td align="left">웹과 동일한 REST API 호출 (HTTPS)</td>
+    </tr>
+  </tbody>
+</table>
+
+<br />
 
 #### 6.15.3. 주요 패키지 및 역할
 
-| 패키지 | 버전 | 역할 |
-| --- | --- | --- |
-| `dio` | ^5.9.2 | HTTP 클라이언트 (API 통신, 인터셉터, 에러 핸들링) |
-| `http` | ^1.2.0 | 기본 HTTP 요청 |
-| `flutter_secure_storage` | ^10.0.0 | JWT 토큰 등 민감 데이터 암호화 저장 (Android Keystore) |
-| `shared_preferences` | ^2.2.2 | 사용자 설정값 로컬 저장 |
-| `camera` | ^0.12.0 | 네이티브 카메라 촬영 (피부 분석, 퍼스널컬러) |
-| `google_mlkit_face_detection` | ^0.13.2 | 온디바이스 얼굴 감지 (촬영 전 얼굴 유효성 검증) |
-| `image_picker` | ^1.2.1 | 갤러리에서 이미지 선택 |
-| `image` | ^4.8.0 | 이미지 리사이징 및 가공 |
-| `video_player` | ^2.8.2 | 온보딩/홈 화면 배너 영상 재생 |
-| `flutter_markdown` | ^0.7.7+1 | AI 챗봇 답변 마크다운 렌더링 |
-| `url_launcher` | ^6.2.5 | 올리브영 제품 링크 외부 브라우저 열기 |
-| `app_links` | latest | 소셜 로그인 OAuth 딥링크 처리 |
+<table>
+  <colgroup>
+    <col style="width: 35%;">
+    <col style="width: 15%;">
+    <col style="width: 50%;">
+  </colgroup>
+  <thead>
+    <tr>
+      <th align="left">패키지</th>
+      <th align="left">버전</th>
+      <th align="left">역할</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="left"><code>dio</code></td>
+      <td align="left">^5.9.2</td>
+      <td align="left">HTTP 클라이언트 (API 통신, 인터셉터, 에러 핸들링)</td>
+    </tr>
+    <tr>
+      <td align="left"><code>http</code></td>
+      <td align="left">^1.2.0</td>
+      <td align="left">기본 HTTP 요청</td>
+    </tr>
+    <tr>
+      <td align="left"><code>flutter_secure_storage</code></td>
+      <td align="left">^10.0.0</td>
+      <td align="left">JWT 토큰 등 민감 데이터 암호화 저장 (Android Keystore)</td>
+    </tr>
+    <tr>
+      <td align="left"><code>shared_preferences</code></td>
+      <td align="left">^2.2.2</td>
+      <td align="left">사용자 설정값 로컬 저장</td>
+    </tr>
+    <tr>
+      <td align="left"><code>camera</code></td>
+      <td align="left">^0.12.0</td>
+      <td align="left">네이티브 카메라 촬영 (피부 분석, 퍼스널컬러)</td>
+    </tr>
+    <tr>
+      <td align="left"><code>google_mlkit_face_detection</code></td>
+      <td align="left">^0.13.2</td>
+      <td align="left">온디바이스 얼굴 감지 (촬영 전 얼굴 유효성 검증)</td>
+    </tr>
+    <tr>
+      <td align="left"><code>image_picker</code></td>
+      <td align="left">^1.2.1</td>
+      <td align="left">갤러리에서 이미지 선택</td>
+    </tr>
+    <tr>
+      <td align="left"><code>image</code></td>
+      <td align="left">^4.8.0</td>
+      <td align="left">이미지 리사이징 및 가공</td>
+    </tr>
+    <tr>
+      <td align="left"><code>video_player</code></td>
+      <td align="left">^2.8.2</td>
+      <td align="left">온보딩/홈 화면 배너 영상 재생</td>
+    </tr>
+    <tr>
+      <td align="left"><code>flutter_markdown</code></td>
+      <td align="left">^0.7.7+1</td>
+      <td align="left">AI 챗봇 답변 마크다운 렌더링</td>
+    </tr>
+    <tr>
+      <td align="left"><code>url_launcher</code></td>
+      <td align="left">^6.2.5</td>
+      <td align="left">올리브영 제품 링크 외부 브라우저 열기</td>
+    </tr>
+    <tr>
+      <td align="left"><code>app_links</code></td>
+      <td align="left">latest</td>
+      <td align="left">소셜 로그인 OAuth 딥링크 처리</td>
+    </tr>
+  </tbody>
+</table>
+
+<br />
 
 #### 6.15.4. 구현 기능
 
 웹에서 제공되는 모든 기능이 앱에서도 동작합니다.
 
-| 기능 | 앱 지원 | 주요 패키지 |
-| --- | --- | --- |
-| 회원가입 / 로그인 (로컬 + 소셜) | O | dio, flutter_secure_storage, app_links |
-| 온보딩 (피부 정보 입력) | O | shared_preferences |
-| AI 채팅 상담 | O | dio, flutter_markdown |
-| 빠른 피부 분석 (1장) | O | camera, google_mlkit_face_detection |
-| 정밀 피부 분석 (3장) | O | camera, google_mlkit_face_detection |
-| 성분 분석 (OCR) | O | camera, image_picker |
-| 퍼스널컬러 분석 | O | camera, google_mlkit_face_detection |
-| 올리브영 제품 추천 + 위시리스트 | O | dio, url_launcher |
-| 피부 MBTI 테스트 | O | dio |
-| 분석 결과 조회 / 비교 | O | dio |
-| 마이페이지 (프로필, QnA, 회원탈퇴) | O | dio, flutter_secure_storage |
+<table>
+  <colgroup>
+    <col style="width: 40%;">
+    <col style="width: 10%;">
+    <col style="width: 50%;">
+  </colgroup>
+  <thead>
+    <tr>
+      <th align="left">기능</th>
+      <th align="left">앱 지원</th>
+      <th align="left">주요 패키지</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="left">회원가입 / 로그인 (로컬 + 소셜)</td>
+      <td align="left">O</td>
+      <td align="left">dio, flutter_secure_storage, app_links</td>
+    </tr>
+    <tr>
+      <td align="left">온보딩 (피부 정보 입력)</td>
+      <td align="left">O</td>
+      <td align="left">shared_preferences</td>
+    </tr>
+    <tr>
+      <td align="left">AI 채팅 상담</td>
+      <td align="left">O</td>
+      <td align="left">dio, flutter_markdown</td>
+    </tr>
+    <tr>
+      <td align="left">빠른 피부 분석 (1장)</td>
+      <td align="left">O</td>
+      <td align="left">camera, google_mlkit_face_detection</td>
+    </tr>
+    <tr>
+      <td align="left">정밀 피부 분석 (3장)</td>
+      <td align="left">O</td>
+      <td align="left">camera, google_mlkit_face_detection</td>
+    </tr>
+    <tr>
+      <td align="left">성분 분석 (OCR)</td>
+      <td align="left">O</td>
+      <td align="left">camera, image_picker</td>
+    </tr>
+    <tr>
+      <td align="left">퍼스널컬러 분석</td>
+      <td align="left">O</td>
+      <td align="left">camera, google_mlkit_face_detection</td>
+    </tr>
+    <tr>
+      <td align="left">올리브영 제품 추천 + 위시리스트</td>
+      <td align="left">O</td>
+      <td align="left">dio, url_launcher</td>
+    </tr>
+    <tr>
+      <td align="left">피부 MBTI 테스트</td>
+      <td align="left">O</td>
+      <td align="left">dio</td>
+    </tr>
+    <tr>
+      <td align="left">분석 결과 조회 / 비교</td>
+      <td align="left">O</td>
+      <td align="left">dio</td>
+    </tr>
+    <tr>
+      <td align="left">마이페이지 (프로필, QnA, 회원탈퇴)</td>
+      <td align="left">O</td>
+      <td align="left">dio, flutter_secure_storage</td>
+    </tr>
+  </tbody>
+</table>
+
+<br />
 
 #### 6.15.5. 웹 vs 앱 얼굴 감지 기술 비교
 
 웹과 앱 모두 온디바이스 얼굴 감지를 수행하지만 사용 기술이 다릅니다.
 
-| 항목 | 웹 (React) | 앱 (Flutter) |
-| --- | --- | --- |
-| 감지 기술 | TensorFlow.js + MediaPipe WASM | Google ML Kit (네이티브) |
-| 패키지 | @tensorflow-models/face-detection | google_mlkit_face_detection |
-| 런타임 | 브라우저 WASM | Android 네이티브 |
-| 서버 전송 | 없음 (온디바이스) | 없음 (온디바이스) |
+<table>
+  <colgroup>
+    <col style="width: 25%;">
+    <col style="width: 37%;">
+    <col style="width: 38%;">
+  </colgroup>
+  <thead>
+    <tr>
+      <th align="left">항목</th>
+      <th align="left">웹 (React)</th>
+      <th align="left">앱 (Flutter)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="left">감지 기술</td>
+      <td align="left">TensorFlow.js + MediaPipe WASM</td>
+      <td align="left">Google ML Kit (네이티브)</td>
+    </tr>
+    <tr>
+      <td align="left">패키지</td>
+      <td align="left">@tensorflow-models/face-detection</td>
+      <td align="left">google_mlkit_face_detection</td>
+    </tr>
+    <tr>
+      <td align="left">런타임</td>
+      <td align="left">브라우저 WASM</td>
+      <td align="left">Android 네이티브</td>
+    </tr>
+    <tr>
+      <td align="left">서버 전송</td>
+      <td align="left">없음 (온디바이스)</td>
+      <td align="left">없음 (온디바이스)</td>
+    </tr>
+  </tbody>
+</table>
 
 두 환경 모두 서버에 얼굴 영상을 전송하지 않으므로 개인정보보호법상 생체정보 이슈 없이 운영할 수 있습니다.
 
+<br />
+
 #### 6.15.6. 앱 리소스 구성
 
-| 폴더 | 내용 |
-| --- | --- |
-| `assets/images/` | 로고, 아바타, 분석 가이드 이미지, 홈 화면 아이콘 |
-| `assets/images/skin_mbti/` | MBTI 8타입별 캐릭터 일러스트 |
-| `assets/images/home/` | 홈 화면 기능 소개 이미지 |
-| `assets/videos/` | 홈 화면 배너 영상 (skin_banner 1~4) |
-| `assets/social/` | 소셜 로그인 버튼 이미지 (Google, Kakao, Naver) |
+<table>
+  <colgroup>
+    <col style="width: 35%;">
+    <col style="width: 65%;">
+  </colgroup>
+  <thead>
+    <tr>
+      <th align="left">폴더</th>
+      <th align="left">내용</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="left"><code>assets/images/</code></td>
+      <td align="left">로고, 아바타, 분석 가이드 이미지, 홈 화면 아이콘</td>
+    </tr>
+    <tr>
+      <td align="left"><code>assets/images/skin_mbti/</code></td>
+      <td align="left">MBTI 8타입별 캐릭터 일러스트</td>
+    </tr>
+    <tr>
+      <td align="left"><code>assets/images/home/</code></td>
+      <td align="left">홈 화면 기능 소개 이미지</td>
+    </tr>
+    <tr>
+      <td align="left"><code>assets/videos/</code></td>
+      <td align="left">홈 화면 배너 영상 (skin_banner 1~4)</td>
+    </tr>
+    <tr>
+      <td align="left"><code>assets/social/</code></td>
+      <td align="left">소셜 로그인 버튼 이미지 (Google, Kakao, Naver)</td>
+    </tr>
+  </tbody>
+</table>
+
+<br />
 
 #### 6.15.7. 아키텍처 연동
 
@@ -1671,6 +3456,9 @@ Flutter App (Android)
     │  JWT 토큰 인증 (flutter_secure_storage)
     ▼
 Nginx (443) → FastAPI Backend → 동일한 AI 파이프라인
+```
+
+<br />
 
 ---
 
@@ -1705,18 +3493,44 @@ ERD 링크: https://www.erdcloud.com/d/2cjZbEpqqK92Mw6AZ
   <img src="assets/erd.png">
 </div>
 
-<!-- </div> -->
 <br />
 
 ### 8.1. 주요 테이블
 
-|    테이블     | 설명                                         |
-| :-----------: | :------------------------------------------- |
-|     users     | 사용자 정보 (피부타입, 피부고민, 나이, 성별) |
-|  chat_rooms   | 채팅방 관리                                  |
-| chat_messages | 대화 이력 저장                               |
-| skin_analyses | 피부 분석 결과 (피부타입, 점수, 측정값)      |
-|   wishlists   | 추천 제품 위시리스트 저장                    |
+<table>
+  <colgroup>
+    <col style="width: 30%;">
+    <col style="width: 70%;">
+  </colgroup>
+  <thead>
+    <tr>
+      <th align="center">테이블</th>
+      <th align="left">설명</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="center">users</td>
+      <td align="left">사용자 정보 (피부타입, 피부고민, 나이, 성별)</td>
+    </tr>
+    <tr>
+      <td align="center">chat_rooms</td>
+      <td align="left">채팅방 관리</td>
+    </tr>
+    <tr>
+      <td align="center">chat_messages</td>
+      <td align="left">대화 이력 저장</td>
+    </tr>
+    <tr>
+      <td align="center">skin_analyses</td>
+      <td align="left">피부 분석 결과 (피부타입, 점수, 측정값)</td>
+    </tr>
+    <tr>
+      <td align="center">wishlists</td>
+      <td align="left">추천 제품 위시리스트 저장</td>
+    </tr>
+  </tbody>
+</table>
 
 <br />
 
@@ -1725,205 +3539,285 @@ ERD 링크: https://www.erdcloud.com/d/2cjZbEpqqK92Mw6AZ
 ## 9. 디렉토리 구조
 
 ```
-📦 **SKN23-3rd-3TEAM/**
-├── **front/** *(React + Vite 프론트엔드)*
-│   ├── index.html                          # 앱 진입점 HTML
-│   ├── package.json                        # 의존성 및 스크립트
-│   ├── vite.config.ts                      # Vite 빌드 설정 (alias 등)
-│   ├── tsconfig.json                       # TypeScript 설정
-│   ├── public/
-│   │   └── favicon.icons                   # 파비콘 파일
-│   └── src/
-│       ├── main.tsx                        # React 앱 마운트 진입점
-│       ├── vite-env.d.ts                   # Vite 환경변수 타입 정의
-│       ├── app/
-│       │   ├── App.tsx                     # RouterProvider 루트 컴포넌트
-│       │   ├── routes.tsx                  # 전체 라우트 정의
-│       │   ├── api/                        # 백엔드 API 호출 함수 모음
-│       │   │   ├── authApi.ts              # 로그인·회원가입·이메일 인증·소셜 로그인
-│       │   │   ├── chatApi.ts              # 채팅방 CRUD·메시지 전송·게스트 채팅
-│       │   │   ├── userApi.ts              # 사용자 프로필 조회·수정·소셜 연동
-│       │   │   ├── analysisApi.ts          # 피부 분석 결과 조회
-│       │   │   ├── wishlistApi.ts          # 위시리스트 조회·추가·삭제
-│       │   │   └── uploadApi.ts            # S3 이미지 업로드
-│       │   ├── pages/                      # 라우트에 대응하는 페이지 컴포넌트
-│       │   │   ├── ChatPage.tsx            # 메인 채팅 페이지 (비로그인 접근 가능)
-│       │   │   ├── AnalysisPage.tsx        # 피부 분석 결과 상세 (로그인 필수)
-│       │   │   ├── WishlistPage.tsx        # 위시리스트 목록 (로그인 필수)
-│       │   │   ├── SettingsPage.tsx        # 프로필·계정 설정 (로그인 필수)
-│       │   │   ├── LoginPage.tsx           # 로그인
-│       │   │   ├── SignupPage.tsx          # 회원가입
-│       │   │   ├── ForgotPasswordPage.tsx  # 비밀번호 재설정
-│       │   │   ├── OnboardingPage.tsx      # 신규 회원 온보딩(피부정보 입력)
-│       │   │   └── OAuthCallbackPage.tsx   # 소셜 로그인 콜백 처리
-│       │   └── components/                 # 재사용 가능한 UI 컴포넌트
-│       │       ├── Layout.tsx              # 전체 레이아웃(사이드바 + 콘텐츠)
-│       │       ├── Sidebar.tsx             # 사이드바(네비·채팅 목록·사용자 정보)
-│       │       └── ui/                     # 범용 UI 원자 컴포넌트(shadcn/ui 기반)
-│       │           ├── bot.tsx             # 봇 아바타 컴포넌트
-│       │           ├── icon.tsx            # SVG 아이콘 래퍼
-│       │           ├── loading.tsx         # 로딩 스피너
-│       │           ├── use-mobile.ts       # 모바일 감지 훅
-│       │           └── utils.ts            # cn() 등 유틸 함수
-│       │
-│       ├── assets/                         # 정적 리소스(이미지/아이콘/애니메이션)
-│       │   ├── logo.png
-│       │   ├── profile.png
-│       │   ├── info_1.png                  # 빠른/정밀 분석 안내사항 이미지
-│       │   ├── info_2.png                  # 성분 분석 안내사항 이미지
-│       │   ├── bot.svg
-│       │   ├── animations/                 # 애니메이션 WebM 파일
-│       │   │   ├── logo_idle_1.webm
-│       │   │   ├── logo_loop_1.webm
-│       │   │   ├── logo_pop_1.webm
-│       │   │   └── logo_text.webm
-│       │   ├── icons/                      # 커스텀 아이콘 SVG 파일
-│       │   │   ├── beauty.svg
-│       │   │   ├── chat.svg
-│       │   │   ├── wish.svg
-│       │   │   ├── moisture.svg
-│       │   │   └── ...
-│       │   └── factorial/                  # 피부분석-추천관리법 팩토리얼 SVG 파일 (17종)
-│       │       ├── antiaging.svg
-│       │       ├── brightening_care.svg
-│       │       ├── moisturizing_boost.svg
-│       │       └── ...
-│       └── styles/                         # 전역 스타일
-│           ├── index.css
-│           ├── tailwind.css
-│           ├── theme.css
-│           └── fonts.css
-│
-├── **back/** *(FastAPI 백엔드)*
-│   ├── main.py                             # FastAPI 앱 진입점(CORS, Router 등록)
-│   │
-│   ├── db/                                 # 데이터베이스 계층
-│   │   ├── migrations/                     # 테이블 생성/변경 SQL
-│   │   │   └── 001_init_tables.sql
-│   │   ├── __init__.py
-│   │   ├── db_manager.py                   # DB 연결 및 공통 쿼리 실행(Base layer)
-│   │   ├── models.py                       # DB 모델(User, ChatSession 등)
-│   │   └── schemas.py                      # Pydantic 스키마
-│   │
-│   ├── routers/                            # API 엔드포인트(Controller layer)
-│   │   ├── __init__.py
-│   │   ├── analysis_router.py              # 피부 분석 API
-│   │   ├── auth_router.py                  # 인증/토큰 API
-│   │   ├── chat_router.py                  # 채팅 API
-│   │   ├── deps.py                         # Depends(인증/현재 유저 등)
-│   │   ├── keyword_router.py               # 키워드 API
-│   │   ├── upload_router.py                # S3 업로드 API
-│   │   ├── user_router.py                  # 사용자 API
-│   │   └── wishlist_router.py              # 위시리스트 API
-│   │
-│   ├── services/                           # 비즈니스 로직(Service layer)
-│   │   ├── __init__.py
-│   │   ├── analysis_service.py
-│   │   ├── auth_service.py
-│   │   ├── chat_service.py
-│   │   ├── email_service.py
-│   │   ├── keyword_service.py
-│   │   └── user_service.py
-│   │
-│   ├── vector/                             # RAG 벡터 파이프라인(수집 → 전처리 → 임베딩)
-│   │   ├── assets/
-│   │   │   ├── links/                      # 외부 수집 링크/검색 결과 JSON
-│   │   │   │   ├── aad_skin_care_*.json
-│   │   │   │   ├── derma_skin_dis_*.json
-│   │   │   │   ├── pubmed_search_*.json
-│   │   │   │   └── single_search.json
-│   │   │   └── vector_data/                # chunk 완료 JSONL(임베딩 입력)
-│   │   │       ├── aad_guides.jsonl
-│   │   │       ├── derma_disease.jsonl
-│   │   │       ├── mfds_ingredient.jsonl
-│   │   │       ├── pubmed_skin_guides.jsonl
-│   │   │       └── single_item_collection.jsonl
-│   │   ├── collectors/                     # 데이터 수집 모듈(RAG 1단계)
-│   │   │   ├── aad_data_to_*.py
-│   │   │   ├── cosmetic_*.py
-│   │   │   ├── derma_data_*.py
-│   │   │   ├── mfds_ingredient_*.py
-│   │   │   └── pubmed_data_*.py
-│   │   ├── utils/
-│   │   │   ├── __init__.py
-│   │   │   └── tagging.py                  # 메타 태깅/카테고리 로직
-│   │   ├── check_collection.py             # Chroma 컬렉션 확인/생성
-│   │   └── vectordb_insert.py              # 임베딩 생성 후 Chroma 업로드
-│   │
-│   ├── ai/                                 # AI 오케스트레이션 (LangGraph 파이프라인)
-│   │   ├── orchestrator/                   # 그래프 실행 엔진
-│   │   │   ├── graph.py                    # LangGraph DAG 정의 및 컴파일 (6-노드 그래프)
-│   │   │   ├── state.py                    # GraphState TypedDict (노드 간 공유 상태)
-│   │   │   ├── router.py                   # Intent 분류기 (LLM 라우팅 + 키워드 폴백)
-│   │   │   ├── context_builder.py          # 사용자 프로필 빌드 (DB 조회 + chat_history 파싱)
-│   │   │   └── nodes/                      # 그래프 노드 구현체
-│   │   │       ├── route.py                # [route_node] GPT-4.1-mini intent 분류 + 즉시 응답
-│   │   │       ├── context.py              # [context_node] 프로필 로드 + 맥락 부족 역질문
-│   │   │       ├── vision.py               # [vision_node] Fast/Deep 모델 추론 · 성분 OCR
-│   │   │       ├── search.py               # [search_node] RAG + Tavily 병렬 검색 · 피부타입 확정
-│   │   │       ├── llm.py                  # [llm_node] GPT 답변 생성 (intent별 프롬프트)
-│   │   │       └── validate.py             # [validate_node] 스키마 검증 · 올리브영 링크 · DB 저장
-│   │   │
-│   │   ├── llm/                            # LLM 호출 및 프롬프트 관리
-│   │   │   ├── generator.py                # generate_report() — intent별 프롬프트 조합 → GPT 호출
-│   │   │   ├── validators.py               # Pydantic 기반 LLM 출력 JSON 스키마 검증
-│   │   │   └── prompts/                    # intent별 시스템 프롬프트
-│   │   │       ├── system_base.py          # 공통 시스템 프롬프트 (역할 정의, 응답 형식)
-│   │   │       ├── skin_analysis.py        # 빠른/정밀 분석 프롬프트 (수치 해석 + 피부타입 판정)
-│   │   │       ├── ingredient_chat.py      # 성분 분석 프롬프트 (전성분 OCR 결과 해석)
-│   │   │       ├── product_recommend.py    # 제품 추천 프롬프트 (올리브영 제품 기반 답변)
-│   │   │       └── general_chat.py         # 일반 상담 프롬프트 (관리법, 루틴, 성분 질문)
-│   │   │
-│   │   ├── tools/                          # 외부 도구 연동
-│   │   │   ├── rag_retriever.py            # ChromaDB 벡터 검색 (가이드/성분/질환/화장품)
-│   │   │   └── oliveyoung.py               # Tavily API로 올리브영 실시간 제품 검색
-│   │   │
-│   │   └── config/
-│   │       └── settings.py                 # API 키, 모델명, 경로 등 환경 설정
-│   │
-│   ├── skin_ai/                            # 딥러닝 모델 추론 (Fast/Deep)
-│   │   ├── fast_inference.py               # Fast Model — 정면 1장 → 5개 항목 수치+등급 (~0.5초)
-│   │   ├── deep_inference.py               # Deep Model — F+L+R 3장 → 13개 수치+10개 등급+신뢰도 (~2초)
-│   │   ├── checkpoint/                     # 학습 완료 모델 가중치
-│   │   │   ├── fast/                       # Area별 Fast Model state_dict.bin (7개)
-│   │   │   └── deep/                       # Area별 Deep Model state_dict.bin (8개)
-│   │   └── ingredient_demo/
-│   │       └── demo_products.json          # 성분 분석 데모용 샘플 데이터
-│   │
-│   ├── assets/                             # 백엔드 리소스(팀 사진, 데모)
-│   │   ├── images/
-│   │   └── demo/
-│   │
-│   └── vector_store/                       # 로컬 Chroma 영속 저장소
-│       └── chroma.sqlite3
-│
-├── README.md
-└── requirements.txt
+📦 SKN23-4th-3TEAM/
+  ├── .env                                        # 환경 변수 (API 키, DB 접속 정보 등)
+  ├── .gitignore
+  ├── README.md
+  ├── requirements.txt                            # Python 공통 의존성
+  ├── docker-compose.yml                          # Docker 배포 구성 (nginx · backend · chromadb)
+  ├── nginx.conf                                  # Nginx 리버스 프록시 설정
+  │
+  ├── ai/                                         # AI 오케스트레이션 (LangGraph 파이프라인)
+  │   ├── config/
+  │   │   └── settings.py                         # API 키, 모델명, 경로 등 환경 설정
+  │   ├── llm/                                    # LLM 호출 및 프롬프트 관리
+  │   │   ├── generator.py                        # intent별 프롬프트 조합 → GPT 호출
+  │   │   ├── validators.py                       # Pydantic 기반 LLM 출력 JSON 스키마 검증
+  │   │   └── prompts/                            # intent별 시스템 프롬프트
+  │   │       ├── system_base.py                  # 공통 시스템 프롬프트 (역할 정의, 응답 형식)
+  │   │       ├── skin_analysis.py                # 빠른/정밀 분석 프롬프트
+  │   │       ├── ingredient_chat.py              # 성분 분석 프롬프트 (OCR 결과 해석)
+  │   │       ├── product_recommend.py            # 제품 추천 프롬프트 (올리브영 기반)
+  │   │       ├── routine_and_product.py          # 루틴 + 제품 동시 추천 프롬프트
+  │   │       ├── personal_color.py               # 퍼스널컬러 분석 프롬프트
+  │   │       └── general_chat.py                 # 일반 상담 프롬프트 (관리법, 루틴, 성분)
+  │   ├── models/
+  │   │   └── vision/                             # 얼굴 감지 모델
+  │   │       ├── face_detector.py                # OpenCV 기반 얼굴 감지
+  │   │       ├── infer.py                        # 모델 추론 실행
+  │   │       ├── model.py                        # ResNet50 모델 정의
+  │   │       └── preprocess.py                   # 이미지 전처리
+  │   ├── orchestrator/                           # LangGraph 그래프 실행 엔진
+  │   │   ├── graph.py                            # LangGraph DAG 정의 및 컴파일 (6-노드)
+  │   │   ├── state.py                            # GraphState TypedDict (노드 간 공유 상태)
+  │   │   ├── router.py                           # Intent 분류기 (LLM 라우팅 + 키워드 폴백)
+  │   │   ├── context_builder.py                  # 사용자 프로필 빌드 (DB 조회 + 대화 파싱)
+  │   │   └── nodes/                              # 그래프 노드 구현체
+  │   │       ├── route.py                        # [route_node] intent 분류 + 즉시 응답
+  │   │       ├── context.py                      # [context_node] 프로필 로드 + 역질문
+  │   │       ├── vision.py                       # [vision_node] 피부 모델 추론 · 성분 OCR
+  │   │       ├── search.py                       # [search_node] RAG + Tavily 병렬 검색
+  │   │       ├── llm.py                          # [llm_node] GPT 답변 생성
+  │   │       └── validate.py                     # [validate_node] 검증 · 링크 반영 · DB 저장
+  │   ├── schemas/
+  │   │   └── report_schema.py                    # 최종 응답 Pydantic 스키마
+  │   └── tools/                                  # 외부 도구 연동
+  │       ├── ocr_engine.py                       # VLM 기반 전성분 OCR 엔진
+  │       ├── oliveyoung.py                       # Tavily 올리브영 실시간 제품 검색
+  │       ├── rag_retriever.py                    # ChromaDB 벡터 검색 (가이드/성분/질환/화장품)
+  │       └── web/                                # 웹 크롤링 보조 도구
+  │           ├── web_extract.py                  # 웹 페이지 콘텐츠 추출
+  │           ├── web_fetch.py                    # HTTP 요청 처리
+  │           ├── web_retriever.py                # 검색 결과 수집
+  │           └── web_search.py                   # 웹 검색 실행
+  │
+  ├── back/                                       # FastAPI 백엔드
+  │   ├── Dockerfile                              # 백엔드 Docker 이미지 빌드
+  │   ├── main.py                                 # FastAPI 앱 진입점 (CORS, Router 등록)
+  │   ├── assets/                                 # 백엔드 정적 리소스
+  │   │   ├── nicknames.json                      # 랜덤 닉네임 목록
+  │   │   └── ongle_contents_with_emoji.xlsx      # 피부 상식 로딩 콘텐츠
+  │   ├── db/                                     # 데이터베이스 계층
+  │   │   ├── db_manager.py                       # DB 연결 및 공통 쿼리 실행
+  │   │   ├── models.py                           # DB 모델 정의 (User, ChatSession 등)
+  │   │   ├── schemas.py                          # Pydantic 스키마
+  │   │   └── migrations/
+  │   │       └── 001_init_tables.sql             # 테이블 초기화 SQL
+  │   ├── routers/                                # API 엔드포인트 (Controller layer)
+  │   │   ├── deps.py                             # 인증 의존성 (Depends)
+  │   │   ├── auth_router.py                      # 인증/토큰 API
+  │   │   ├── user_router.py                      # 사용자 프로필 API
+  │   │   ├── chat_router.py                      # 채팅방 · 메시지 API
+  │   │   ├── analysis_router.py                  # 피부 분석 결과 API
+  │   │   ├── wishlist_router.py                  # 위시리스트 API
+  │   │   ├── upload_router.py                    # S3 이미지 업로드 API
+  │   │   ├── keyword_router.py                   # 키워드 API
+  │   │   ├── qna_router.py                       # 문의(QnA) API
+  │   │   └── skin_mbti_router.py                 # 피부 MBTI API
+  │   ├── services/                               # 비즈니스 로직 (Service layer)
+  │   │   ├── auth_service.py                     # 인증 · JWT · 소셜 로그인 서비스
+  │   │   ├── user_service.py                     # 사용자 정보 관리 서비스
+  │   │   ├── chat_service.py                     # 채팅방 · 메시지 서비스
+  │   │   ├── analysis_service.py                 # 피부 분석 결과 저장 · 조회 서비스
+  │   │   ├── email_service.py                    # 이메일 인증 (SendGrid) 서비스
+  │   │   ├── keyword_service.py                  # 키워드 추출 서비스
+  │   │   ├── qna_service.py                      # 문의 서비스
+  │   │   ├── skin_mbti_service.py                # 피부 MBTI 서비스
+  │   │   └── cleanup_scheduler.py                # 만료 데이터 정리 스케줄러
+  │   └── vector/                                 # RAG 벡터 파이프라인 (수집 → 전처리 → 임베딩)
+  │       ├── check_collection.py                 # ChromaDB 컬렉션 확인/생성
+  │       ├── vectordb_insert.py                  # 임베딩 생성 후 ChromaDB 업로드
+  │       ├── assets/                             # 수집된 원시 데이터 및 JSONL
+  │       │   ├── links/                          # 외부 수집 링크 · 검색 결과 JSON
+  │       │   └── vector_data/                    # 청킹 완료 JSONL (임베딩 입력)
+  │       ├── collectors/                         # 데이터 수집 모듈 (RAG 1단계)
+  │       │   ├── aad_data_to_json.py             # AAD 피부 가이드 수집
+  │       │   ├── cosmetic_report_to_json.py      # 기능성 화장품 보고품목 수집
+  │       │   ├── derma_data_to_json.py           # 피부 질병 정보 수집
+  │       │   ├── mfds_ingredient_to_json.py      # 식약처 성분 정보 수집
+  │       │   └── pubmed_data_to_json.py          # PubMed 논문 수집
+  │       └── utils/
+  │           └── tagging.py                      # 키워드 기반 메타 태깅 · 카테고리 로직
+  │
+  ├── front/                                      # React + Vite 프론트엔드
+  │   ├── index.html                              # 앱 진입점 HTML
+  │   ├── package.json                            # 의존성 및 스크립트
+  │   ├── vite.config.ts                          # Vite 빌드 설정 (alias 등)
+  │   ├── tsconfig.json                           # TypeScript 설정
+  │   ├── public/                                 # 정적 공개 파일 (favicon 등)
+  │   └── src/
+  │       ├── main.tsx                            # React 앱 마운트 진입점
+  │       ├── vite-env.d.ts                       # Vite 환경변수 타입 정의
+  │       ├── app/
+  │       │   ├── App.tsx                         # RouterProvider 루트 컴포넌트
+  │       │   ├── routes.tsx                      # 전체 라우트 정의
+  │       │   ├── api/                            # 백엔드 API 호출 함수 모음
+  │       │   │   ├── authApi.ts                  # 로그인 · 회원가입 · 소셜 로그인
+  │       │   │   ├── chatApi.ts                  # 채팅방 CRUD · 메시지 전송
+  │       │   │   ├── userApi.ts                  # 사용자 프로필 조회 · 수정
+  │       │   │   ├── analysisApi.ts              # 피부 분석 결과 조회
+  │       │   │   ├── wishlistApi.ts              # 위시리스트 조회 · 추가 · 삭제
+  │       │   │   ├── uploadApi.ts                # S3 이미지 업로드
+  │       │   │   ├── qnaApi.ts                   # 문의(QnA) API
+  │       │   │   └── skinMbtiApi.ts              # 피부 MBTI API
+  │       │   ├── pages/                          # 라우트에 대응하는 페이지 컴포넌트
+  │       │   │   ├── ChatPage.tsx                # 메인 채팅 (비로그인 접근 가능)
+  │       │   │   ├── AnalysisPage.tsx            # 피부 분석 결과 (로그인 필수)
+  │       │   │   ├── WishlistPage.tsx            # 위시리스트 목록
+  │       │   │   ├── SettingsPage.tsx            # 프로필 · 계정 설정
+  │       │   │   ├── LoginPage.tsx               # 로그인
+  │       │   │   ├── SignupPage.tsx              # 회원가입
+  │       │   │   ├── ForgotPasswordPage.tsx      # 비밀번호 재설정
+  │       │   │   ├── OnboardingPage.tsx          # 신규 회원 온보딩 (피부 정보 입력)
+  │       │   │   ├── OAuthCallbackPage.tsx       # 소셜 로그인 콜백 처리
+  │       │   │   ├── SkinMbtiPage.tsx            # 피부 MBTI 테스트
+  │       │   │   ├── SkinMbtiResultPage.tsx      # 피부 MBTI 결과
+  │       │   │   ├── SharedAnalysisPage.tsx      # 분석 결과 공유 링크
+  │       │   │   ├── SharedSkinMbtiPage.tsx      # MBTI 결과 공유 링크
+  │       │   │   ├── TermsPage.tsx               # 이용약관
+  │       │   │   ├── PrivacyPage.tsx             # 개인정보처리방침
+  │       │   │   └── FaqPage.tsx                 # FAQ
+  │       │   └── components/                     # 재사용 가능한 UI 컴포넌트
+  │       │       ├── Layout.tsx                  # 전체 레이아웃 (사이드바 + 콘텐츠)
+  │       │       ├── Sidebar.tsx                 # 사이드바 (네비 · 채팅 목록 · 사용자 정보)
+  │       │       ├── common/                     # 공통 컴포넌트
+  │       │       ├── onboarding/                 # 온보딩 관련 컴포넌트
+  │       │       └── ui/                         # 범용 UI 원자 컴포넌트 (shadcn/ui 기반)
+  │       ├── assets/                             # 정적 리소스 (이미지 · 아이콘 · 애니메이션)
+  │       │   ├── animations/                     # 로고 애니메이션 WebM 파일
+  │       │   ├── icons/                          # 커스텀 SVG 아이콘
+  │       │   └── factorial/                      # 피부분석 추천관리법 SVG (17종)
+  │       ├── shared/
+  │       │   └── lib/
+  │       │       └── kakao.ts                    # 카카오 유틸
+  │       └── styles/                             # 전역 스타일
+  │           ├── index.css
+  │           ├── tailwind.css
+  │           ├── theme.css
+  │           └── fonts.css
+  │
+  ├── skin_ai/                                    # 딥러닝 피부 분석 모델 추론
+  │   ├── fast_inference.py                       # Fast Model: 정면 1장 → 5개 항목 수치+등급
+  │   ├── deep_inference.py                       # Deep Model: F+L+R 3장 → 13개 수치+10개 등급+신뢰도
+  │   └── ingredient_demo/                        # 성분 분석 데모용 샘플 데이터
+  │       └── demo_products.json
+  │
+  ├── on_you/                                     # Flutter 모바일 앱 (Android)
+  │   ├── pubspec.yaml                            # Flutter 패키지 의존성 정의
+  │   ├── lib/                                    # Dart 소스코드
+  │   │   ├── main.dart                           # 앱 진입점
+  │   │   ├── app.dart                            # 앱 라우팅 및 전역 설정
+  │   │   ├── data/                               # 정적 데이터 (피부 MBTI 문항 등)
+  │   │   ├── models/                             # 데이터 모델 클래스
+  │   │   │   ├── face_capture_result.dart        # 얼굴 촬영 결과 모델
+  │   │   │   ├── skin_analysis_result.dart       # 피부 분석 결과 모델
+  │   │   │   ├── recommended_product.dart        # 추천 제품 모델
+  │   │   │   ├── wish_item.dart                  # 위시리스트 아이템 모델
+  │   │   │   └── ...
+  │   │   ├── screens/                            # 화면(Screen) 컴포넌트
+  │   │   │   ├── home_screen.dart                # 홈 화면
+  │   │   │   ├── chatbot_screen.dart             # AI 챗봇 화면
+  │   │   │   ├── face_capture_screen.dart        # 얼굴 촬영 (정밀 분석)
+  │   │   │   ├── quick_face_capture_screen.dart  # 얼굴 촬영 (빠른 분석)
+  │   │   │   ├── ingredient_capture_screen.dart  # 전성분 촬영
+  │   │   │   ├── skin_analysis_page.dart         # 피부 분석 결과
+  │   │   │   ├── skin_mbti_test_screen.dart      # 피부 MBTI 테스트
+  │   │   │   ├── skin_mbti_result_screen.dart    # 피부 MBTI 결과
+  │   │   │   ├── wish_screen.dart                # 위시리스트
+  │   │   │   ├── settings_screen.dart            # 설정 · 마이페이지
+  │   │   │   ├── login_screen.dart               # 로그인
+  │   │   │   ├── signup_screen.dart              # 회원가입
+  │   │   │   └── ...
+  │   │   ├── services/                           # API 통신 및 인증 서비스
+  │   │   │   ├── api_service.dart                # 기본 HTTP API 클라이언트 (dio)
+  │   │   │   ├── auth_service.dart               # JWT 토큰 관리 (flutter_secure_storage)
+  │   │   │   ├── api_config.dart                 # API 서버 URL 설정
+  │   │   │   └── analysis_request_service.dart   # 분석 요청 서비스
+  │   │   ├── store/                              # 전역 상태 관리
+  │   │   │   ├── profile_image_store.dart        # 프로필 이미지 상태
+  │   │   │   └── wish_store.dart                 # 위시리스트 상태
+  │   │   └── widgets/                            # 재사용 가능한 위젯
+  │   │       └── face_guide_overlay.dart         # 얼굴 촬영 가이드 오버레이
+  │   └── android/                                # Android 네이티브 설정 · 빌드 구성
+  │
+  └── assets/                                     # README용 이미지 · GIF 리소스
+
 ```
 
 <br />
 
+---
+
 ## 10. Tech Stack
 
 <div align="center">
-
-| Category | Stack |
-| :-: | :-- |
-| **Front-End** | ![React](https://img.shields.io/badge/React-61DAFB?style=flat&logo=react&logoColor=black) ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat&logo=typescript&logoColor=black) ![vite](https://img.shields.io/badge/vite-9135FF?style=flat&logo=vite&logoColor=white) ![TailwindCSS](https://img.shields.io/badge/TailwindCSS-1572B6?style=flat&logo=tailwindcss&logoColor=white) ![RadixUI](https://img.shields.io/badge/RadixUI-161618?style=flat&logo=radixui&logoColor=white) ![shadcn/ui](https://img.shields.io/badge/shadcnui-000000?style=flat&logo=shadcnui&logoColor=white) |
-| **Back-End** | ![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat&logo=fastapi&logoColor=white) ![Python](https://img.shields.io/badge/Python-3776AB?style=flat&logo=python&logoColor=white) ![Uvicorn](https://img.shields.io/badge/Uvicorn-499848?style=flat&logoColor=white) |
-| **인증 / 보안** | ![JWT](https://img.shields.io/badge/JWT-000000?style=flat&logo=jsonwebtokens&logoColor=white) ![bcrypt](https://img.shields.io/badge/bcrypt-338AF0?style=flat&logoColor=white) ![Google OAuth](https://img.shields.io/badge/Google_OAuth-4285F4?style=flat&logo=google&logoColor=white) ![Naver OAuth](https://img.shields.io/badge/Naver_OAuth-03C75A?style=flat&logo=naver&logoColor=white) ![SendGrid](https://img.shields.io/badge/SendGrid-1A82E2?style=flat&logo=sendgrid&logoColor=white) |
-| **Database** | ![MariaDB](https://img.shields.io/badge/MariaDB-003545?style=flat&logo=mariadb&logoColor=white) |
-| **Vector DB** | ![ChromaDB](https://img.shields.io/badge/ChromaDB-FF6B00?style=flat&logoColor=white) |
-| **AI / LLM** | ![OpenAI](https://img.shields.io/badge/GPT--4o-412991?style=flat&logo=openai&logoColor=white) ![OpenAI](https://img.shields.io/badge/GPT--4o--mini-412991?style=flat&logo=openai&logoColor=white) |
-| **ML / DL** | ![PyTorch](https://img.shields.io/badge/PyTorch-EE4C2C?style=flat&logo=pytorch&logoColor=white) ![ResNet50](https://img.shields.io/badge/ResNet50-FF6F00?style=flat&logoColor=white) ![Qwen2.5-VL](https://img.shields.io/badge/Qwen2.5--VL-7B-blueviolet?style=flat&logoColor=white) ![HuggingFace](https://img.shields.io/badge/HuggingFace-FFD21E?style=flat&logo=huggingface&logoColor=black) |
-| **RAG / Orchestration** | ![LangGraph](https://img.shields.io/badge/LangGraph-1C3C3C?style=flat&logo=langgraph&logoColor=white) ![Tavily](https://img.shields.io/badge/Tavily-0066FF?style=flat&logoColor=white) ![Sentence-Transformers](https://img.shields.io/badge/Sentence--Transformers-FF6B00?style=flat&logoColor=white) ![ko-sroberta](https://img.shields.io/badge/ko--sroberta--multitask-yellow?style=flat&logoColor=white) |
-| **이미지 처리** | ![OpenCV](https://img.shields.io/badge/OpenCV-5C3EE8?style=flat&logo=opencv&logoColor=white) ![Pillow](https://img.shields.io/badge/Pillow-3776AB?style=flat&logo=python&logoColor=white) |
-| **Infra** | ![AWS](https://img.shields.io/badge/AWS_EC2-FF9900?style=flat&logo=amazonec2&logoColor=white) ![S3](https://img.shields.io/badge/S3-FF9900?style=flat&logo=amazonec2&logoColor=white) |
-| **Tools** | ![Figma](https://img.shields.io/badge/Figma-F05032?style=flat&logo=Figma&logoColor=white) ![Git](https://img.shields.io/badge/Git-F05032?style=flat&logo=git&logoColor=white) ![VS Code](https://img.shields.io/badge/VS_Code-007ACC?style=flat&logo=visual-studio-code&logoColor=white) ![RunPod](https://img.shields.io/badge/RunPod-673AB7?style=flat&logoColor=white) |
-
+  <table>
+    <colgroup>
+      <col style="width: 25%;">
+      <col style="width: 75%;">
+    </colgroup>
+    <thead>
+      <tr>
+        <th align="center">Category</th>
+        <th align="left">Stack</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td align="center"><strong>Front-End</strong></td>
+        <td align="left">![React](https://img.shields.io/badge/React-61DAFB?style=flat&logo=react&logoColor=black) ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat&logo=typescript&logoColor=black) ![vite](https://img.shields.io/badge/vite-9135FF?style=flat&logo=vite&logoColor=white) ![TailwindCSS](https://img.shields.io/badge/TailwindCSS-1572B6?style=flat&logo=tailwindcss&logoColor=white) ![RadixUI](https://img.shields.io/badge/RadixUI-161618?style=flat&logo=radixui&logoColor=white) ![shadcn/ui](https://img.shields.io/badge/shadcnui-000000?style=flat&logo=shadcnui&logoColor=white)</td>
+      </tr>
+      <tr>
+        <td align="center"><strong>Mobile</strong></td>
+        <td align="left">![Flutter](https://img.shields.io/badge/Flutter-02569B?style=flat&logo=flutter&logoColor=white) ![Dart](https://img.shields.io/badge/Dart-0175C2?style=flat&logo=dart&logoColor=white) ![Google ML Kit](https://img.shields.io/badge/Google_ML_Kit-4285F4?style=flat&logo=google&logoColor=white)</td>
+      </tr>
+      <tr>
+        <td align="center"><strong>Back-End</strong></td>
+        <td align="left">![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=flat&logo=fastapi&logoColor=white) ![Python](https://img.shields.io/badge/Python-3776AB?style=flat&logo=python&logoColor=white) ![Uvicorn](https://img.shields.io/badge/Uvicorn-499848?style=flat&logoColor=white)</td>
+      </tr>
+      <tr>
+        <td align="center"><strong>인증 / 보안</strong></td>
+        <td align="left">![JWT](https://img.shields.io/badge/JWT-000000?style=flat&logo=jsonwebtokens&logoColor=white) ![bcrypt](https://img.shields.io/badge/bcrypt-338AF0?style=flat&logoColor=white) ![Google OAuth](https://img.shields.io/badge/Google_OAuth-4285F4?style=flat&logo=google&logoColor=white) ![Naver OAuth](https://img.shields.io/badge/Naver_OAuth-03C75A?style=flat&logo=naver&logoColor=white) ![Kakao OAuth](https://img.shields.io/badge/Kakao_OAuth-FFCD00?style=flat&logo=kakao&logoColor=black) ![SendGrid](https://img.shields.io/badge/SendGrid-1A82E2?style=flat&logo=sendgrid&logoColor=white)</td>
+      </tr>
+      <tr>
+        <td align="center"><strong>Database</strong></td>
+        <td align="left">![MariaDB](https://img.shields.io/badge/MariaDB-003545?style=flat&logo=mariadb&logoColor=white)</td>
+      </tr>
+      <tr>
+        <td align="center"><strong>Vector DB</strong></td>
+        <td align="left">![ChromaDB](https://img.shields.io/badge/ChromaDB-FF6B00?style=flat&logoColor=white)</td>
+      </tr>
+      <tr>
+        <td align="center"><strong>AI / LLM</strong></td>
+        <td align="left">![OpenAI](https://img.shields.io/badge/GPT--4o-412991?style=flat&logo=openai&logoColor=white) ![OpenAI](https://img.shields.io/badge/GPT--4.1--mini-412991?style=flat&logo=openai&logoColor=white)</td>
+      </tr>
+      <tr>
+        <td align="center"><strong>ML / DL</strong></td>
+        <td align="left">![PyTorch](https://img.shields.io/badge/PyTorch-EE4C2C?style=flat&logo=pytorch&logoColor=white) ![ResNet50](https://img.shields.io/badge/ResNet50-FF6F00?style=flat&logoColor=white) ![Qwen2.5-VL](https://img.shields.io/badge/Qwen2.5--VL-7B-blueviolet?style=flat&logoColor=white) ![HuggingFace](https://img.shields.io/badge/HuggingFace-FFD21E?style=flat&logo=huggingface&logoColor=black)</td>
+      </tr>
+      <tr>
+        <td align="center"><strong>RAG / Orchestration</strong></td>
+        <td align="left">![LangGraph](https://img.shields.io/badge/LangGraph-1C3C3C?style=flat&logo=langgraph&logoColor=white) ![Tavily](https://img.shields.io/badge/Tavily-0066FF?style=flat&logoColor=white) ![Sentence-Transformers](https://img.shields.io/badge/Sentence--Transformers-FF6B00?style=flat&logoColor=white) ![ko-sroberta](https://img.shields.io/badge/ko--sroberta--multitask-yellow?style=flat&logoColor=white)</td>
+      </tr>
+      <tr>
+        <td align="center"><strong>이미지 처리</strong></td>
+        <td align="left">![OpenCV](https://img.shields.io/badge/OpenCV-5C3EE8?style=flat&logo=opencv&logoColor=white) ![Pillow](https://img.shields.io/badge/Pillow-3776AB?style=flat&logo=python&logoColor=white) ![TensorFlow.js](https://img.shields.io/badge/TensorFlow.js-FF6F00?style=flat&logo=tensorflow&logoColor=white) ![MediaPipe](https://img.shields.io/badge/MediaPipe-0097A7?style=flat&logoColor=white)</td>
+      </tr>
+      <tr>
+        <td align="center"><strong>Infra</strong></td>
+        <td align="left">![AWS](https://img.shields.io/badge/AWS_EC2-FF9900?style=flat&logo=amazonec2&logoColor=white) ![S3](https://img.shields.io/badge/S3-FF9900?style=flat&logo=amazons3&logoColor=white) ![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat&logo=docker&logoColor=white) ![Nginx](https://img.shields.io/badge/Nginx-009639?style=flat&logo=nginx&logoColor=white)</td>
+      </tr>
+      <tr>
+        <td align="center"><strong>Tools</strong></td>
+        <td align="left">![Figma](https://img.shields.io/badge/Figma-F05032?style=flat&logo=Figma&logoColor=white) ![Git](https://img.shields.io/badge/Git-F05032?style=flat&logo=git&logoColor=white) ![VS Code](https://img.shields.io/badge/VS_Code-007ACC?style=flat&logo=visual-studio-code&logoColor=white) ![RunPod](https://img.shields.io/badge/RunPod-673AB7?style=flat&logoColor=white)</td>
+      </tr>
+    </tbody>
+  </table>
 </div>
 
 <br />
+
+---
 
 ## 11. 실행 방법
 
@@ -1976,6 +3870,9 @@ DB_USER
 DB_PASSWORD
 DB_NAME
 
+# 서버 환경 구분 (local, ec2)
+SERVER
+
 # JWT
 JWT_SECRET_KEY
 
@@ -1992,7 +3889,7 @@ AWS_SECRET_ACCESS_KEY
 S3_BUCKET_NAME
 
 # API 연결 URL
-VITE_API_BASE_URL=http://localhost:8000
+VITE_API_BASE_URL
 
 # 임베딩 모델
 EMBED_MODEL_NAME
@@ -2032,29 +3929,36 @@ FRONTEND_BASE_URL
 
 <br />
 
+---
+
 ## 12. 화면 설계
 
 ### 12.1. 사이트 구조
 
-```bash
-
+```
 On-you(온유)
    ├── chat (회원, 비회원)
    │      ├── 채팅 질문
    │      ├── 빠른 분석
    │      ├── 정밀 분석
-   │      └── 성분 분석
+   │      ├── 성분 분석
+   │      └── 퍼스널컬러 분석
+   │
    ├── 피부 분석
    │      ├── 현재 분석
    │      └── 비교 분석
+   │
    ├── 피부 MBTI
+   │
    ├── 위시리스트
+   │
    ├── 설정
    │      ├── 프로필 (회원정보, 피부정보)
-   │      ├── 소셜 연동 (구글, 네이버)
+   │      ├── 소셜 연동 (구글, 카카오, 네이버)
    │      ├── 문의목록 (유저, 관리자)
    │      └── 회원탈퇴
-   └── 로그인 (일반, 구글, 네이버)
+   │
+   └── 로그인 (일반, 구글, 카카오, 네이버)
         ├── 비밀번호 찾기 (이메일 인증)
         └── 회원가입 (이메일 인증)
 
@@ -2062,17 +3966,25 @@ On-you(온유)
 
 <br />
 
+---
+
 ### 12.2. 화면흐름도
 
 <div align="center">
-  <img src="assets/화면흐름도.jpg" width="80%" />
+  <img src="assets/화면흐름도.jpg" />
 </div>
 
 <br />
 
+---
+
 ### 12.3. 와이어 프레임 (Figma):
 
 https://www.figma.com/make/GidYts0kuhsYalIeB8HraC/Multimodal-Skin-Analysis-Chatbot?t=YhjLgI2srgQIFRuA-1
+
+<br />
+
+---
 
 ### 12.4. 인포그래픽
 
@@ -2087,18 +3999,19 @@ https://www.figma.com/make/GidYts0kuhsYalIeB8HraC/Multimodal-Skin-Analysis-Chatb
     <img src="assets/인포그래픽_전성분.png">
   </div>  
 </div>
+
 <br />
 
 ---
 
 ## 13. Postman 문서
 
-API 문서는 Postman Documenter를 통해 확인할 수 있습니다.
-
-**Postman 주소**  
 https://documenter.getpostman.com/view/53095517/2sBXieta1g
 
+API 문서는 Postman Documenter를 통해 확인할 수 있습니다.  
 주요 인증, 회원, 피부 분석, 피부 MBTI, 퍼스널컬러, 공유 기능 API는 Postman Documenter에서 확인할 수 있도록 구성했습니다.
+
+<br />
 
 ---
 
@@ -2111,11 +4024,13 @@ Nginx를 리버스 프록시 및 정적 파일 서버로 사용해 프론트엔�
 
 <br />
 
+---
+
 ### 14.1. 배포 인프라 구조
 
 전체 서비스는 Docker Compose를 통해 다음 3개의 컨테이너로 구성됩니다.
 
-```text
+```
 사용자 (브라우저)
      │  HTTP / HTTPS
      ▼
@@ -2133,17 +4048,50 @@ Nginx를 리버스 프록시 및 정적 파일 서버로 사용해 프론트엔�
         [chromadb]
            └─ 임베딩 벡터 저장소
 ```
-이 구조를 통해 사용자는 하나의 도메인으로 접속하더라도,
-실제로는 프론트엔드 정적 리소스, 백엔드 API, 벡터 검색 기능이 역할에 따라 분리된 구조에서 동작하도록 설계했습니다.
+
+이 구조를 통해 사용자는 하나의 도메인으로 접속하더라도, 실제로는 프론트엔드 정적 리소스, 백엔드 API, 벡터 검색 기능이 역할에 따라 분리된 구조에서 동작하도록 설계했습니다.
 
 <br/>
 
+---
+
 ### 14.2. 컨테이너 구성
-|   컨테이너   | 이미지              | 역할                        |
-| :------: | :--------------- | :------------------------ |
-|   nginx  | nginx:alpine     | 리버스 프록시, SSL 종료, 정적 파일 서빙 |
-|  backend | Dockerfile 기반 빌드 | FastAPI 앱 서버, AI 분석 처리    |
-| chromadb | chromadb/chroma  | 임베딩 벡터 저장소                |
+
+<table>
+  <colgroup>
+    <col style="width: 20%;">
+    <col style="width: 30%;">
+    <col style="width: 50%;">
+  </colgroup>
+  <thead>
+    <tr>
+      <th align="center">컨테이너</th>
+      <th align="left">이미지</th>
+      <th align="left">역할</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="center">nginx</td>
+      <td align="left">nginx:alpine</td>
+      <td align="left">리버스 프록시, SSL 종료, 정적 파일 서빙</td>
+    </tr>
+    <tr>
+      <td align="center">backend</td>
+      <td align="left">Dockerfile 기반 빌드</td>
+      <td align="left">FastAPI 앱 서버, AI 분석 처리</td>
+    </tr>
+    <tr>
+      <td align="center">chromadb</td>
+      <td align="left">chromadb/chroma</td>
+      <td align="left">임베딩 벡터 저장소</td>
+    </tr>
+  </tbody>
+</table>
+
+<br/>
+
+---
 
 ### 14.3. Nginx 라우팅 구성
 
@@ -2151,27 +4099,46 @@ Nginx는 외부에서 들어오는 요청을 목적에 따라 프론트엔드 �
 
 HTTP(80) 요청은 HTTPS(443)로 자동 리다이렉트  
 /auth/ 경로는 소셜 로그인 및 콜백 처리를 위해 백엔드로 프록시  
-/users, /chats, /upload, /keywords, /analysis, /wishlist, /qna, /skin-mbti   경로는 백엔드 API로 프록시
-그 외 모든 경로는 프론트엔드 정적 파일로 연결  
+/users, /chats, /upload, /keywords, /analysis, /wishlist, /qna, /skin-mbti 경로는 백엔드 API로 프록시 그 외 모든 경로는 프론트엔드 정적 파일로 연결  
 React SPA 라우팅을 위해 try_files 기반 fallback 적용  
 업로드 파일 크기 제한은 최대 20MB  
-SSL 인증서는 Let's Encrypt를 사용하고, 인증서 경로를 Nginx 컨테이너에   마운트하여 적용
-<br />
+SSL 인증서는 Let's Encrypt를 사용하고, 인증서 경로를 Nginx 컨테이너에 마운트하여 적용 <br />
+
+<br/>
+
+---
 
 ### 14.4. 배포 및 실행 방법
 
 ### 14.4.1. .env 파일
-> scp -i onyou-ec2-key.pem SKN23-4th-3TEAM/front/.env ec2-user@3.36.101.246:/home/ec2-user/SKN23-4th-3TEAM/front/
 
->scp -i onyou-ec2-key.pem .env ec2-user@3.36.101.246:/home/ec2-user/SKN23-4th-3TEAM/
+```bash
+scp -i onyou-ec2-key.pem SKN23-4th-3TEAM/front/.env ec2-user@3.36.101.246:/home/ec2-user/SKN23-4th-3TEAM/front/
+```
+
+```bash
+scp -i onyou-ec2-key.pem .env ec2-user@3.36.101.246:/home/ec2-user/SKN23-4th-3TEAM/
+```
 
 ### 14.4.2. 전체 재빌드 & 재시작
->docker-compose down
->
->docker-compose up -d --build
+
+```bash
+docker-compose down
+```
+
+```bash
+docker-compose up -d --build
+```
 
 ### 14.4.3. nginx 수정 후
->docker-compose restart nginx
+
+```bash
+docker-compose restart nginx
+```
+
+<br/>
+
+---
 
 ## 15. 시연 화면
 
@@ -2208,20 +4175,53 @@ SSL 인증서는 Let's Encrypt를 사용하고, 인증서 경로를 Nginx 컨테
 ## 15.1 시연영상(웹)
 
 <div align="center">
-  <div><img src="assets/gif/Adobe Express - 비로그인 편집.gif" width="90%"></div>
-  <div><img src="assets/gif/Adobe Express - 회원관리법.gif" width="90%"></div>
-  <div><img src="assets/gif/Adobe Express - 레이저시술.gif" width="90%"></div>
-  <div><img src="assets/gif/Adobe Express - 빠른분석.gif" width="90%"></div>
-  <div><img src="assets/gif/Adobe Express - 정밀분석.gif" width="90%"></div>
-  <div><img src="assets/gif/Adobe Express - 전성분추출.gif" width="90%"></div>
-  <div><img src="assets/gif/Adobe Express - 퍼스널컬러.gif" width="90%"></div>
-  <div><img src="assets/gif/Adobe Express - 피부MBTI.gif" width="90%"></div>
+  <div><img src="assets/gif/Adobe Express - 비로그인 편집.gif" width="90%" /></div>
+  <div><img src="assets/gif/Adobe Express - 회원관리법.gif" width="90%" /></div>
+  <div><img src="assets/gif/Adobe Express - 레이저시술.gif" width="90%" /></div>
+  <div><img src="assets/gif/Adobe Express - 빠른분석.gif" width="90%" /></div>
+  <div><img src="assets/gif/Adobe Express - 정밀분석.gif" width="90%" /></div>
+  <div><img src="assets/gif/Adobe Express - 전성분추출.gif" width="90%" /></div>
+  <div><img src="assets/gif/Adobe Express - 퍼스널컬러.gif" width="90%" /></div>
+  <div><img src="assets/gif/Adobe Express - 피부MBTI.gif" width="90%" /></div>
 </div>
 
 ## 15.2 시연영상(앱)
-<div align="center">
 
+<div align="center">
+  <table>
+    <tr>
+      <td><img src="assets/gif/2.gif" /></td>
+      <td><img src="assets/gif/0.gif" /></td>
+      <td><img src="assets/gif/1.gif" /></td>
+    </tr>
+    <tr>
+      <td><img src="assets/gif/7.gif" /></td>
+      <td><img src="assets/gif/3.gif" /></td>
+      <td><img src="assets/gif/4.gif" /></td>
+    </tr>
+    <tr>
+      <td><img src="assets/gif/10.gif" /></td>
+      <td><img src="assets/gif/11.gif" /></td>
+      <td><img src="assets/gif/12.gif" /></td>
+    </tr>
+    <tr>
+      <td><img src="assets/gif/13.gif" /></td>
+      <td><img src="assets/gif/15.gif" /></td>
+      <td><img src="assets/gif/14.gif" /></td>
+    </tr>
+    <tr>
+      <td><img src="assets/gif/5.gif" /></td>
+      <td><img src="assets/gif/6.gif" /></td>
+      <td><img src="assets/gif/16.gif" /></td>
+    </tr>
+    <tr>
+      <td><img src="assets/gif/8.gif" /></td>
+      <td><img src="assets/gif/9.gif" /></td>
+    </tr>
+  </table>
 </div>
+
+<br />
 
 ---
 
@@ -2239,6 +4239,8 @@ SSL 인증서는 Let's Encrypt를 사용하고, 인증서 경로를 Nginx 컨테
 
 <br />
 
+---
+
 ### 16.2. RAG 검색 0건 문제
 
 - **원인**: 실행 위치(cwd)에 따라 `CHROMA_DB_PATH` 상대경로가 달라져 새 vector_store가 생성
@@ -2246,12 +4248,16 @@ SSL 인증서는 Let's Encrypt를 사용하고, 인증서 경로를 Nginx 컨테
 
 <br />
 
+---
+
 ### 16.3. OCR 모델 CPU 환경 실행 불가
 
 - **원인**: Qwen2.5-VL 7B 모델을 RunPod GPU에서 학습했으나, 실제 서비스 환경은 CPU
 - **해결**: 데모용 미리 추출된 전성분 JSON 매칭 테이블 방식으로 대체 (순서 기반 카운터)
 
 <br />
+
+---
 
 ### 16.4. LLM 응답에 JSON 구조 노출
 
@@ -2289,10 +4295,8 @@ SSL 인증서는 Let's Encrypt를 사용하고, 인증서 경로를 Nginx 컨테
 
 - **정석원** : 이번 프로젝트에서는 LLM 응답 생성기 구현, LLM 라우터 설계, 올리브영 제품 검증 파이프라인 구축, RAG 기반 답변 보강, React 프론트엔드 개발, FastAPI 백엔드 개발을 맡으며 LLM 서비스가 실제로 어떤 흐름으로 동작하는지 깊이 이해할 수 있었습니다. 특히 LLM이 단순히 답변만 생성하는 것이 아니라, 사용자 의도 분류 → 관련 근거 검색 → 답변 생성 → 결과 검증의 단계로 연결되어 동작한다는 점을 직접 구현하며 익힐 수 있었습니다. 짧은 기간이었지만 각자 맡은 역할을 끝까지 책임지고 함께 완성해준 팀원들 덕분에 프로젝트를 잘 마무리할 수 있었고, 모두에게 감사한 마음이 큽니다.
 
-- **정유선** : 이번 프로젝트를 통해 ReactJS·TypeScript 기반 프론트엔드와 FastAPI 백엔드 구축을 직접 경험하며 많은 것을 배울 수 있었습니다. 특히 한국어 특화 임베딩 모델인 jhgan/ko-sroberta-multitask를 활용해 데이터 수집과 벡터 임베딩 작업까지 수행해본 점이 매우 뜻깊었습니다. 또한 프로젝트 후반에는 화면 기획서와 API 명세서 작성 및 정리, 그리고 Flutter 애플리케이션 플레이스토어 등록 작업까지 맡으며 개발뿐 아니라 서비스 마무리 단계의 실무도 경험할 수 있었습니다.
-무엇보다 귀여운 이미지 디자인과 디자이너분들의 세심한 도움 덕분에 개발 과정이 더욱 즐거웠고, 모든 팀원이 각자의 역할에 최선을 다해주신 덕분에 프로젝트를 성공적으로 마무리할 수 있었습니다. 특히 팀장님의 훌륭한 리더십 아래 많이 배우고 성장할 수 있었던 점에 깊이 감사드립니다.
+- **정유선** : 이번 프로젝트를 통해 ReactJS·TypeScript 기반 프론트엔드와 FastAPI 백엔드 구축을 직접 경험하며 많은 것을 배울 수 있었습니다. 특히 한국어 특화 임베딩 모델인 jhgan/ko-sroberta-multitask를 활용해 데이터 수집과 벡터 임베딩 작업까지 수행해본 점이 매우 뜻깊었습니다. 또한 프로젝트 후반에는 화면 기획서와 API 명세서 작성 및 정리, 그리고 Flutter 애플리케이션 플레이스토어 등록 작업까지 맡으며 개발뿐 아니라 서비스 마무리 단계의 실무도 경험할 수 있었습니다. 무엇보다 귀여운 이미지 디자인과 디자이너분들의 세심한 도움 덕분에 개발 과정이 더욱 즐거웠고, 모든 팀원이 각자의 역할에 최선을 다해주신 덕분에 프로젝트를 성공적으로 마무리할 수 있었습니다. 특히 팀장님의 훌륭한 리더십 아래 많이 배우고 성장할 수 있었던 점에 깊이 감사드립니다.
 
-- **송민채** : 이번 프로젝트에서 저는 DB 설계, 백엔드 구조 설계, 인증·보안 구현을 맡으며, 단순 기능 개발을 넘어 서비스의 전체 구조와 흐름을 고민하는 경험을 할 수 있었습니다. ERD 작성과 외래키 설계를 통해 데이터 관계를 직접 구성했고, 계층형 백엔드 구조와 API 중심 개발을 경험하며 시스템을 더 깊이 이해할 수 있었습니다. 또한 비밀번호 암호화와 해싱 구현을 위해 보안 개념을 학습하면서, 이전에는 막연했던 인증·보안 영역에 대한 이해도 넓힐 수 있었습니다.
-아울러 AWS 서버를 직접 구축하며 EC2, RDS, S3의 역할과 활용 방식을 익혔고, 프론트엔드·백엔드·LLM이 함께 맞물려 돌아가는 협업 과정을 통해 실서비스 개발의 흐름을 체감할 수 있었습니다. Git을 활용한 협업과 진행 상황 공유의 중요성도 직접 배우며, 기술뿐 아니라 협업 방식까지 한 단계 성장할 수 있었습니다. 3차와 4차 프로젝트를 함께하며 많은 것을 배우게 해주신 팀장님과 팀원분들께 감사드립니다.
+- **송민채** : 이번 프로젝트에서 저는 DB 설계, 백엔드 구조 설계, 인증·보안 구현을 맡으며, 단순 기능 개발을 넘어 서비스의 전체 구조와 흐름을 고민하는 경험을 할 수 있었습니다. ERD 작성과 외래키 설계를 통해 데이터 관계를 직접 구성했고, 계층형 백엔드 구조와 API 중심 개발을 경험하며 시스템을 더 깊이 이해할 수 있었습니다. 또한 비밀번호 암호화와 해싱 구현을 위해 보안 개념을 학습하면서, 이전에는 막연했던 인증·보안 영역에 대한 이해도 넓힐 수 있었습니다. 아울러 AWS 서버를 직접 구축하며 EC2, RDS, S3의 역할과 활용 방식을 익혔고, 프론트엔드·백엔드·LLM이 함께 맞물려 돌아가는 협업 과정을 통해 실서비스 개발의 흐름을 체감할 수 있었습니다. Git을 활용한 협업과 진행 상황 공유의 중요성도 직접 배우며, 기술뿐 아니라 협업 방식까지 한 단계 성장할 수 있었습니다. 3차와 4차 프로젝트를 함께하며 많은 것을 배우게 해주신 팀장님과 팀원분들께 감사드립니다.
 
 - **이승연** : 이번 프로젝트를 통해 단순 기능 구현을 넘어, 실제 서비스 관점에서 기능 간 연결성과 사용자 흐름을 설계하고 운영까지 고려하는 경험을 할 수 있었습니다. 로컬 개발 환경부터 EC2 배포, S3 저장, FastAPI·MariaDB 연동까지 전체 서비스 흐름을 직접 다뤄보며 API 구조와 데이터 흐름에 대한 이해를 넓혔고, 환경 변수·DB 연결·서버 설정 오류를 해결하는 과정에서 운영 환경에 대한 감각도 키울 수 있었습니다. 또한 UI 구성과 인포그래픽, 챗봇 브랜드 디자인 작업에도 참여하며 서비스 완성도와 사용자 경험의 중요성을 깊이 느꼈습니다. 예상치 못한 오류와 반복적인 수정 과정이 쉽지는 않았지만, 그만큼 디버깅과 문제 해결 역량을 키울 수 있었고, 사용자 입장에서 자연스럽고 일관된 경험을 제공하는 설계의 가치를 배울 수 있었습니다. 부족한 점이 많았음에도 끝까지 이끌어주신 팀장님과 함께해주신 팀원분들께 감사드립니다.
