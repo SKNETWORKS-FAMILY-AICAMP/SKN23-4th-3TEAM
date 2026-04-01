@@ -4269,6 +4269,7 @@ docker-compose restart nginx
       <td><img src="assets/gif/16.gif" /></td>
     </tr>
     <tr>
+      <td><img src="assets/gif/17.gif" /></td>
       <td><img src="assets/gif/8.gif" /></td>
       <td><img src="assets/gif/9.gif" /></td>
     </tr>
